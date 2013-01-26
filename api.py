@@ -43,23 +43,11 @@ def get_nearby_venues(api, latitude, longitude, radius=800):
 
     params = {}
     params['query'] = 'coffee'
-
-    #params['near'] = 'New York'
-
     params['radius'] = radius
-    #params['ll'] = '40.7,-74' #"%.4s,%.4s" % (latitude, longitude)
     params['ll'] = '%.4s,%.4s' % (latitude, longitude)
-
-    if params['ll'] != '40.7,-74':
-        print repr(params['ll']), repr('40.7,-74')
-
     params['intent'] = 'browse'
     params['limit'] = 50
-    print repr(params)
     response = api.venues.search(params=params)
-    print response
-
-    #geocode = response[u'geocode']
     venues = response[u'venues']
 
     return venues

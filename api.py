@@ -3,20 +3,25 @@ import os
 import foursquare
 
 
+# idea: scrape nymag:
+# http://nymag.com/listings/bar/n/
+
 def get_credentials():
     """ 
     Query the environment to get
-    the API KEY and SECRET for LASTFM
+    the FOURSQUARE Client ID and SECRET
     """
 
     CLIENT_ID = os.environ["FOURSQUARE_CLIENT_ID"]
     CLIENT_SECRET = os.environ["FOURSQUARE_CLIENT_SECRET"]
-
     return (CLIENT_ID, CLIENT_SECRET)
 
 
 def get_api():
-    
+    """
+    Create and return an instance of
+    the Foursquare api
+    """
     client_id, client_secret = get_credentials()
     api = foursquare.Foursquare(client_id=client_id,
                                    client_secret=client_secret,
@@ -24,20 +29,68 @@ def get_api():
     return api
 
 
+def get_nearby_venues(api, latitude, longitude, radius=800):
+    """
+    Return a list of venues
+    Based on api:
+    https://developer.foursquare.com/docs/venues/search
+
+    Each venue is defined by:
+    https://developer.foursquare.com/docs/responses/venue
+
+    Radius in meters
+    """
+
+    params = {}
+    params['query'] = 'coffee'
+
+    #params['near'] = 'New York'
+
+    params['radius'] = radius
+    #params['ll'] = '40.7,-74' #"%.4s,%.4s" % (latitude, longitude)
+    params['ll'] = '%.4s,%.4s' % (latitude, longitude)
+
+    if params['ll'] != '40.7,-74':
+        print repr(params['ll']), repr('40.7,-74')
+
+    params['intent'] = 'browse'
+    params['limit'] = 50
+    print repr(params)
+    response = api.venues.search(params=params)
+    print response
+
+    #geocode = response[u'geocode']
+    venues = response[u'venues']
+
+    return venues
+
+    
+
+
 def main():
 
-    client = get_api()
-    auth_uri = client.oauth.auth_url()
+    api = get_api()
+    auth_uri = api.oauth.auth_url()
 
-    #print auth_uri
-    #print client.users('1183247')
-    #print client.venues('40a55d80f964a52020f31ee3')
+
+    #venues = get_nearby_venues(api,"40.728625","73.997684")
+    #venues = get_nearby_venues(api,"44.3","37.2")
+    venues = get_nearby_venues(api, 40.7, -74)
+
+    print venues
+    return
+
+    for venue in venues:
+        print venue
+    return
+
     params = {}
     params['query'] = 'coffee'
     params['near'] = 'New York'
     params['intent'] = 'browse'
-    #response = client.venues.search(params={'near': 'New York', 'query':'coffee'})
+    params['limit'] = 50
     response = client.venues.search(params=params)
+
     geocode = response[u'geocode']
     venues = response[u'venues']
 

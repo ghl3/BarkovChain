@@ -1,7 +1,9 @@
 
+import re
 import time
 import urllib2
 from bs4 import BeautifulSoup
+import nltk
 
 import pymongo
 import bson.objectid
@@ -104,7 +106,35 @@ def get_reviews():
     longitude = address_info.find(attrs={'class' : 'longitude'}).string
 
     print name, street_address, locality, region, postal_code, latitude, longitude
+
+    summary_details = summary.find(attrs={'class' : 'summary-details'})
     
+    review = summary_details.find(attrs={'class' : 'average'}).string
+    best = summary_details.find(attrs={'class' : 'best'}).string
+    category_string = summary_details.find(attrs={'class' : 'category'}).get_text()
+    category_string = category_string.replace("Scene: ", "")
+    categories = category_string.split(',')
+    print review, best, categories
+
+    #result = re.match("Scene: (?.+[,])*.*", category_string)
+    #print result.groups()
+
+    #for match in result.group():
+    #    print match
+
+    review_section = listing.find(attrs={'class' : 'listing-review'}).findAll('p')
+    review = ''.join([ item.get_text().strip() for item in review_section])
+    review = review.replace('\r', '').replace('\n', '')
+    print repr(review)
+    #for item in review_section:
+    #    print item.get_text()
+    #review_section = listing.find(attrs={'class' : 'listing-review'}).get_text()
+
+    #print review_section
+    #review = review_section.get_text()
+    #review = nltk.clean_html(review)
+    #print review
+
 
 if __name__ == "__main__":
     #get_new_restaurants()

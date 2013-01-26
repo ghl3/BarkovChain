@@ -41,7 +41,7 @@ def get_restaurant_entry(result):
     user_review_url = all_links[1]['href']
     map_url = all_links[2]['href']
     restaurant = {"name":name, "url":url, "address":address, 
-                  "desc_short":desc_short,"user_review_url":user_review_url, 
+                  "desc_short":desc_short, "user_review_url":user_review_url, 
                   "map_url":map_url, "critics_pic":critics_pic}
     return restaurant
 
@@ -64,8 +64,15 @@ def get_restaurant_review(soup):
 
     # Get the summary info
     summary_details = summary.find(attrs={'class' : 'summary-details'})
-    average_score = summary_details.find(attrs={'class' : 'average'}).string
-    best = summary_details.find(attrs={'class' : 'best'}).string
+
+    score_field = summary_details.find(attrs={'class' : 'average'})
+    if score_field != None:
+        average_score = summary_details.find(attrs={'class' : 'average'}).string
+        best = summary_details.find(attrs={'class' : 'best'}).string
+    else:
+        average_score = None
+        best = None
+
     category_string = summary_details.find(attrs={'class' : 'category'}).get_text()
     category_string = category_string.replace("Scene: ", "")
     categories = category_string.split(',')
@@ -119,48 +126,48 @@ def get_new_restaurants():
 
 
 def get_reviews():
-    #database = connectToDatabase("barkov_chain")
-    #nymag = database['nymag']
 
+    """
     url = "http://nymag.com/listings/bar/disiac-lounge/"
-
     request = urllib2.Request(url)
     response = urllib2.urlopen(request)
     soup = BeautifulSoup(response)
-    
-
-
-    '''
-    listing = soup.find(attrs={"class" : "listing item vcard"})
-    summary = listing.find(attrs={'class' : 'listing-summary'})
-    name = summary.h1.string
-
-    address_info = summary.find(attrs={'class' : 'summary-address'})
-    street_address = address_info.find(attrs={'class' : 'street-address'}).string
-    locality = address_info.find(attrs={'class' : 'locality'}).string
-    region = address_info.find(attrs={'class' : 'region'}).string
-    postal_code = address_info.find(attrs={'class' : 'postal-code'}).string
-    latitude = address_info.find(attrs={'class' : 'latitude'}).string
-    longitude = address_info.find(attrs={'class' : 'longitude'}).string
-
-    print name, street_address, locality, region, postal_code, latitude, longitude
-
-    summary_details = summary.find(attrs={'class' : 'summary-details'})
-    
-    review = summary_details.find(attrs={'class' : 'average'}).string
-    best = summary_details.find(attrs={'class' : 'best'}).string
-    category_string = summary_details.find(attrs={'class' : 'category'}).get_text()
-    category_string = category_string.replace("Scene: ", "")
-    categories = category_string.split(',')
-    print review, best, categories
-
-    review_section = listing.find(attrs={'class' : 'listing-review'}).findAll('p')
-    review = ''.join([ item.get_text().strip() for item in review_section])
-    review = review.replace('\r', '').replace('\n', '')
-    print repr(review)
-    '''
     review = get_restaurant_review(soup)
     print review
+    return
+    """
+
+    database = connectToDatabase("barkov_chain")
+    nymag = database['nymag']
+
+    entries = nymag.find({ 'review' : {'$exists':False} },
+                         limit = 5)    
+    
+    for entry in entries:
+
+        url = entry['url']        
+        print "Getting review for: ", entry['name'],
+        print " from url: ", url
+        time.sleep(1.0)
+
+        request = urllib2.Request(url)
+        response = urllib2.urlopen(request)
+        soup = BeautifulSoup(response)
+        if soup==None:
+            print "Error: soup is None"
+            raise Exception()
+
+        review = get_restaurant_review(soup)
+        name = review.pop('name')
+        if name != entry['name']:
+            print "Error: Entry names don't match: ",
+            print repr(name), repr(entry['name'])
+            raise Exception()
+
+        entry.update(review)
+        key = {"_id": entry['_id']}
+        nymag.update(key, entry)
+        
 
 if __name__ == "__main__":
     #get_new_restaurants()

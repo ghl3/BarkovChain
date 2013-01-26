@@ -46,6 +46,43 @@ def get_restaurant_entry(result):
     return restaurant
 
 
+def get_restaurant_review(soup):
+    
+    listing = soup.find(attrs={"class" : "listing item vcard"})
+
+    summary = listing.find(attrs={'class' : 'listing-summary'})
+    name = summary.h1.string
+
+    # Get the address info
+    address_info = summary.find(attrs={'class' : 'summary-address'})
+    street_address = address_info.find(attrs={'class' : 'street-address'}).string
+    locality = address_info.find(attrs={'class' : 'locality'}).string
+    region = address_info.find(attrs={'class' : 'region'}).string
+    postal_code = address_info.find(attrs={'class' : 'postal-code'}).string
+    latitude = address_info.find(attrs={'class' : 'latitude'}).string
+    longitude = address_info.find(attrs={'class' : 'longitude'}).string
+
+    # Get the summary info
+    summary_details = summary.find(attrs={'class' : 'summary-details'})
+    average_score = summary_details.find(attrs={'class' : 'average'}).string
+    best = summary_details.find(attrs={'class' : 'best'}).string
+    category_string = summary_details.find(attrs={'class' : 'category'}).get_text()
+    category_string = category_string.replace("Scene: ", "")
+    categories = category_string.split(',')
+
+    # Get the review
+    review_section = listing.find(attrs={'class' : 'listing-review'}).findAll('p')
+    review = ''.join([ item.get_text().strip() for item in review_section])
+    review = review.replace('\r', '').replace('\n', '')
+
+    info = {'name' : name, 'street_address' : street_address, 'locality' : locality,
+              'region' : region, 'postal_code' : postal_code, 
+              'latitude' : latitude, 'longitude' : longitude,
+              'average_score' : average_score, 'best' : best, 'categories': categories,
+              'review' : review}
+    return info
+
+
 def get_new_restaurants():
 
     database = connectToDatabase("barkov_chain")
@@ -91,9 +128,10 @@ def get_reviews():
     response = urllib2.urlopen(request)
     soup = BeautifulSoup(response)
     
-    listing = soup.find(attrs={"class" : "listing item vcard"})
-    #print listing    
 
+
+    '''
+    listing = soup.find(attrs={"class" : "listing item vcard"})
     summary = listing.find(attrs={'class' : 'listing-summary'})
     name = summary.h1.string
 
@@ -116,44 +154,14 @@ def get_reviews():
     categories = category_string.split(',')
     print review, best, categories
 
-    #result = re.match("Scene: (?.+[,])*.*", category_string)
-    #print result.groups()
-
-    #for match in result.group():
-    #    print match
-
     review_section = listing.find(attrs={'class' : 'listing-review'}).findAll('p')
     review = ''.join([ item.get_text().strip() for item in review_section])
     review = review.replace('\r', '').replace('\n', '')
     print repr(review)
-    #for item in review_section:
-    #    print item.get_text()
-    #review_section = listing.find(attrs={'class' : 'listing-review'}).get_text()
-
-    #print review_section
-    #review = review_section.get_text()
-    #review = nltk.clean_html(review)
-    #print review
-
+    '''
+    review = get_restaurant_review(soup)
+    print review
 
 if __name__ == "__main__":
     #get_new_restaurants()
     get_reviews()
-
-
-"""
-critics_pic = True if result.find(attrs={"class" : "criticsPick"}) else False
-all_links = result.findAll("a")
-link = all_links[0] #result.a
-name = link.string
-url = link['href']
-paragraphs = result.findAll("p")
-desc_short = paragraphs[0].string
-address = paragraphs[1].string
-user_review_url = all_links[1]['href']
-map_url = all_links[2]['href']
-restaurant = {"name":name, "url":url, "address":address, "desc_short":desc_short,
-"user_review_url":user_review_url, "map_url":map_url, 
-"critics_pic":critics_pic}
-# Search by name and url
-"""

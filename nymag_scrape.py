@@ -1,4 +1,5 @@
 
+import time
 import urllib2
 from bs4 import BeautifulSoup
 
@@ -48,45 +49,34 @@ def main():
     database = connectToDatabase("barkov_chain")
     nymag = database['nymag']
 
-    '''
-    url = 'http://nymag.com/srch?t=bar&N=259+69&No=0&Ns=nyml_sort_name%7C0'
-    request = urllib2.Request(url)
-    response = urllib2.urlopen(request)
-    soup = BeautifulSoup(response)
-    '''
-
-    next_url = 'http://nymag.com/srch?t=bar&N=259+69&No=0&Ns=nyml_sort_name%7C0'
+    current_url = 'http://nymag.com/srch?t=bar&N=259+69&No=0&Ns=nyml_sort_name%7C0'
     current_page=0
 
-    while current_page < 10:
+    while current_page < 50:
 
         current_page += 1
-        request = urllib2.Request(url)
+        print "Getting url: ", current_url
+
+        # Sleep for 1 sec
+        time.sleep(1.0)
+
+        request = urllib2.Request(current_url)
         response = urllib2.urlopen(request)
         soup = BeautifulSoup(response)
 
         # Get the 'next' url
-        next_url = soup.find(attrs={"id" : 'sitewidePrevNext'}).find(attrs={"class" : "nextActive"})['href'] #.string  findAll("a")[1]
-
+        current_url = soup.find(attrs={"id" : 'sitewidePrevNext'}).find(attrs={"class" : "nextActive"})['href'] #.string  findAll("a")[1]
         restaurants = soup.find(attrs={ "id" : "resultsFound"}).findAll(attrs={"class" : "result"})
 
         for result in restaurants:
             restaurant = get_restaurant_entry(result)
-        key = {"name" : restaurant['name'], 
-               "url" : restaurant['url']}
-        #nymag.update(key, restaurant, upsert=True)
-        print restaurant
+            print restaurant['name']
+            key = {"name" : restaurant['name'], 
+                   "url" : restaurant['url']}
+            nymag.update(key, restaurant, upsert=True)
+        print '\n'
 
     return
-
-    for user in page_users:
-        name = user['href'].strip('/user/') 
-        if name not in excluded_users:
-            all_users.append(name)
-            pass
-
-    return all_users, checked_pages
-
 
 if __name__ == "__main__":
     main()

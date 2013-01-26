@@ -26,6 +26,23 @@ def connectToDatabase(table_name="barkov_chain"):
     return db
 
 
+def get_restaurant_entry(result):
+    critics_pic = True if result.find(attrs={"class" : "criticsPick"}) else False
+    all_links = result.findAll("a")
+    link = all_links[0] #result.a
+    name = link.string
+    url = link['href']
+    paragraphs = result.findAll("p")
+    desc_short = paragraphs[0].string
+    address = paragraphs[1].string
+    user_review_url = all_links[1]['href']
+    map_url = all_links[2]['href']
+    restaurant = {"name":name, "url":url, "address":address, 
+                  "desc_short":desc_short,"user_review_url":user_review_url, 
+                  "map_url":map_url, "critics_pic":critics_pic}
+    return restaurant
+
+
 def main():
 
     database = connectToDatabase("barkov_chain")
@@ -39,6 +56,8 @@ def main():
     restaurants = soup.find(attrs={ "id" : "resultsFound"}).findAll(attrs={"class" : "result"})
 
     for result in restaurants:
+        restaurant = get_restaurant_entry(result)
+        """
         critics_pic = True if result.find(attrs={"class" : "criticsPick"}) else False
         all_links = result.findAll("a")
         link = all_links[0] #result.a
@@ -53,10 +72,12 @@ def main():
                       "user_review_url":user_review_url, "map_url":map_url, 
                       "critics_pic":critics_pic}
         # Search by name and url
-        key = {"name" : name, "url":url}
-        nymag.update(key, restaurant, upsert=True)
+        """
+        key = {"name" : restaurant['name'], 
+               "url" : restaurant['url']}
+        #nymag.update(key, restaurant, upsert=True)
         #restaurant_id = nymag.save( restaurant )
-        print name, url, address, desc_short, user_review_url, map_url, critics_pic
+        print restaurant
 
     return
 

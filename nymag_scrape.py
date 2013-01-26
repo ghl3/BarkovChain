@@ -44,7 +44,7 @@ def get_restaurant_entry(result):
     return restaurant
 
 
-def main():
+def get_new_restaurants():
 
     database = connectToDatabase("barkov_chain")
     nymag = database['nymag']
@@ -78,8 +78,37 @@ def main():
 
     return
 
+
+def get_reviews():
+    #database = connectToDatabase("barkov_chain")
+    #nymag = database['nymag']
+
+    url = "http://nymag.com/listings/bar/disiac-lounge/"
+
+    request = urllib2.Request(url)
+    response = urllib2.urlopen(request)
+    soup = BeautifulSoup(response)
+    
+    listing = soup.find(attrs={"class" : "listing item vcard"})
+    #print listing    
+
+    summary = listing.find(attrs={'class' : 'listing-summary'})
+    name = summary.h1.string
+
+    address_info = summary.find(attrs={'class' : 'summary-address'})
+    street_address = address_info.find(attrs={'class' : 'street-address'}).string
+    locality = address_info.find(attrs={'class' : 'locality'}).string
+    region = address_info.find(attrs={'class' : 'region'}).string
+    postal_code = address_info.find(attrs={'class' : 'postal-code'}).string
+    latitude = address_info.find(attrs={'class' : 'latitude'}).string
+    longitude = address_info.find(attrs={'class' : 'longitude'}).string
+
+    print name, street_address, locality, region, postal_code, latitude, longitude
+    
+
 if __name__ == "__main__":
-    main()
+    #get_new_restaurants()
+    get_reviews()
 
 
 """

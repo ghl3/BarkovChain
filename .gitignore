@@ -1,2 +1,4 @@
 setup.sh
 NOTES.txt
+*.log
+venv

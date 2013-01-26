@@ -48,35 +48,33 @@ def main():
     database = connectToDatabase("barkov_chain")
     nymag = database['nymag']
 
+    '''
     url = 'http://nymag.com/srch?t=bar&N=259+69&No=0&Ns=nyml_sort_name%7C0'
     request = urllib2.Request(url)
     response = urllib2.urlopen(request)
     soup = BeautifulSoup(response)
+    '''
 
-    restaurants = soup.find(attrs={ "id" : "resultsFound"}).findAll(attrs={"class" : "result"})
+    next_url = 'http://nymag.com/srch?t=bar&N=259+69&No=0&Ns=nyml_sort_name%7C0'
+    current_page=0
 
-    for result in restaurants:
-        restaurant = get_restaurant_entry(result)
-        """
-        critics_pic = True if result.find(attrs={"class" : "criticsPick"}) else False
-        all_links = result.findAll("a")
-        link = all_links[0] #result.a
-        name = link.string
-        url = link['href']
-        paragraphs = result.findAll("p")
-        desc_short = paragraphs[0].string
-        address = paragraphs[1].string
-        user_review_url = all_links[1]['href']
-        map_url = all_links[2]['href']
-        restaurant = {"name":name, "url":url, "address":address, "desc_short":desc_short,
-                      "user_review_url":user_review_url, "map_url":map_url, 
-                      "critics_pic":critics_pic}
-        # Search by name and url
-        """
+    while current_page < 10:
+
+        current_page += 1
+        request = urllib2.Request(url)
+        response = urllib2.urlopen(request)
+        soup = BeautifulSoup(response)
+
+        # Get the 'next' url
+        next_url = soup.find(attrs={"id" : 'sitewidePrevNext'}).find(attrs={"class" : "nextActive"})['href'] #.string  findAll("a")[1]
+
+        restaurants = soup.find(attrs={ "id" : "resultsFound"}).findAll(attrs={"class" : "result"})
+
+        for result in restaurants:
+            restaurant = get_restaurant_entry(result)
         key = {"name" : restaurant['name'], 
                "url" : restaurant['url']}
         #nymag.update(key, restaurant, upsert=True)
-        #restaurant_id = nymag.save( restaurant )
         print restaurant
 
     return
@@ -92,3 +90,21 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+"""
+critics_pic = True if result.find(attrs={"class" : "criticsPick"}) else False
+all_links = result.findAll("a")
+link = all_links[0] #result.a
+name = link.string
+url = link['href']
+paragraphs = result.findAll("p")
+desc_short = paragraphs[0].string
+address = paragraphs[1].string
+user_review_url = all_links[1]['href']
+map_url = all_links[2]['href']
+restaurant = {"name":name, "url":url, "address":address, "desc_short":desc_short,
+"user_review_url":user_review_url, "map_url":map_url, 
+"critics_pic":critics_pic}
+# Search by name and url
+"""

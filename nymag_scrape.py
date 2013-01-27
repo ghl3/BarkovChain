@@ -1,6 +1,6 @@
 
 import argparse
-
+import sys
 import re
 import time
 import urllib2
@@ -19,21 +19,29 @@ def connectToDatabase(table_name="barkov_chain"):
     """
 
     try:
-        connection = pymongo.Connection()
-    except:
-        print "connectToDatabase() - Failed to open connect to MongoDB"
+        #connection = pymongo.Connection()
+        connection = pymongo.MongoClient()
+    except ConnectionFailure:
+        message = "connectToDatabase() - Failed to open connect to MongoDB \n"
+        message += "Make sure that the MongoDB daemon is running."
+        sys.stderr.write(message)
         raise
 
     try:
         db = connection[table_name]
-    except:
-        print "connectToDatabase() - Failed to connect to %s" % table_name
+    except InvalidName:
+        message = "connectToDatabase() - Failed to connect to %s" % table_name
+        sys.stderr.write(message)
         raise
 
     return db
 
 
 def get_restaurant_entry(result):
+    """
+    Return a dict with a the restaurant's listing
+    Takes a BeautifulSoup4 object
+    """
     critics_pic = True if result.find(attrs={"class" : "criticsPick"}) else False
     all_links = result.findAll("a")
     link = all_links[0] #result.a
@@ -51,9 +59,11 @@ def get_restaurant_entry(result):
 
 
 def get_restaurant_review(soup):
-    
+    """
+    Return the review dict of a restaurant
+    Takes a BeautifulSoup4 object
+    """
     listing = soup.find(attrs={"class" : "listing item vcard"})
-
     summary = listing.find(attrs={'class' : 'listing-summary'})
     name = summary.h1.string
 
@@ -68,7 +78,6 @@ def get_restaurant_review(soup):
 
     # Get the summary info
     summary_details = summary.find(attrs={'class' : 'summary-details'})
-
     score_field = summary_details.find(attrs={'class' : 'average'})
     if score_field != None:
         average_score = summary_details.find(attrs={'class' : 'average'}).string
@@ -76,7 +85,6 @@ def get_restaurant_review(soup):
     else:
         average_score = None
         best = None
-
     category_string = summary_details.find(attrs={'class' : 'category'}).get_text()
     category_string = category_string.replace("Scene: ", "")
     categories = category_string.split(',')
@@ -95,7 +103,11 @@ def get_restaurant_review(soup):
 
 
 def get_new_restaurants(url, max_pages=50):
-
+    """
+    Add a number of restaurant entries to the db
+    Takes a url for a NYMag restaurant search result page
+    and a maximum number of pages to move through
+    """
     database = connectToDatabase("barkov_chain")
     nymag = database['nymag']
 
@@ -113,6 +125,9 @@ def get_new_restaurants(url, max_pages=50):
         request = urllib2.Request(current_url)
         response = urllib2.urlopen(request)
         soup = BeautifulSoup(response)
+        if soup == None:
+            sys.stderr.write("Invalid URL supplied: " + current_url)
+            raise RuntimeError()
 
         # Get the 'next' url
         current_url = soup.find(attrs={"id" : 'sitewidePrevNext'}).find(attrs={"class" : "nextActive"})['href'] #.string  findAll("a")[1]
@@ -130,6 +145,11 @@ def get_new_restaurants(url, max_pages=50):
 
 
 def get_reviews(num_reviews_to_fetch):
+    """
+    Loop through the database, 
+    find a number of restaurants that don't have reviews,
+    download their reviews, and append them to the db
+    """
 
     """
     url = "http://nymag.com/listings/bar/disiac-lounge/"
@@ -151,27 +171,29 @@ def get_reviews(num_reviews_to_fetch):
 
         url = entry['url']        
         print "Getting review for: ", entry['name'],
-        print " from url: ", url
+        print "from url: ", url
         time.sleep(1.0)
 
         request = urllib2.Request(url)
         response = urllib2.urlopen(request)
         soup = BeautifulSoup(response)
         if soup==None:
-            print "Error: soup is None"
-            raise Exception()
+            sys.stderr.write("Error: soup is None")
+            raise RuntimeError()
 
         review = get_restaurant_review(soup)
         name = review.pop('name')
         if name != entry['name']:
-            print "Error: Entry names don't match: ",
-            print repr(name), repr(entry['name'])
-            raise Exception()
+            message = "Error: Entry names don't match: "
+            message += repr(name) + ' ' + repr(entry['name'])
+            sys.stderr.write(message)
+            raise RuntimeError()
 
         entry.update(review)
         key = {"_id": entry['_id']}
         nymag.update(key, entry)
-        
+
+    return
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Scrape data from NYMag.')
@@ -182,11 +204,17 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     #url = 'http://nymag.com/srch?t=bar&N=259+69&No=0&Ns=nyml_sort_name%7C0'
-    url = args.scrape_url
-    if url != None:
-        get_new_restaurants(url)
+    try:
+        url = args.scrape_url
+        if url != None:
+            get_new_restaurants(url)
 
-    reviews_to_fetch = args.fetch_reviews
-    if reviews_to_fetch != None:
-        get_reviews(reviews_to_fetch)
+        reviews_to_fetch = args.fetch_reviews
+        if reviews_to_fetch != None:
+            get_reviews(reviews_to_fetch)
 
+    except (ConnectionFailure, InvalidName) as err:
+        print err
+        sys.exit(1)
+
+    sys.exit(0)

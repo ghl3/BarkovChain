@@ -10,8 +10,13 @@ import pymongo
 import bson.objectid
 from bs4 import BeautifulSoup
 
+from pymongo.errors import ConnectionFailure
+from pymongo.errors import InvalidName
 
-def connectToDatabase(table_name="barkov_chain"):
+class BadDBField(Exception):
+    pass	
+
+def connect_to_database(table_name="barkov_chain"):
     """ 
     Get a handle on the db object
     """
@@ -20,7 +25,7 @@ def connectToDatabase(table_name="barkov_chain"):
         #connection = pymongo.Connection()
         connection = pymongo.MongoClient()
     except ConnectionFailure:
-        message = "connectToDatabase() - Failed to open connect to MongoDB \n"
+        message = "connect_to_database() - Failed to open connect to MongoDB \n"
         message += "Make sure that the MongoDB daemon is running."
         sys.stderr.write(message)
         raise
@@ -28,11 +33,11 @@ def connectToDatabase(table_name="barkov_chain"):
     try:
         db = connection[table_name]
     except InvalidName:
-        message = "connectToDatabase() - Failed to connect to %s" % table_name
+        message = "connect_to_database() - Failed to connect to %s" % table_name
         sys.stderr.write(message)
         raise
 
-    return db
+    return db, connection
 
 
 def get_restaurant_entry(result):
@@ -62,7 +67,7 @@ def get_restaurant_entry(result):
             if val == None and key == "map_url": continue
             message = "In getting restaurant entry, %s is invalid" % key
             sys.stderr.write(message)
-            raise RuntimeError()
+            raise BadDBField(key, val)
 
     return restaurant
 
@@ -72,18 +77,27 @@ def get_restaurant_review(soup):
     Return the review dict of a restaurant
     Takes a BeautifulSoup4 object
     """
-    listing = soup.find(attrs={"class" : "listing item vcard"})
-    summary = listing.find(attrs={'class' : 'listing-summary'})
+    #listing = soup.find(attrs={"class" : "listing item vcard"})
+    #summary = listing.find(attrs={'class' : 'listing-summary'})
+    summary = soup.find(attrs={'class' : 'listing-summary'})
     name = summary.h1.string
 
     # Get the address info
-    address_info = summary.find(attrs={'class' : 'summary-address'})
-    street_address = address_info.find(attrs={'class' : 'street-address'}).string
-    locality = address_info.find(attrs={'class' : 'locality'}).string
-    region = address_info.find(attrs={'class' : 'region'}).string
-    postal_code = address_info.find(attrs={'class' : 'postal-code'}).string
-    latitude = address_info.find(attrs={'class' : 'latitude'}).string
-    longitude = address_info.find(attrs={'class' : 'longitude'}).string
+    try:
+        address_info = summary.find(attrs={'class' : 'summary-address'})
+        street_address = address_info.find(attrs={'class' : 'street-address'}).string
+        locality = address_info.find(attrs={'class' : 'locality'}).string
+        region = address_info.find(attrs={'class' : 'region'}).string
+        latitude = address_info.find(attrs={'class' : 'latitude'}).string
+        longitude = address_info.find(attrs={'class' : 'longitude'}).string
+    except AttributeError:
+        raise BadDBField()
+
+    postal_code_field = address_info.find(attrs={'class' : 'postal-code'})
+    if postal_code_field != None:
+        postal_code = postal_code_field.string #address_info.find(attrs={'class' : 'postal-code'}).string
+    else:
+        postal_code = None
 
     # Get the summary info
     summary_details = summary.find(attrs={'class' : 'summary-details'})
@@ -94,14 +108,24 @@ def get_restaurant_review(soup):
     else:
         average_score = None
         best = None
-    category_string = summary_details.find(attrs={'class' : 'category'}).get_text()
-    category_string = category_string.replace("Scene: ", "")
-    categories = category_string.split(',')
+    category_field = summary_details.find(attrs={'class' : 'category'})
+    if category_field != None:
+        category_string = category_field.get_text()
+        category_string = category_string.replace("Scene: ", "")
+        categories = category_string.split(',')
+        if len(categories) == 0:
+            raise RuntimeError()
+    else:
+        categories = None
 
     # Get the review
-    review_section = listing.find(attrs={'class' : 'listing-review'}).findAll('p')
-    review = ''.join([ item.get_text().strip() for item in review_section])
-    review = review.replace('\r', '').replace('\n', '')
+    #review_section = listing.find(attrs={'class' : 'listing-review'}).findAll('p')
+    review_section = soup.find(attrs={'class' : 'listing-review'}).findAll('p')
+    if len(review_section)==0:
+	    review=None
+    else:
+        review = ''.join([ item.get_text().strip() for item in review_section])
+	review = review.replace('\r', '').replace('\n', '')
 
     info = {'name' : name, 'street_address' : street_address, 'locality' : locality,
               'region' : region, 'postal_code' : postal_code, 
@@ -114,21 +138,24 @@ def get_restaurant_review(soup):
         if val == '' or val == None:
             if val == None and key == 'average_score': continue
             if val == None and key == 'best': continue
+            if val == None and key == 'categories': continue
+            if val == None and key == 'postal_code': continue
+            if val == None and key == 'review': continue
             message = "In getting restaurant review, %s is invalid" % key
             sys.stderr.write(message)
-            raise RuntimeError()
+            raise BadDBField(key, val)
 
     return info
 
 
-def get_new_restaurants(url, max_pages=50):
+def get_new_restaurants(db, url, max_pages=50):
     """
     Add a number of restaurant entries to the db
     Takes a url for a NYMag restaurant search result page
     and a maximum number of pages to move through
     """
-    database = connectToDatabase("barkov_chain")
-    nymag = database['nymag']
+    #nymag = database['nymag']
+    nymag = db
 
     current_url = url
     current_page = 0
@@ -136,6 +163,7 @@ def get_new_restaurants(url, max_pages=50):
     while current_page < max_pages:
 
         current_page += 1
+
         print "Getting url: ", current_url
 
         # Sleep for 1 sec
@@ -165,7 +193,7 @@ def get_new_restaurants(url, max_pages=50):
     return
 
 
-def get_reviews(num_reviews_to_fetch):
+def get_reviews(db, num_reviews_to_fetch):
     """
     Loop through the database, 
     find a number of restaurants that don't have reviews,
@@ -182,8 +210,9 @@ def get_reviews(num_reviews_to_fetch):
     return
     """
 
-    database = connectToDatabase("barkov_chain")
-    nymag = database['nymag']
+    #database = connect_to_database("barkov_chain")
+    #nymag = database['nymag']
+    nymag = db['nymag']
 
     entries = nymag.find({ 'review' : {'$exists':False} },
                          limit = num_reviews_to_fetch)    
@@ -202,7 +231,12 @@ def get_reviews(num_reviews_to_fetch):
             sys.stderr.write("Error: soup is None")
             raise RuntimeError()
 
-        review = get_restaurant_review(soup)
+        try:
+            review = get_restaurant_review(soup)
+        except BadDBField:
+            print "Skipping url: ", url
+            continue
+
         name = review.pop('name')
         if name != entry['name']:
             message = "Error: Entry names don't match: "
@@ -224,17 +258,26 @@ if __name__ == "__main__":
                         default=None, help='number of reviews to fetch')
     args = parser.parse_args()
 
+    db, connection = connect_to_database()
+
     try:
         url = args.scrape_url
         if url != None:
-            get_new_restaurants(url)
+            get_new_restaurants(db, url)
 
         reviews_to_fetch = args.fetch_reviews
         if reviews_to_fetch != None:
-            get_reviews(reviews_to_fetch)
+            get_reviews(db, reviews_to_fetch)
 
     except (ConnectionFailure, InvalidName) as err:
         print err
+        connection.disconnect()
         sys.exit(1)
 
+    except Exception as err:
+        print err
+        connection.disconnect()
+        raise
+
+    connection.disconnect()
     sys.exit(0)

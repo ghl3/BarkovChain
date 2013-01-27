@@ -18,8 +18,26 @@
     <link rel="stylesheet" type="text/css" href="/static/style.css" />
     <link rel="stylesheet" type="text/css" href="/static/galaxy.css" />
 
+    <style type="text/css">
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+
+    </style>
+      <!--// #map_canvas { height: 100% }-->
+
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
     <script src="http://d3js.org/d3.v3.min.js"></script>
+
+    <!--
+    <script type="text/javascript"
+	    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDymPsc4_YBUOQbwLvaNBxrNtTbfWLSt58&sensor=true">
+    </script>
+    -->
+    <script type="text/javascript"
+	    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD6O4gOP4tS3TlLH34wJzbuMq4Wn2oHfKU&sensor=false">
+    </script>
+
+    <script type="text/javascript" src="{{url_for('static', filename='mapping.js') }}" ></script>
 
   </head>
 
@@ -27,6 +45,8 @@
     
     Website is currently under construction.  Please check back soon!
 
+    <div id="map_canvas" style="width:500px; height:700px;"></div>
+    
   </body>
-
+  
 </html>

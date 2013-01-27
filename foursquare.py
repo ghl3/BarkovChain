@@ -2,10 +2,6 @@
 import os
 import foursquare
 
-
-# idea: scrape nymag:
-# http://nymag.com/listings/bar/n/
-
 def get_credentials():
     """ 
     Query the environment to get
@@ -52,14 +48,11 @@ def get_nearby_venues(api, latitude, longitude, radius=800):
 
     return venues
 
-    
-
 
 def main():
 
     api = get_api()
     auth_uri = api.oauth.auth_url()
-
 
     #venues = get_nearby_venues(api,"40.728625","73.997684")
     #venues = get_nearby_venues(api,"44.3","37.2")
@@ -90,7 +83,6 @@ def main():
         print venue
         for key, val in venue.iteritems():
             print key, val
-
 
 if __name__ == "__main__":
     main()

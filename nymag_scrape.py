@@ -1,4 +1,6 @@
 
+import argparse
+
 import re
 import time
 import urllib2
@@ -8,6 +10,8 @@ import nltk
 import pymongo
 import bson.objectid
 
+
+# http://nymag.com/srch?t=bar&N=259+69&No=1201&q=Listing%20Type%3ABars&Ns=nyml_sort_name%7C0
 
 def connectToDatabase(table_name="barkov_chain"):
     """ 
@@ -90,15 +94,15 @@ def get_restaurant_review(soup):
     return info
 
 
-def get_new_restaurants():
+def get_new_restaurants(url, max_pages=50):
 
     database = connectToDatabase("barkov_chain")
     nymag = database['nymag']
 
-    current_url = 'http://nymag.com/srch?t=bar&N=259+69&No=0&Ns=nyml_sort_name%7C0'
-    current_page=0
+    current_url = url
+    current_page = 0
 
-    while current_page < 50:
+    while current_page < max_pages:
 
         current_page += 1
         print "Getting url: ", current_url
@@ -125,7 +129,7 @@ def get_new_restaurants():
     return
 
 
-def get_reviews():
+def get_reviews(num_reviews_to_fetch):
 
     """
     url = "http://nymag.com/listings/bar/disiac-lounge/"
@@ -141,7 +145,7 @@ def get_reviews():
     nymag = database['nymag']
 
     entries = nymag.find({ 'review' : {'$exists':False} },
-                         limit = 5)    
+                         limit = num_reviews_to_fetch)    
     
     for entry in entries:
 
@@ -170,5 +174,19 @@ def get_reviews():
         
 
 if __name__ == "__main__":
-    #get_new_restaurants()
-    get_reviews()
+    parser = argparse.ArgumentParser(description='Scrape data from NYMag.')
+    parser.add_argument('--scrape_url', '-s', dest='scrape_url', 
+                        default=None, help='url to scrape restaurants from')
+    parser.add_argument('--fetch_reviews', '-f', dest='fetch_reviews', type=int, 
+                        default=None, help='number of reviews to fetch')
+    args = parser.parse_args()
+
+    #url = 'http://nymag.com/srch?t=bar&N=259+69&No=0&Ns=nyml_sort_name%7C0'
+    url = args.scrape_url
+    if url != None:
+        get_new_restaurants(url)
+
+    reviews_to_fetch = args.fetch_reviews
+    if reviews_to_fetch != None:
+        get_reviews(reviews_to_fetch)
+

@@ -16,13 +16,22 @@ var marker = null;
 
 function placeMarker(map, location) {
 
+    if( marker ){
+	marker.setMap(null);
+	marker = null;
+    }
+
     // Create if necessary
     if( !marker ){
-	marker = new google.maps.Marker({position: location, map: map});
+	marker = new google.maps.Marker({
+	    position: location, 
+	    map: map,
+	    animation: google.maps.Animation.DROP
+	});
     }
 
     // Set its position
-    marker.setPosition(location);
+    //marker.setPosition(location);
 }
 
 $(document).ready(function() {
@@ -32,7 +41,10 @@ $(document).ready(function() {
     var mapOptions = {
 	center: new google.maps.LatLng(40.7, -74),
 	zoom: 12,
-	mapTypeId: google.maps.MapTypeId.ROADMAP
+	mapTypeId: google.maps.MapTypeId.ROADMAP,
+	//draggable: false,
+	//scrollwheel: false,
+	minZoom: 13, maxZoom: 18
     };
 
     var map = new google.maps.Map(document.getElementById("map_canvas"),

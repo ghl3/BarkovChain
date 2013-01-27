@@ -4,14 +4,12 @@ import sys
 import re
 import time
 import urllib2
-from bs4 import BeautifulSoup
 import nltk
 
 import pymongo
 import bson.objectid
+from bs4 import BeautifulSoup
 
-
-# http://nymag.com/srch?t=bar&N=259+69&No=1201&q=Listing%20Type%3ABars&Ns=nyml_sort_name%7C0
 
 def connectToDatabase(table_name="barkov_chain"):
     """ 
@@ -44,7 +42,7 @@ def get_restaurant_entry(result):
     """
     critics_pic = True if result.find(attrs={"class" : "criticsPick"}) else False
     all_links = result.findAll("a")
-    link = all_links[0] #result.a
+    link = all_links[0]
     name = link.string
     url = link['href']
     paragraphs = result.findAll("p")
@@ -52,9 +50,20 @@ def get_restaurant_entry(result):
     address = paragraphs[1].string
     user_review_url = all_links[1]['href']
     map_url = all_links[2]['href']
+    if map_url == "javascript:void(null)":
+        map_url == None
     restaurant = {"name":name, "url":url, "address":address, 
                   "desc_short":desc_short, "user_review_url":user_review_url, 
                   "map_url":map_url, "critics_pic":critics_pic}
+
+    # Do some error checking
+    for key, val in restaurant.iteritems():
+        if val == '' or val == None:
+            if val == None and key == "map_url": continue
+            message = "In getting restaurant entry, %s is invalid" % key
+            sys.stderr.write(message)
+            raise RuntimeError()
+
     return restaurant
 
 
@@ -99,6 +108,16 @@ def get_restaurant_review(soup):
               'latitude' : latitude, 'longitude' : longitude,
               'average_score' : average_score, 'best' : best, 'categories': categories,
               'review' : review}
+
+    # Do some error checking
+    for key, val in info.iteritems():
+        if val == '' or val == None:
+            if val == None and key == 'average_score': continue
+            if val == None and key == 'best': continue
+            message = "In getting restaurant review, %s is invalid" % key
+            sys.stderr.write(message)
+            raise RuntimeError()
+
     return info
 
 
@@ -130,8 +149,10 @@ def get_new_restaurants(url, max_pages=50):
             raise RuntimeError()
 
         # Get the 'next' url
-        current_url = soup.find(attrs={"id" : 'sitewidePrevNext'}).find(attrs={"class" : "nextActive"})['href'] #.string  findAll("a")[1]
-        restaurants = soup.find(attrs={ "id" : "resultsFound"}).findAll(attrs={"class" : "result"})
+        current_url = soup.find(attrs={"id" : 'sitewidePrevNext'}) \
+            .find(attrs={"class" : "nextActive"})['href'] 
+        restaurants = soup.find(attrs={ "id" : "resultsFound"}) \
+            .findAll(attrs={"class" : "result"})
 
         for result in restaurants:
             restaurant = get_restaurant_entry(result)
@@ -203,7 +224,6 @@ if __name__ == "__main__":
                         default=None, help='number of reviews to fetch')
     args = parser.parse_args()
 
-    #url = 'http://nymag.com/srch?t=bar&N=259+69&No=0&Ns=nyml_sort_name%7C0'
     try:
         url = args.scrape_url
         if url != None:

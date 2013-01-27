@@ -19,8 +19,14 @@ def index():
 @app.route('/map')
 def map():
     locations = get_random_locations()
+    for venue in locations:
+        print venue
+        print venue['name']
+        print venue['address']
+        print venue['desc_short']
     img_src = create_static_map_src(locations)
     return render_template('map.html',
+                           venue_list=locations,
                            img_src=img_src)
 
 
@@ -31,32 +37,30 @@ def get_random_locations(num_locations=3):
     
     db, connection = connect_to_database(table_name="barkov_chain")
     nymag = db['nymag']
-    entries = nymag.find({ 'review' : {'$exists':True} },
+    locations = nymag.find({ 'review' : {'$exists':True} },
                          limit = 100)
-    colors = ["red", "green", "blue", "orange", "purple", "yellow"]
-    locations = []
-
-    entries = [entries[random.randint(0, 100)] for i in range(num_locations)]
-
-    for entry, color in zip(entries, colors):
-        locations.append((entry['latitude'], entry['longitude'], 
-                          color))
+    locations = [locations[random.randint(0, 100)] for i in range(num_locations)]
     return locations
 
 
-def create_static_map_src(points, path_color = '0x0000ff', 
+def create_static_map_src(locations, path_color = '0x0000ff', 
                           path_weight=5):
     """
     Create a static google map based on 
-    the list of points:
-    points = [
-               (latitude, longitude, color),
-               (latitude, longitude, color),
-                        ...
-             ]
+    the list of venues.
+
+    Each venue is a dict that contains
+    "latitude" and "longitude".
+
     Return an image string to be put as the 'src'
     of an html image tag.
     """
+
+    colors = ["red", "green", "blue", "orange", "purple", "yellow"]
+
+    points = []
+    for venue, color in zip(locations, colors):
+        points.append((venue['latitude'], venue['longitude'], color))
 
     image_src = 'http://maps.googleapis.com/maps/api/staticmap'
     image_src += '?center=Washington+Square+Park,New+York,NY'

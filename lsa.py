@@ -84,6 +84,9 @@ class LSA(object):
             for j in range(cols):
                 self.A[i,j] = (self.A[i,j] / WordsPerDoc[j]) * log(float(cols) / DocsPerWord[i])
 
+    def generate_cosine_matrix(self):
+        pass
+                
     def printA(self):
         print self.A
 

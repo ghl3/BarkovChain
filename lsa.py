@@ -1,7 +1,10 @@
 
-from numpy import zeros
+import numpy
+from numpy import zeros, asarray
 from scipy.linalg import svd
 import unicodedata
+
+from math import log
 
 from nymag_scrape import connect_to_database
 
@@ -13,8 +16,9 @@ def get_stopwords():
     stop_words = set()
     with open('stop-words.txt', 'r') as f:
         for word in f:
-            stop_words.update(word)
-    return list(stop_words)
+            word = word.strip()
+            stop_words.add(word)
+    return stop_words
 
 '''
 titles =
@@ -39,23 +43,32 @@ class LSA(object):
     def __init__(self, stopwords, ignorechars):
         self.stopwords = stopwords
         self.ignorechars = ignorechars
+        # dict[word] = [documents it appears in]
         self.wdict = {}
         self.dcount = 0
+        # doc_dict[doc_name] = column
+        self.doc_dict = {}
 
-    def parse_document(self, doc):
+    def parse_document(self, doc_name, doc):
         words = doc.split();
         for w in words:
             w = unicodedata.normalize('NFC', w).encode('ascii', 'ignore')
             w = w.lower().translate(None, self.ignorechars)
+            #w = w.lower()
             if w in self.stopwords:
                 continue
             elif w in self.wdict:
                 self.wdict[w].append(self.dcount)
             else:
                 self.wdict[w] = [self.dcount]
+        self.doc_dict[doc_name] = self.dcount
         self.dcount += 1
 
     def build_matrix(self):
+        """
+        Create the internal numpy matrix:
+        A[word_idx, document_idx]
+        """
         self.keys = [k for k in self.wdict.keys() if len(self.wdict[k]) > 1]
         self.keys.sort()
         self.A = zeros([len(self.keys), self.dcount])
@@ -63,8 +76,25 @@ class LSA(object):
             for d in self.wdict[k]:
                 self.A[i,d] += 1
 
+    def TFIDF(self):
+        WordsPerDoc = numpy.sum(self.A, axis=0)
+        DocsPerWord = numpy.sum(asarray(self.A > 0, 'i'), axis=1)
+        rows, cols = self.A.shape
+        for i in range(rows):
+            for j in range(cols):
+                self.A[i,j] = (self.A[i,j] / WordsPerDoc[j]) * log(float(cols) / DocsPerWord[i])
+
     def printA(self):
         print self.A
+
+    def get_column(self, name):
+        """
+        Print the row corresponding to
+        the given restaurant
+        """
+        # Get the column for the document
+        column = self.doc_dict[name]
+        return self.A[:,column]
 
 
 def main():
@@ -78,11 +108,26 @@ def main():
     nymag = db['nymag']
     locations = nymag.find({ 'review' : {'$exists':True} },
                            limit = 100)
+    test_location = None
     for location in locations:
-        lsa.parse_document(location['review'])
+        test_location = location
+        lsa.parse_document(location['name'], location['review'])
 
     lsa.build_matrix()
+    lsa.TFIDF()
     lsa.printA()
+    name = test_location['name']
+    review = test_location['review']
+    print name, review
+    column = lsa.get_column(name)
+    important_words = []
+    for word, val in zip(lsa.keys, column):
+        if val == 0: continue
+        important_words.append((word, val))
+    important_words.sort(key=lambda x: x[1], reverse=True)
+    for word, val in important_words:
+        print word, val
+    #lsa.print_restaurant(location_name)
     return
 
 

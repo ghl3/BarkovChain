@@ -2,6 +2,21 @@
 import os
 import foursquare
 
+'''
+To Do:
+import foursquare tips
+
+To the mapping using 'suggest location':
+https://developer.foursquare.com/docs/explore#req=venues/suggestCompletion%3Fll%3D40.7,-74%26query%3Dfoursqu
+
+Add the foursquare id to the database
+
+Then, loop over events with a foursquare id and
+download the tips (and ratings)
+
+''
+
+
 def get_credentials():
     """ 
     Query the environment to get

@@ -3,10 +3,12 @@
 import os
 import random
 
+import json
 from flask import Flask
 from flask import render_template
 from flask import request
 from flask import jsonify
+from flask import Response
 
 from nymag_scrape import connect_to_database
 
@@ -15,6 +17,10 @@ app = Flask(__name__)
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/bootstrap')
+def bootstrap():
+    return render_template('bootstrap.html')
 
 @app.route('/map')
 def map():
@@ -28,6 +34,51 @@ def map():
     return render_template('map.html',
                            venue_list=locations,
                            img_src=img_src)
+@app.errorhandler(403)
+def not_found(error=None):
+    message = {
+        'status': 403,
+        'message': 'Forbidden'
+        }
+    resp = jsonify(message)
+    resp.status_code = 403
+    return resp
+
+@app.errorhandler(404)
+def not_found(error=None):
+    message = {
+        'status': 404,
+        'message': 'Not Found: ' + request.url,
+        }
+    resp = jsonify(message)
+    resp.status_code = 404
+    return resp
+
+
+@app.route('/api/locations')
+def api_locations( methods=['GET']):
+    """
+    Get locations and return as JSON
+    Requires the following param
+    """
+
+    print "Entering api/locations"
+
+    print request.headers['Content-Type']
+
+    # Be tolerent when recieving, 
+    # be string when sending
+    if 'json' in request.headers['Content-Type']:
+        print "Found JSON"
+        locations = get_random_locations()
+        locations = [ loc['name'] for loc in locations]
+        js = json.dumps(locations)
+        resp = Response(js, status=200, mimetype='application/json')
+        #resp.headers['Link'] = 'http://luisrei.com'
+        return resp
+    
+    else:
+        return not_found()
 
 
 def get_random_locations(num_locations=3):

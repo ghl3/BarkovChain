@@ -36,20 +36,34 @@ function placeMarker(map, location) {
 }
 
 
+// Clear a table and recreate based
+// on the input list of data points
+function addDataToTable(data, table_id) {
+
+}
+
+
 // SubmitLocationToServer
 function submitLocationToServer() {
     console.log('Submitting Location To Server');
 
-    /*
-    var jqxhr = $.getJSON("/api/locations", 
-			  {"current_position" : current_position, 
-			   "num_locations" : 3})
-	.done(function() { console.log("done");})
-	.always(function() { console.log("always");})
-*/
-    
     var data = {"current_position" : current_position, 
 		"num_locations" : 3};
+
+    function successfulCallback(data) {
+
+	// Add the data to the table
+	addDataToTable(data, "#venue_list");
+
+	console.log(data);
+	console.log("Success");
+    }
+    
+    function errorCallback(data) {
+	console.log(data);
+	console.log("Error");
+	
+    }
 
     $.ajax({
 	url: "/api/locations",
@@ -57,26 +71,13 @@ function submitLocationToServer() {
 	contentType:"application/json; charset=utf-8",
 	data: data
     })
-	.done(function() { console.log("done");})
-	.always(function() { console.log("always");})
+	.done(successfulCallback)
+	.fail(errorCallback)
+	.always(function() { 
+	    console.log("Done with 'submitLocationToServer'");
+	});
     
-
-
     console.log("Sent request to get locations.  Waiting...");    
-
-    /*
-    $.post("/api/locations", {"current_position" : current_position, "num_locations" : 3})
-	.done(function() { console.log("done");})
-	.always(function() { console.log("always");})
-	*/
-    
-    /*
-	   successfulCallback)
-	   .error(errorCallback);
-    */
-    
-
-    
 
 }
 
@@ -108,8 +109,6 @@ $(document).ready(function() {
     // Send an ajax request to the flask server
     // and get some info
     $("#button_create").click(submitLocationToServer);
-    
-    // Define the submit button
-    
+
 
 });

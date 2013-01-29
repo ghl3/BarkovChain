@@ -9,6 +9,7 @@ from flask import render_template
 from flask import request
 from flask import jsonify
 from flask import Response
+from bson import json_util
 
 from nymag_scrape import connect_to_database
 
@@ -71,8 +72,9 @@ def api_locations( methods=['GET']):
     if 'json' in request.headers['Content-Type']:
         print "Found JSON"
         locations = get_random_locations()
-        locations = [ loc['name'] for loc in locations]
-        js = json.dumps(locations)
+        #locations = [ loc['name'] for loc in locations]
+        js = json.dumps(locations, default=json_util.default)
+        #js = json.dumps(locations)
         resp = Response(js, status=200, mimetype='application/json')
         #resp.headers['Link'] = 'http://luisrei.com'
         return resp

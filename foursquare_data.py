@@ -1,6 +1,13 @@
 
+from nymag_scrape import connect_to_database
+
+import json
 import os
 import foursquare
+import nltk
+
+import unicodedata
+
 
 '''
 To Do:
@@ -17,9 +24,9 @@ download the tips (and ratings)
 '''
 
 
-def suggest_completion(api, **kwargs):
-    """https://developer.foursquare.com/docs/venues/explore"""
-    return api.GET('suggest_completion', **kwargs)
+#def suggest_completion(api, **kwargs):
+#    """https://developer.foursquare.com/docs/venues/explore"""
+#    return api.GET('suggest_completion', **kwargs)
 
 
 def get_credentials():
@@ -48,17 +55,31 @@ def get_api():
     return api
 
 
-def get_foursquare_id(api, name, longitude, latitude):
+def get_foursquare_id(api, name, longitude, latitude, radius=100):
     """
     Based on the name and location,
     get a guess for the foursquare
     version and return the id
     """
     ll = "{lat},{lon}".format(lat=latitude, lon=longitude)
-    response = suggest_completion(api.venues, query=name, ll=ll)
-    #response = api.venues.suggestcompletion(query=name, ll=ll)
+    #response = suggest_completion(api.venues, query=name, ll=ll)
+    params = {'query': name, 'll':ll, 'radius':radius}
+    response = api.venues.suggestcompletion(params=params)
 
-    return response
+    matches = []
+
+    venues = response[u'minivenues']
+    if len(venues)==0:
+        return None, None
+
+    for venue in venues:
+        venue_name = venue[u'name']
+        distance = nltk.metrics.edit_distance(name, venue_name)
+        matches.append((venue, distance))
+        
+    matches.sort(key=lambda x: x[1])
+
+    return matches[0]
 
 
 def get_nearby_venues(api, latitude, longitude, radius=800):
@@ -85,13 +106,57 @@ def get_nearby_venues(api, latitude, longitude, radius=800):
     return venues
 
 
+def match_foursquare_id(db, api, num_to_match=10):
+    """
+    """
+    nymag = db['nymag']
+
+    entries = nymag.find({ 'foursquare_id' : {'$exists':False},
+                           'review' : {'$exists':True}},
+                         limit = num_to_match)
+
+    for entry in entries:
+        name = entry['name']
+        lon = entry['longitude']
+        lat = entry['latitude']
+        ascii_name = unicodedata.normalize('NFKD', name).encode('ascii','ignore')
+
+        if len(ascii_name) < 3: 
+            print "Failed to find match for: ", name
+            continue
+
+        #print name, ascii_name, lon, lat
+        best_match, distance = get_foursquare_id(api, ascii_name, lon, lat)
+        if best_match==None: 
+            print "Failed to find match for: ", name
+            continue
+
+        (fsq_name, fsq_id) = (best_match[u'name'], best_match[u'id'])
+        print "Adding foursquare id for nymag name: %s " % name,
+        print "fsq name: %s distance: %s" % (fsq_name, distance)
+        print best_match
+        
+        #    entry.update({'foursquare_id' : fsq_id})
+        #    key = {"_id": entry['_id']}
+        #    nymag.update(key, entry)
+
+    return
+
+
 def main():
 
     api = get_api()
     auth_uri = api.oauth.auth_url()
 
-    print get_foursquare_id(api, "Art Bar", longitude=-74.00355, 
-                            latitude=40.738491)
+    db, connection = connect_to_database()
+
+    match_foursquare_id(db, api, 10)
+    return
+
+    matches = get_foursquare_id(api, "art bar", longitude=-74.00355,
+                                 latitude=40.738491)
+    for match in matches:
+        print match
     return
 
     #venues = get_nearby_venues(api,"40.728625","73.997684")

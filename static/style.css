@@ -1,103 +1,148 @@
 * {margin:0 auto; padding:0;} 
 
 html, body {
-    width: 100%;
-    font-family: 'Carrois Gothic', sans-serif;
+  width: 100%;
+  font-family: 'Carrois Gothic', sans-serif;
 }
 
 body {
 }
 
 /* --------------------------------
-    HEADER and MENU
-   -------------------------------- */
+   HEADER and MENU
+   */
 header {
-    position: relative;
-    z-index: 1000;
-    width: 60%;
-    margin: auto;
-    text-align: center;
-    
-    padding-top: 10px;
-    padding-bottom: 10px;
+  position: relative;
+  z-index: 1000;
+  width: 60%;
+  margin: auto;
+  text-align: center;
+  
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
 
 ul.menu {
-    padding-top: 4px;
-    padding-bottom: 4px;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 ul.menu li {
-    vertical-align:middle;
-	padding: 0px 25px;
-	list-style: none;
-	display: inline;
+  vertical-align:middle;
+  padding: 0px 25px;
+  list-style: none;
+  display: inline;
 }
 
 ul.menu li#name {
-    font-size: 16pt;
-    font-weight: bold;
-	padding: 0px 25px;
-	list-style: none;
-	display: inline;
-	border-right: 1px solid #ccc;
+  font-size: 16pt;
+  font-weight: bold;
+  padding: 0px 25px;
+  list-style: none;
+  display: inline;
+  border-right: 1px solid #ccc;
 }
 
 a.menu_item {
-    text-decoration: none;
-    color: #D41513;
+  text-decoration: none;
+  color: #D41513;
 }
 
 a.menu_item:hover {
-    text-decoration: underline;
-    color: #FA000D;
+  text-decoration: underline;
+  color: #FA000D;
 }
 
 /* --------------------------------
-    LINKS
-   -------------------------------- */
+   LINKS
+   */
 a {
-    text-decoration: none;
-    color: #D41513;
+  text-decoration: none;
+  color: #D41513;
 }
 
 a:hover {
-    text-decoration: underline;
-    color: #FA000D;
+  text-decoration: underline;
+  color: #FA000D;
 }
 
 /* --------------------------------
-    CONTENT
-   -------------------------------- */
+   CONTENT
+   */
 #content {
-    margin-top: 20px;
-    width: 50%;
+  margin-top: 20px;
+  width: 50%;
 }
 
 
 /* --------------------------------
-    FOOTER
-   -------------------------------- */
+   FOOTER
+   */
 footer {
-    
+  
 }
 
 /*
-*/
+   */
 #bgcanvas {
-    position: absolute;
-    top: 0;
-    left: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 /* --------------------------------
-    MISC
-   -------------------------------- */
+   MISC
+   */
 hr.divider {
-    width: 40%;
-    size: 1px;
+  width: 40%;
+  size: 1px;
 }
 
 img.main {
-    margin-right: 15px;
+  margin-right: 15px;
+}
+
+
+html { height: 100% }
+body { height: 100%; margin: 0; padding: 0 }
+
+
+/* ---------------------------------
+   From bootstrap example 
+*/
+
+body {
+  padding-top: 20px;
+  padding-bottom: 40px;
+}
+
+/* Custom container */
+.container-narrow {
+  margin: 0 auto;
+  max-width: 700px;
+}
+.container-narrow > hr {
+  margin: 30px 0;
+}
+
+/* Main marketing message and sign up button */
+.jumbotron {
+  margin: 60px 0;
+  text-align: center;
+}
+.jumbotron h1 {
+  font-size: 72px;
+  line-height: 1;
+}
+.jumbotron .btn {
+  font-size: 21px;
+  padding: 14px 24px;
+}
+
+/* Supporting marketing content */
+.marketing {
+  margin: 60px 0;
+}
+.marketing p + h4 {
+  margin-top: 28px;
 }

@@ -7,47 +7,133 @@
     <meta name="keywords" content="Restaurants Bars Coffee Markov Chain" >
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
 
-    <!--
-    <link rel="shortcut icon" href="/favicon.ico" >
-    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    -->
-
     <!-- Style / css -->
-
-    <!--<link href="http://fonts.googleapis.com/css?family=Carrois+Gothic" rel="stylesheet" type="text/css">-->
     <link rel="stylesheet" type="text/css" href="/static/colorbrewer.css" media="screen" />
     <link rel="stylesheet" type="text/css" href="/static/style.css" />
     <link rel="stylesheet" type="text/css" href="/static/galaxy.css" />
 
-    <style type="text/css">
-      html { height: 100% }
-      body { height: 100%; margin: 0; padding: 0 }
-
-    </style>
-      <!--// #map_canvas { height: 100% }-->
+    <!-- Le styles -->
+    <link href="/static/bootstrap/css/bootstrap.css" rel="stylesheet">
+    <link href="/static/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
 
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
     <script src="http://d3js.org/d3.v3.min.js"></script>
 
-    <!--
-    <script type="text/javascript"
-	    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDymPsc4_YBUOQbwLvaNBxrNtTbfWLSt58&sensor=true">
-    </script>
+    <!--    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD6O4gOP4tS3TlLH34wJzbuMq4Wn2oHfKU&sensor=false">
+	    </script>
     -->
-    <script type="text/javascript"
-	    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD6O4gOP4tS3TlLH34wJzbuMq4Wn2oHfKU&sensor=false">
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false">
     </script>
+
 
     <script type="text/javascript" src="{{url_for('static', filename='mapping.js') }}" ></script>
 
   </head>
 
   <body>
-    
-    Website is currently under construction.  Please check back soon!
+
+    <div class="container-narrow">
+
+      <!--
+	  <div class="masthead">
+            <h3 class="muted">Barkov Chain</h3>
+	    Website is currently under construction.  Please check back soon!
+	  </div>
+	  -->
+      <hr>
+
+      <div class="page-header">
+	<h1>Barkov Chain <small>Planning your night made easy</small></h1>
+      </div>
+
+      <!--
+	  <div class="jumbotron">
+	    -->
+      <!--
+          <h2>Barkov Chain</h2>
+          <h2>Select a location on the map to begin</h2>
+	  -->
+
+      <!--<a class="btn btn-large btn-success" href="#">Sign up today</a>-->
+      <!--
+	  </div>
+    -->
+      <p class="lead">Select a location on the map to begin</p>
+      <div id="map_canvas" style="width:500px; height:600px; border: 2px solid black;"></div>
+      
+      <div class="btn-group dropdown">
+	<a class="btn dropdown-toggle" data-toggle="dropdown">
+	  Number of Destinations
+          <span class="caret"></span>
+	</a>
+	<ul class="dropdown-menu">
+	  <li>1</li>
+	</ul>
+      </div>
+
+      <a id="button_create" class="btn btn-large btn-success" >Create</a>
+      <hr>
+
+
+      <!--
+	  <div class="row-fluid marketing">
+            <div class="span6">
+              <h4>Subheading</h4>
+              <p>Donec id elit non mi porta gravida at eget metus. Maecenas faucibus mollis interdum.</p>
+
+              <h4>Subheading</h4>
+              <p>Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Cras mattis consectetur purus sit amet fermentum.</p>
+
+              <h4>Subheading</h4>
+              <p>Maecenas sed diam eget risus varius blandit sit amet non magna.</p>
+            </div>
+
+            <div class="span6">
+              <h4>Subheading</h4>
+              <p>Donec id elit non mi porta gravida at eget metus. Maecenas faucibus mollis interdum.</p>
+
+              <h4>Subheading</h4>
+              <p>Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Cras mattis consectetur purus sit amet fermentum.</p>
+
+              <h4>Subheading</h4>
+              <p>Maecenas sed diam eget risus varius blandit sit amet non magna.</p>
+            </div>
+	  </div>
+
+	  <hr>
+	  -->
+      <div class="footer">
+        <p>&copy; Company 2012</p>
+      </div>
+
+    </div> <!-- /container -->
+
+    <!-- Le javascript
+	 ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <!--<script src="/static/bootstrap/js/jquery.js"></script>-->
+    <script src="/static/bootstrap/js/bootstrap-transition.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-alert.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-modal.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-dropdown.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-scrollspy.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-tab.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-tooltip.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-popover.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-button.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-collapse.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-carousel.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-typeahead.js"></script>
+
+  </body>
+
+
+
+
+  <!-- Old Here -->
+  <body>
 
     <div id="map_canvas" style="width:500px; height:700px;"></div>
-    
   </body>
   
 </html>

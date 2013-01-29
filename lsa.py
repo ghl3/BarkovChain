@@ -8,6 +8,12 @@ from math import log
 
 from nymag_scrape import connect_to_database
 
+# lsa:
+# http://www.puffinwarellc.com/index.php/news-and-articles/articles/33.html?showall=1
+
+# plsa:
+# http://www.mblondel.org/journal/2010/06/13/lsa-and-plsa-in-python/
+
 def get_stopwords():
     """
     Load the collection of stop words

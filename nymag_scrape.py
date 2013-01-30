@@ -185,9 +185,12 @@ def get_new_restaurants(db, url, max_pages=50):
         for result in restaurants:
             restaurant = get_restaurant_entry(result)
             print restaurant['name']
-            key = {"name" : restaurant['name'], 
-                   "url" : restaurant['url']}
-            nymag.update(key, restaurant, upsert=True)
+            entry = {'nymag' : restaurant}
+            key = {"nymag.name" : restaurant['name'], 
+                   "nymag.url" : restaurant['url']}
+            print "Adding: ", key, entry
+            #nymag.update(key, entry, upsert=True)
+            print "NOT UPDATING"
         print '\n'
 
     return
@@ -219,8 +222,10 @@ def get_reviews(db, num_reviews_to_fetch):
     
     for entry in entries:
 
-        url = entry['url']        
-        print "Getting review for: ", entry['name'],
+        
+        name = entry['nymag']['name']
+        url = entry['nymag']['url']        
+        print "Getting review for: ", name,
         print "from url: ", url
         time.sleep(1.0)
 
@@ -237,16 +242,18 @@ def get_reviews(db, num_reviews_to_fetch):
             print "Skipping url: ", url
             continue
 
-        name = review.pop('name')
-        if name != entry['name']:
+        review_name = review.pop('name')
+        if review_name != name:
             message = "Error: Entry names don't match: "
             message += repr(name) + ' ' + repr(entry['name'])
             sys.stderr.write(message)
             raise RuntimeError()
 
-        entry.update(review)
+        entry['nymag'].update(review)
         key = {"_id": entry['_id']}
-        nymag.update(key, entry)
+        print "Updating:", key, entry
+        print "NOT UPDATING"
+        #nymag.update(key, entry)
 
     return
 

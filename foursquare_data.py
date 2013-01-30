@@ -20,9 +20,7 @@ Add the foursquare id to the database
 
 Then, loop over events with a foursquare id and
 download the tips (and ratings)
-
 '''
-
 
 #def suggest_completion(api, **kwargs):
 #    """https://developer.foursquare.com/docs/venues/explore"""
@@ -111,16 +109,17 @@ def match_foursquare_id(db, api, num_to_match=10):
     Get the corresponding foursquare id to the
     given location.
     """
-    nymag = db['bars']
-
-    entries = nymag.find({ 'foursquare_id' : {'$exists':False},
-                           'review' : {'$exists':True}},
-                         limit = num_to_match)
+    bars = db['bars']
+    
+    # Find bars without a foursquare entry
+    entries = bars.find({ 'foursquare' : {'$exists':False}},
+                        limit = num_to_match)
 
     for entry in entries:
-        name = entry['name']
-        lon = entry['longitude']
-        lat = entry['latitude']
+        nymag = entry['nymag']
+        name = nymag['name']
+        lon = nymag['longitude']
+        lat = nymag['latitude']
         ascii_name = unicodedata.normalize('NFKD', name).encode('ascii','ignore')
 
         if len(ascii_name) < 3: 
@@ -128,25 +127,26 @@ def match_foursquare_id(db, api, num_to_match=10):
             continue
 
         #print name, ascii_name, lon, lat
-        best_match, distance = get_foursquare_id(api, ascii_name, lon, lat)
-        if best_match==None: 
+        fsq_match, distance = get_foursquare_id(api, ascii_name, lon, lat)
+        if fsq_match==None: 
             print "Failed to find match for: ", name
             continue
 
-        print best_match
-        (fsq_name, fsq_id) = (best_match[u'name'], best_match[u'id'])
-        print "Adding foursquare id for nymag name: %s " % name,
-        print "fsq name: %s distance: %s" % (fsq_name, distance)
+        #print fsq_match
+        #(fsq_name, fsq_id) = (fsq_match[u'name'], fsq_match[u'id'])
+        #print "Adding foursquare id for nymag name: %s " % name,
+        #print "fsq name: %s distance: %s" % (fsq_name, distance)
+        #foursquare_info = {'foursquare_name' : fsq_name,
+        #                   'foursquare_id' : fsq_id,
+        #                   'foursquare_nymag_overlap' : distance}
 
-        foursquare_info = {'foursquare_name' : fsq_name,
-                           'foursquare_id' : fsq_id,
-                           'foursquare_nymag_overlap' : distance}
+        entry['foursquare'] = fsq_match
+        entry['foursquare']['distance_to_nymag'] = distance
 
-        #print best_match
-        
-        #    entry.update({'foursquare_id' : fsq_id})
-        #    key = {"_id": entry['_id']}
-        #    nymag.update(key, entry)
+        print fsq_match['name'], nymag['name'],
+        print entry
+        # key = {"_id": entry['_id']}
+        # nymag.update(key, entry)
 
     return
 
@@ -160,6 +160,8 @@ def main():
 
     match_foursquare_id(db, api, 50)
     return
+
+##############
 
     matches = get_foursquare_id(api, "art bar", longitude=-74.00355,
                                  latitude=40.738491)
@@ -182,7 +184,7 @@ def main():
     params['query'] = 'coffee'
     params['near'] = 'New York'
     params['intent'] = 'browse'
-    params['limit'] = 50
+    params['limit'] = 15
     response = client.venues.search(params=params)
 
     geocode = response[u'geocode']

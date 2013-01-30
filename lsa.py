@@ -45,18 +45,22 @@ class LSA(object):
 
     def parse_document(self, doc_name, doc):
         words = doc.split();
+        words_in_doc = []
         for w in words:
             w = unicodedata.normalize('NFC', w).encode('ascii', 'ignore')
             w = w.lower().translate(None, self.ignorechars)
             #w = w.lower()
+            if w == '': continue
             if w in self.stopwords:
                 continue
             elif w in self.wdict:
                 self.wdict[w].append(self.dcount)
             else:
                 self.wdict[w] = [self.dcount]
+            words_in_doc.append(w)
         self.doc_dict[doc_name] = self.dcount
         self.dcount += 1
+        print doc_name, words_in_doc
 
     def build_matrix(self):
         """
@@ -80,6 +84,18 @@ class LSA(object):
 
     def run_svd(self):
         self.U, self.S, self.Vt = svd(self.A)
+
+    def top_svd(self, num=None):
+        
+        # Get the index for sorting:
+        print self.S
+        sorted_index = [i[0] for i in sorted(enumerate(self.S), key=lambda x: x[1])]
+        print sorted_index
+        return
+
+        print "S: ", self.S.shape, self.S
+        print "S Sorted: ", numpy.sort(self.S)
+        return numpy.sort(self.S)[::-1]
 
     def generate_cosine_matrix(self):
         pass
@@ -106,7 +122,8 @@ class LSA(object):
         return self.Vt[:,column]
 
 
-    def cosine(self, docA, docB, reduced=True):
+    def cosine(self, docA, docB, 
+               size=None, reduced=True):
         """
         Get the overlap between the documents
 
@@ -118,6 +135,10 @@ class LSA(object):
         else:
             vecA = self.get_document_vector(docA)
             vecB = self.get_document_vector(docB)
+
+        if size != None:
+            vecA = vecA[:size]
+            vecB = vecB[:size]
             
         return numpy.dot(vecA, vecB)
 
@@ -149,22 +170,28 @@ def main():
     # Add documents
     db, connection = connect_to_database(table_name="barkov_chain")
     nymag = db['bars']
-    locations = nymag.find({ 'review' : {'$ne':None} },
-                           limit = 300)
+    locations = nymag.find({ 'nymag.review' : {'$ne':None} },
+                           limit = 100)
 
     location_list = []
 
     for location in locations:
+        location = location['nymag']
         name = location['name']
         review = location['review']
         location_list.append( (name, review) )
-        print name, review
+        #print name, review
         lsa.parse_document(location['name'], location['review'])
 
     lsa.build_matrix()
     lsa.tf_idf()
     lsa.run_svd()
     lsa.printA()
+
+    
+
+    print lsa.top_svd()
+    return
 
     #numpy.save("lsa", lsa.A)
 

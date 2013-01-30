@@ -38,6 +38,7 @@ def map():
     return render_template('map.html',
                            venue_list=locations,
                            img_src=img_src)
+
 @app.errorhandler(400)
 def invalid_content(error=None):
     message = {
@@ -96,27 +97,7 @@ def api_locations( methods=['GET']):
             print "Didn't find: %s" % arg
             return invalid_content
 
-    """
-    if 'longitude' not in request.args:
-        print "Didn't find 'position'"
-        return invalid_content()
-    else:
-        position = request.args.get('position')
-
-    if 'number_of_locations' not in request.args:
-        print "Didn't find 'number_of_locations'"
-        return invalid_content()
-    else:
-        number_of_locations = request.args.get('number_of_locations')
-    """
-
     # Generate and return the response
-    # locations = get_random_locations(number_of_locations=number_of_locations)
-    
-
-    #position = {'longitude' : unicodedata.numeric(request.args['longitude']),
-    #            'latitude' : unicodedata.numeric(request.args['latitude'])}
-    #print "Position: ", request.args['longitude'], request.args['latitude']
     position = {'longitude' : float(request.args['longitude']),
                 'latitude' : float(request.args['latitude'])}
 

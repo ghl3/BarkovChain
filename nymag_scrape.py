@@ -10,34 +10,34 @@ import pymongo
 import bson.objectid
 from bs4 import BeautifulSoup
 
-from pymongo.errors import ConnectionFailure
-from pymongo.errors import InvalidName
+from database import connect_to_database
 
 class BadDBField(Exception):
     pass	
 
-def connect_to_database(table_name="barkov_chain"):
-    """ 
-    Get a handle on the db object
-    """
 
-    try:
-        #connection = pymongo.Connection()
-        connection = pymongo.MongoClient()
-    except ConnectionFailure:
-        message = "connect_to_database() - Failed to open connect to MongoDB \n"
-        message += "Make sure that the MongoDB daemon is running."
-        sys.stderr.write(message)
-        raise
+# def connect_to_database(table_name="barkov_chain"):
+#     """ 
+#     Get a handle on the db object
+#     """
 
-    try:
-        db = connection[table_name]
-    except InvalidName:
-        message = "connect_to_database() - Failed to connect to %s" % table_name
-        sys.stderr.write(message)
-        raise
+#     try:
+#         #connection = pymongo.Connection()
+#         connection = pymongo.MongoClient()
+#     except ConnectionFailure:
+#         message = "connect_to_database() - Failed to open connect to MongoDB \n"
+#         message += "Make sure that the MongoDB daemon is running."
+#         sys.stderr.write(message)
+#         raise
 
-    return db, connection
+#     try:
+#         db = connection[table_name]
+#     except InvalidName:
+#         message = "connect_to_database() - Failed to connect to %s" % table_name
+#         sys.stderr.write(message)
+#         raise
+
+#     return db, connection
 
 
 def get_restaurant_entry(result):
@@ -250,33 +250,6 @@ def get_reviews(db, num_reviews_to_fetch):
 
     return
 
-
-def clean(db, num_to_clean):
-    """
-    'clean' the database
-    In particular, convert some
-    unicode to floats
-    """
-    
-    nymag = db['bars']
-
-    entries = nymag.find({ 'longitude' : {'$type' : 2} },
-                         limit = num_to_clean)    
-
-    for entry in entries:
-
-        longitude = float(entry['longitude'])
-        latitude = float(entry['latitude'])
-        entry['longitude'] = longitude
-        entry['latitude'] = latitude
-        if longitude == None or latitude == None:
-            print "Failed to update: %s" % entry['name']
-            continue
-        print "Updating: %s with (%s, %s)" % (entry['name'], longitude, latitude)
-        key = {"_id": entry['_id']}
-        nymag.update(key, entry)
-
-    return
     
     
 

@@ -214,6 +214,7 @@ function submitLocationToServer() {
     function successfulCallback(data) {
 
 	// Add the data to the table
+	console.log(data);
 	var table = createTableFromData(data, ["name", "address", "review"]);
 	$("#venue_list").empty();
 	$("#venue_list").append(table);

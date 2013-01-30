@@ -133,9 +133,15 @@ def match_foursquare_id(db, api, num_to_match=10):
             print "Failed to find match for: ", name
             continue
 
+        print best_match
         (fsq_name, fsq_id) = (best_match[u'name'], best_match[u'id'])
         print "Adding foursquare id for nymag name: %s " % name,
         print "fsq name: %s distance: %s" % (fsq_name, distance)
+
+        foursquare_info = {'foursquare_name' : fsq_name,
+                           'foursquare_id' : fsq_id,
+                           'foursquare_nymag_overlap' : distance}
+
         #print best_match
         
         #    entry.update({'foursquare_id' : fsq_id})

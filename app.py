@@ -14,7 +14,8 @@ from bson import json_util
 
 #import unicodedata
 
-from nymag_scrape import connect_to_database
+from database import connect_to_database
+from database import valid_entry_dict
 
 app = Flask(__name__)
 
@@ -107,20 +108,13 @@ def api_locations( methods=['GET']):
     print "Nearest Locations:"
     print locations
 
-    js = json.dumps(locations, default=json_util.default)
+    data_for_app = [location['nymag'] for location in locations]
+
+    js = json.dumps(data_for_app, default=json_util.default)
     resp = Response(js, status=200, mimetype='application/json')
     #resp.headers['Link'] = 'http://luisrei.com'
 
     return resp
-
-
-def valid_entry_dict():
-    """
-    A query string defining a valid
-    entry in the Mongo DB
-    """
-
-    return { 'review' : {'$ne':None} }
 
 
 def get_random_locations(number_of_locations=3):
@@ -165,8 +159,8 @@ def get_close_locations(position, number_of_locations=3):
     lon_max = lon + block_distance*block_lon
 
     db_query = {
-        "latitude": {"$gt": lat_min, "$lt": lat_max},
-        "longitude": {"$gt": lon_min, "$lt": lon_max}
+        "nymag.latitude": {"$gt": lat_min, "$lt": lat_max},
+        "nymag.longitude": {"$gt": lon_min, "$lt": lon_max}
         }
 
     #db_query = {}
@@ -176,16 +170,17 @@ def get_close_locations(position, number_of_locations=3):
     print "db query: ", db_query
 
     db, connection = connect_to_database(table_name="barkov_chain")
-    nymag = db['bars']
-    locations = nymag.find(db_query)
+    bars = db['bars']
+    locations = bars.find(db_query)
     
     # Here, we would do some magic to pick
     # out the 'best' locations
     nearest_locations = []
     for location in locations:
+        nymag = location['nymag']
         distance = distance_dr(lat, lon,
-                               location['latitude'], 
-                               location['longitude'])
+                               nymag['latitude'], 
+                               nymag['longitude'])
         nearest_locations.append( (location, distance) )
 
     nearest_locations.sort(key=lambda x: x[1])

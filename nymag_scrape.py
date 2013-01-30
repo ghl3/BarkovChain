@@ -250,12 +250,24 @@ def get_reviews(db, num_reviews_to_fetch):
 
     return
 
+
+def clean(db):
+    """
+    'clean' the database
+    In particular, convert some
+    unicode to floats
+    """
+    pass
+    
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Scrape data from NYMag.')
     parser.add_argument('--scrape_url', '-s', dest='scrape_url', 
                         default=None, help='url to scrape restaurants from')
     parser.add_argument('--fetch_reviews', '-f', dest='fetch_reviews', type=int, 
                         default=None, help='number of reviews to fetch')
+    parser.add_argument('--clearn', '-c', dest='clean', type=int, 
+                        default=None, help='clean up the database')
     args = parser.parse_args()
 
     db, connection = connect_to_database()
@@ -268,6 +280,10 @@ if __name__ == "__main__":
         reviews_to_fetch = args.fetch_reviews
         if reviews_to_fetch != None:
             get_reviews(db, reviews_to_fetch)
+
+        clean = args.clean
+        if clean != None:
+            clean(db)
 
     except (ConnectionFailure, InvalidName) as err:
         print err

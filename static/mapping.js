@@ -3,6 +3,7 @@
 console.log("Loading jscript");
 
 // Global Variables
+var map = null;
 var marker = null;
 var current_position = {'latitude' : null, 'longitude' : null};
 
@@ -38,9 +39,78 @@ function placeMarker(map, location) {
 
 // Clear a table and recreate based
 // on the input list of data points
-function addDataToTable(data, table_id) {
+function createTableFromData(data, columns) {
+
     console.log("Place holder");
+    
+    // Create the Table
+    var table = document.createElement('table');
+    //table.setAttribute('id', table_id);
+
+    // Add the Title
+    var row = table.insertRow(0);
+
+    // Create the header
+    for( var column_idx = 0; column_idx < columns.length; ++column_idx ) {
+	var cell = row.insertCell(column_idx);
+	cell.innerHTML = columns[column_idx];
+    }
+
+    // Add the data rows
+    for(var data_itr=0; data_itr<data.length; ++data_itr) {
+	var dict = data[data_itr];
+
+	// Recall that the header row is row=0
+	var row = table.insertRow(data_itr+1);
+
+	for( var column_idx = 0; column_idx < columns.length; ++column_idx ) {
+	    var cell = row.insertCell(column_idx);
+	    var var_name = columns[column_idx];
+	    cell.innerHTML = dict[var_name];
+	    cell.className += "table_column_" + column_idx;
+	    
+	}
+    }
+
+    /*
+      var cell = row.insertCell(0);
+      cell.innerHTML = dict['name'];
+      cell.width='60px';
+      var cell = row.insertCell(1);
+      cell.innerHTML = parseFloat(dict['val']).toPrecision(4);
+      cell.width='100px';
+      var cell = row.insertCell(2);
+      cell.innerHTML = parseFloat(dict['errorLo']).toPrecision(4);
+      cell.width='100px';
+      var cell = row.insertCell(3);
+      cell.innerHTML = parseFloat(dict['errorHi']).toPrecision(4);
+      cell.width='100px';
+    */
+    
+    return table;
+
 }
+
+
+function createPath(data) {
+
+    var flightPlanCoordinates = [
+        new google.maps.LatLng(37.772323, -122.214897),
+        new google.maps.LatLng(21.291982, -157.821856),
+        new google.maps.LatLng(-18.142599, 178.431),
+        new google.maps.LatLng(-27.46758, 153.027892)
+    ];
+    var flightPath = new google.maps.Polyline({
+	path: flightPlanCoordinates,
+	strokeColor: "#FF0000",
+	strokeOpacity: 1.0,
+	strokeWeight: 2
+    });
+
+    flightPath.setMap(map);
+
+}
+
 
 
 // SubmitLocationToServer
@@ -66,16 +136,17 @@ function submitLocationToServer() {
     function successfulCallback(data) {
 
 	// Add the data to the table
-	addDataToTable(data, "#venue_list");
-
-	console.log(data);
-	console.log("Success");
+	var table = createTableFromData(data, ["name", "address"]);
+	$("#venue_list").append(table);
+	console.log("successfulCallback: Table");
+	console.log(table);
+	//addDataToTable(data, "#venue_list");
+	//console.log(data);
     }
     
     function errorCallback(data) {
 	console.log(data);
 	console.log("Error");
-	
     }
 
     $.ajax({
@@ -101,8 +172,9 @@ $(document).ready(function() {
     console.log("Loading Map");
     
     // Create the map
-    var map = new google.maps.Map(document.getElementById("map_canvas"),
-				  mapOptions);
+    //var map = new google.maps.Map(document.getElementById("map_canvas"),
+    //				  mapOptions);
+    map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
 
     // Define clicking on the map
     google.maps.event.addListener(map, 'click', function(event) {

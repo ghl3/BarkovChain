@@ -129,7 +129,7 @@ def get_random_locations(number_of_locations=3):
     """
     
     db, connection = connect_to_database(table_name="barkov_chain")
-    nymag = db['nymag']
+    nymag = db['bars']
     locations = nymag.find({ 'review' : {'$exists':True} },
                          limit = 100)
     locations = [locations[random.randint(0, 100)] for i in range(number_of_locations)]
@@ -176,7 +176,7 @@ def get_close_locations(position, number_of_locations=3):
     print "db query: ", db_query
 
     db, connection = connect_to_database(table_name="barkov_chain")
-    nymag = db['nymag']
+    nymag = db['bars']
     locations = nymag.find(db_query)
     
     # Here, we would do some magic to pick

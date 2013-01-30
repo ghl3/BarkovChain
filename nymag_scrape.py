@@ -154,7 +154,7 @@ def get_new_restaurants(db, url, max_pages=50):
     Takes a url for a NYMag restaurant search result page
     and a maximum number of pages to move through
     """
-    #nymag = database['nymag']
+    #nymag = database['bars']
     nymag = db
 
     current_url = url
@@ -211,8 +211,8 @@ def get_reviews(db, num_reviews_to_fetch):
     """
 
     #database = connect_to_database("barkov_chain")
-    #nymag = database['nymag']
-    nymag = db['nymag']
+    #nymag = database['bars']
+    nymag = db['bars']
 
     entries = nymag.find({ 'review' : {'$exists':False} },
                          limit = num_reviews_to_fetch)    
@@ -258,7 +258,7 @@ def clean(db, num_to_clean):
     unicode to floats
     """
     
-    nymag = db['nymag']
+    nymag = db['bars']
 
     entries = nymag.find({ 'longitude' : {'$type' : 2} },
                          limit = num_to_clean)    

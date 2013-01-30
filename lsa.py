@@ -148,7 +148,7 @@ def main():
 
     # Add documents
     db, connection = connect_to_database(table_name="barkov_chain")
-    nymag = db['nymag']
+    nymag = db['bars']
     locations = nymag.find({ 'review' : {'$ne':None} },
                            limit = 300)
 

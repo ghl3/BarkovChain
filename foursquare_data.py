@@ -108,8 +108,10 @@ def get_nearby_venues(api, latitude, longitude, radius=800):
 
 def match_foursquare_id(db, api, num_to_match=10):
     """
+    Get the corresponding foursquare id to the
+    given location.
     """
-    nymag = db['nymag']
+    nymag = db['bars']
 
     entries = nymag.find({ 'foursquare_id' : {'$exists':False},
                            'review' : {'$exists':True}},
@@ -134,7 +136,7 @@ def match_foursquare_id(db, api, num_to_match=10):
         (fsq_name, fsq_id) = (best_match[u'name'], best_match[u'id'])
         print "Adding foursquare id for nymag name: %s " % name,
         print "fsq name: %s distance: %s" % (fsq_name, distance)
-        print best_match
+        #print best_match
         
         #    entry.update({'foursquare_id' : fsq_id})
         #    key = {"_id": entry['_id']}
@@ -150,7 +152,7 @@ def main():
 
     db, connection = connect_to_database()
 
-    match_foursquare_id(db, api, 10)
+    match_foursquare_id(db, api, 50)
     return
 
     matches = get_foursquare_id(api, "art bar", longitude=-74.00355,

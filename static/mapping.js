@@ -5,6 +5,7 @@ console.log("Loading jscript");
 // Global Variables
 var map = null;
 var marker = null;
+var current_latlong = null;
 var current_position = {'latitude' : null, 'longitude' : null};
 
 var mapOptions = {
@@ -98,6 +99,17 @@ function createPath(data) {
         new google.maps.LatLng(-27.46758, 153.027892)
     ];
     */
+
+    for(var coor_itr=0; coor_itr < coordinates.length; ++coor_itr) {
+	var point = new google.maps.Marker({
+	    position: coordinates[coor_itr], //location, 
+	    map: map,
+	    animation: google.maps.Animation.DROP
+	});
+    }
+
+    coordinates.push(current_latlong);
+
     var flightPath = new google.maps.Polyline({
 	path: coordinates,
 	strokeColor: "#FF0000",
@@ -180,6 +192,7 @@ $(document).ready(function() {
 
     // Define clicking on the map
     google.maps.event.addListener(map, 'click', function(event) {
+	current_latlong = event.latLng;
 	placeMarker(map, event.latLng);
 	var lat = marker['position']['Ya'];
 	var lon = marker['position']['Za'];

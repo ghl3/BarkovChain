@@ -171,7 +171,7 @@ def get_close_locations(position, number_of_locations=3):
 
     # Block "distance" = 5
     # ie, we want a restaurant within 5 blocks
-    block_distance = 100
+    block_distance = 10
 
     lat_min = position['latitude'] - block_distance*block_lat
     lat_max = position['latitude'] + block_distance*block_lat
@@ -183,7 +183,7 @@ def get_close_locations(position, number_of_locations=3):
         "longitude": {"$gt": lon_min, "$lt": lon_max}
         }
 
-    db_query = {}
+    #db_query = {}
     # Ensure the query is valid
     db_query.update(valid_entry_dict())
     print "db query: ", db_query

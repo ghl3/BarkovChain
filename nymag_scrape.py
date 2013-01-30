@@ -251,13 +251,33 @@ def get_reviews(db, num_reviews_to_fetch):
     return
 
 
-def clean(db):
+def clean(db, num_to_clean):
     """
     'clean' the database
     In particular, convert some
     unicode to floats
     """
-    pass
+    
+    nymag = db['nymag']
+
+    entries = nymag.find({ 'longitude' : {'$type' : 2} },
+                         limit = num_to_clean)    
+
+    for entry in entries:
+
+        longitude = float(entry['longitude'])
+        latitude = float(entry['latitude'])
+        entry['longitude'] = longitude
+        entry['latitude'] = latitude
+        if longitude == None or latitude == None:
+            print "Failed to update: %s" % entry['name']
+            continue
+        print "Updating: %s with (%s, %s)" % (entry['name'], longitude, latitude)
+        key = {"_id": entry['_id']}
+        nymag.update(key, entry)
+
+    return
+    
     
 
 if __name__ == "__main__":
@@ -266,7 +286,7 @@ if __name__ == "__main__":
                         default=None, help='url to scrape restaurants from')
     parser.add_argument('--fetch_reviews', '-f', dest='fetch_reviews', type=int, 
                         default=None, help='number of reviews to fetch')
-    parser.add_argument('--clearn', '-c', dest='clean', type=int, 
+    parser.add_argument('--clear', '-c', dest='clean', type=int, 
                         default=None, help='clean up the database')
     args = parser.parse_args()
 
@@ -281,9 +301,9 @@ if __name__ == "__main__":
         if reviews_to_fetch != None:
             get_reviews(db, reviews_to_fetch)
 
-        clean = args.clean
-        if clean != None:
-            clean(db)
+        num_to_clean = args.clean
+        if num_to_clean != None:
+            clean(db, num_to_clean)
 
     except (ConnectionFailure, InvalidName) as err:
         print err

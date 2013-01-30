@@ -119,6 +119,31 @@ function createPath(data) {
 
     flightPath.setMap(map);
 
+
+    /* Consier having the path follow streets:
+       See: http://stackoverflow.com/questions/10513360/polyline-snap-to-road-using-google-maps-api-v3
+
+       google.maps.event.addListener(map, "click", function(evt) {
+       if (path.length == 0) {
+       path.push(evt.latLng);
+       poly = new google.maps.Polyline({ map: map });
+       poly.setPath(path);
+       } else {
+       service.route({
+       origin: path[path.length - 1],
+       destination: evt.latLng,
+       travelMode: google.maps.DirectionsTravelMode.DRIVING
+       }, function(result, status) {
+       if (status == google.maps.DirectionsStatus.OK) {
+       path = path.concat(result.routes[0].overview_path);
+       poly.setPath(path);
+       }
+       });
+       }
+       });
+
+    */
+
 }
 
 

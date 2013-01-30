@@ -2,6 +2,7 @@
 
 import os
 import random
+import math
 
 import json
 from flask import Flask
@@ -123,6 +124,9 @@ def api_locations( methods=['GET']):
     number_of_locations = int(request.args['number_of_locations'])
     locations = get_close_locations(position=position, 
                                     number_of_locations=number_of_locations)
+    print "Nearest Locations:"
+    print locations
+
     js = json.dumps(locations, default=json_util.default)
     resp = Response(js, status=200, mimetype='application/json')
     #resp.headers['Link'] = 'http://luisrei.com'
@@ -173,10 +177,12 @@ def get_close_locations(position, number_of_locations=3):
     # ie, we want a restaurant within 5 blocks
     block_distance = 10
 
-    lat_min = position['latitude'] - block_distance*block_lat
-    lat_max = position['latitude'] + block_distance*block_lat
-    lon_min = position['longitude'] - block_distance*block_lon
-    lon_max = position['longitude'] + block_distance*block_lon
+    lat, lon = position['latitude'], position['longitude']
+
+    lat_min = lat - block_distance*block_lat
+    lat_max = lat + block_distance*block_lat
+    lon_min = lon - block_distance*block_lon
+    lon_max = lon + block_distance*block_lon
 
     db_query = {
         "latitude": {"$gt": lat_min, "$lt": lat_max},
@@ -190,10 +196,29 @@ def get_close_locations(position, number_of_locations=3):
 
     db, connection = connect_to_database(table_name="barkov_chain")
     nymag = db['nymag']
-    locations = nymag.find(db_query, limit = 10)
+    locations = nymag.find(db_query)
+    
+    # Here, we would do some magic to pick
+    # out the 'best' locations
+    nearest_locations = []
+    for location in locations:
+        distance = distance_dr(lat, lon,
+                               location['latitude'], 
+                               location['longitude'])
+        nearest_locations.append( (location, distance) )
+
+    nearest_locations.sort(key=lambda x: x[1])
+
+    return [location[0] for location in nearest_locations[:number_of_locations]]
+
     #for location in locations:
     #    print location
-    return list(locations)
+    #return list(locations)
+
+
+def distance_dr(lat0, lon0, lat1, lon1):
+    d2 = (lat0-lat1)*(lat0-lat1) + (lon0-lon1)*(lon0-lon1)
+    return math.sqrt(d2)
 
 
 def create_static_map_src(locations, path_color = '0x0000ff', 

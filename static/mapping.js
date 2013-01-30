@@ -85,7 +85,6 @@ function createPath(data) {
     var coordinates = new Array();
 
     for(var data_itr=0; data_itr<data.length; ++data_itr) {
-	if(data_itr > 3) break;
 	var dict = data[data_itr];
 	var lat = dict['latitude'];
 	var lon = dict['longitude'];
@@ -188,6 +187,7 @@ function submitLocationToServer() {
 
 	// Add the data to the table
 	var table = createTableFromData(data, ["name", "address"]);
+	$("#venue_list").empty();
 	$("#venue_list").append(table);
 
 	// Create a path on the map

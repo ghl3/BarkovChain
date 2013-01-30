@@ -12,8 +12,7 @@ from flask import jsonify
 from flask import Response
 from bson import json_util
 
-import unicodedata
-
+#import unicodedata
 
 from nymag_scrape import connect_to_database
 
@@ -140,7 +139,7 @@ def valid_entry_dict():
     entry in the Mongo DB
     """
 
-    return { 'review' : {'$exists':True} }
+    return { 'review' : {'$ne':None} }
 
 
 def get_random_locations(number_of_locations=3):
@@ -192,6 +191,7 @@ def get_close_locations(position, number_of_locations=3):
     #db_query = {}
     # Ensure the query is valid
     db_query.update(valid_entry_dict())
+
     print "db query: ", db_query
 
     db, connection = connect_to_database(table_name="barkov_chain")

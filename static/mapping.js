@@ -1,7 +1,4 @@
 
-
-console.log("Loading jscript");
-
 // Global Variables
 var map = null;
 var marker = null;
@@ -39,15 +36,42 @@ function placeMarker(map, location) {
     }
 }
 
+// Create a twitter bootstrap collapsable
+// Object on-th-fly
+function createCollapsable(id, title, content) {
+
+    html_string = ' \
+	<div class="accordion" id="' + id + '"> \
+	 <div class="accordion-group"> \
+          <div class="accordion-heading"> \
+	    <a class="accordion-toggle" data-toggle="collapse" \
+               data-parent="#' + id + '" href="#collapse_' + id + '"> \
+	      ' + title + ' \
+	    </a> \
+	  </div> \
+	  <div id="collapse_' + id + '" class="accordion-body collapse"> \
+	    <div class="accordion-inner"> \
+	      ' + content + ' \
+	    </div> \
+	  </div> \
+	</div> \
+      </div>'
+
+    //var htmlObject = $(html_string);
+    //return htmlObject;
+    return html_string;
+
+}
+
 
 // Clear a table and recreate based
 // on the input list of data points
 function createTableFromData(data, columns) {
 
-    console.log("Place holder");
-    
     // Create the Table
     var table = document.createElement('table');
+    table.setAttribute("class", "table");
+    //var table = document.createElement('table');
     //table.setAttribute('id', table_id);
 
     // Add the Title
@@ -57,6 +81,7 @@ function createTableFromData(data, columns) {
     for( var column_idx = 0; column_idx < columns.length; ++column_idx ) {
 	var cell = row.insertCell(column_idx);
 	cell.innerHTML = columns[column_idx];
+	cell.setAttribute("class", "table_header");
     }
 
     // Add the data rows
@@ -69,9 +94,14 @@ function createTableFromData(data, columns) {
 	for( var column_idx = 0; column_idx < columns.length; ++column_idx ) {
 	    var cell = row.insertCell(column_idx);
 	    var var_name = columns[column_idx];
-	    cell.innerHTML = dict[var_name];
+	    if(var_name != 'review') {
+		cell.innerHTML = dict[var_name];
+	    }
+	    else {
+		var collapsable = createCollapsable("row_" + data_itr, "review", dict[var_name]); 
+		cell.innerHTML = collapsable; //appendChild(collapsable);
+	    }
 	    cell.className += "table_column_" + column_idx;
-	    
 	}
     }
 
@@ -161,8 +191,6 @@ function createPath(data) {
 
 }
 
-
-
 // SubmitLocationToServer
 function submitLocationToServer() {
     console.log('Submitting Location To Server');
@@ -186,7 +214,7 @@ function submitLocationToServer() {
     function successfulCallback(data) {
 
 	// Add the data to the table
-	var table = createTableFromData(data, ["name", "address"]);
+	var table = createTableFromData(data, ["name", "address", "review"]);
 	$("#venue_list").empty();
 	$("#venue_list").append(table);
 
@@ -251,5 +279,11 @@ $(document).ready(function() {
     // and get some info
     $("#button_create").click(submitLocationToServer);
 
+
+    /*
+    collapsable = createCollapsable("id", "title", "content");
+
+    $("#test").append(collapsable);
+    */
 
 });

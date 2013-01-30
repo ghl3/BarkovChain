@@ -8,6 +8,11 @@ html, body {
 body {
 }
 
+.table_header {  
+  font-weight: bold;
+}
+
+
 /* --------------------------------
    HEADER and MENU
    */
@@ -20,6 +25,10 @@ header {
   
   padding-top: 10px;
   padding-bottom: 10px;
+}
+
+.centered {  
+  text-align: center;
 }
 
 ul.menu {

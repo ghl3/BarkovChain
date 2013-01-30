@@ -7,6 +7,8 @@ var map = null;
 var marker = null;
 var current_latlong = null;
 var current_position = {'latitude' : null, 'longitude' : null};
+var location_points = new Array();
+var itinerary_path = null;
 
 var mapOptions = {
     center: new google.maps.LatLng(40.7, -74),
@@ -100,24 +102,38 @@ function createPath(data) {
     ];
     */
 
+    // Clear everything in the current points:
+    for (var i = 0; i < location_points.length; i++) {
+	location_points[i].setMap(null);
+    }
+    location_points.length = 0;
+    if(itinerary_path != null ){
+	itinerary_path.setMap(null);
+    }
+
+
     for(var coor_itr=0; coor_itr < coordinates.length; ++coor_itr) {
 	var point = new google.maps.Marker({
 	    position: coordinates[coor_itr], //location, 
 	    map: map,
 	    animation: google.maps.Animation.DROP
 	});
+	location_points.push(point);
     }
 
+    // Then, add the original node to the
+    // list for drawing the path
     coordinates.push(current_latlong);
 
-    var flightPath = new google.maps.Polyline({
+    itinerary_path = new google.maps.Polyline({
 	path: coordinates,
 	strokeColor: "#FF0000",
 	strokeOpacity: 1.0,
 	strokeWeight: 2
     });
 
-    flightPath.setMap(map);
+    itinerary_path.setMap(map);
+
 
 
     /* Consier having the path follow streets:

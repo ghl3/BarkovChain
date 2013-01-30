@@ -11,6 +11,9 @@ from flask import jsonify
 from flask import Response
 from bson import json_util
 
+import unicodedata
+
+
 from nymag_scrape import connect_to_database
 
 app = Flask(__name__)
@@ -35,6 +38,16 @@ def map():
     return render_template('map.html',
                            venue_list=locations,
                            img_src=img_src)
+@app.errorhandler(400)
+def invalid_content(error=None):
+    message = {
+        'status': 400,
+        'message': 'invalid body content'
+        }
+    resp = jsonify(message)
+    resp.status_code = 400
+    return resp
+
 @app.errorhandler(403)
 def not_found(error=None):
     message = {
@@ -55,35 +68,78 @@ def not_found(error=None):
     resp.status_code = 404
     return resp
 
-
 @app.route('/api/locations')
 def api_locations( methods=['GET']):
     """
     Get locations and return as JSON
-    Requires the following param
+    Requires the following parameters:
+
+    { 'position' : {
+             'longitude' : longitude,
+             'latitude' : latitude,
+             },
+      'number_of_locations' : number_of_locations
+    }
+    
     """
 
-    print "Entering api/locations"
-
-    print request.headers['Content-Type']
-
+    # Check content type (only json for now)
     # Be tolerent when recieving, 
     # be string when sending
-    if 'json' in request.headers['Content-Type']:
-        print "Found JSON"
-        locations = get_random_locations()
-        #locations = [ loc['name'] for loc in locations]
-        js = json.dumps(locations, default=json_util.default)
-        #js = json.dumps(locations)
-        resp = Response(js, status=200, mimetype='application/json')
-        #resp.headers['Link'] = 'http://luisrei.com'
-        return resp
-    
-    else:
+    if 'json' not in request.headers['Content-Type']:
         return not_found()
 
+    # Check validity of body
+    required_args = ['longitude', 'latitude', 'number_of_locations']
+    for arg in required_args:
+        if arg not in request.args:
+            print "Didn't find: %s" % arg
+            return invalid_content
 
-def get_random_locations(num_locations=3):
+    """
+    if 'longitude' not in request.args:
+        print "Didn't find 'position'"
+        return invalid_content()
+    else:
+        position = request.args.get('position')
+
+    if 'number_of_locations' not in request.args:
+        print "Didn't find 'number_of_locations'"
+        return invalid_content()
+    else:
+        number_of_locations = request.args.get('number_of_locations')
+    """
+
+    # Generate and return the response
+    # locations = get_random_locations(number_of_locations=number_of_locations)
+    
+
+    #position = {'longitude' : unicodedata.numeric(request.args['longitude']),
+    #            'latitude' : unicodedata.numeric(request.args['latitude'])}
+    #print "Position: ", request.args['longitude'], request.args['latitude']
+    position = {'longitude' : float(request.args['longitude']),
+                'latitude' : float(request.args['latitude'])}
+
+    number_of_locations = int(request.args['number_of_locations'])
+    locations = get_close_locations(position=position, 
+                                    number_of_locations=number_of_locations)
+    js = json.dumps(locations, default=json_util.default)
+    resp = Response(js, status=200, mimetype='application/json')
+    #resp.headers['Link'] = 'http://luisrei.com'
+
+    return resp
+
+
+def valid_entry_dict():
+    """
+    A query string defining a valid
+    entry in the Mongo DB
+    """
+
+    return { 'review' : {'$exists':True} }
+
+
+def get_random_locations(number_of_locations=3):
     """
     Return 3 random locations from the database
     """
@@ -92,8 +148,52 @@ def get_random_locations(num_locations=3):
     nymag = db['nymag']
     locations = nymag.find({ 'review' : {'$exists':True} },
                          limit = 100)
-    locations = [locations[random.randint(0, 100)] for i in range(num_locations)]
+    locations = [locations[random.randint(0, 100)] for i in range(number_of_locations)]
     return locations
+
+
+def get_close_locations(position, number_of_locations=3):
+    """
+    Return 'number_of_locations' locations that are
+    'close' to the given position, where the position
+    is a dictionary of 'longitude' and 'latitude'
+
+    Note: 1 New York Block is approximately:
+    delta-latitude = 0.0003
+    delta-longitude = 0.001
+
+    Return a list
+    """
+    
+    # New York Block dimensions
+    block_lat = 0.0003
+    block_lon = 0.001
+
+    # Block "distance" = 5
+    # ie, we want a restaurant within 5 blocks
+    block_distance = 100
+
+    lat_min = position['latitude'] - block_distance*block_lat
+    lat_max = position['latitude'] + block_distance*block_lat
+    lon_min = position['longitude'] - block_distance*block_lon
+    lon_max = position['longitude'] + block_distance*block_lon
+
+    db_query = {
+        "latitude": {"$gt": lat_min, "$lt": lat_max},
+        "longitude": {"$gt": lon_min, "$lt": lon_max}
+        }
+
+    db_query = {}
+    # Ensure the query is valid
+    db_query.update(valid_entry_dict())
+    print "db query: ", db_query
+
+    db, connection = connect_to_database(table_name="barkov_chain")
+    nymag = db['nymag']
+    locations = nymag.find(db_query, limit = 10)
+    #for location in locations:
+    #    print location
+    return list(locations)
 
 
 def create_static_map_src(locations, path_color = '0x0000ff', 

@@ -39,7 +39,7 @@ function placeMarker(map, location) {
 // Clear a table and recreate based
 // on the input list of data points
 function addDataToTable(data, table_id) {
-
+    console.log("Place holder");
 }
 
 
@@ -47,8 +47,21 @@ function addDataToTable(data, table_id) {
 function submitLocationToServer() {
     console.log('Submitting Location To Server');
 
-    var data = {"current_position" : current_position, 
-		"num_locations" : 3};
+    if( current_position['latitude'] == null ) {
+	console.log("Current latitude is null");
+	return;
+    }
+    if( current_position['longitude'] == null ) {
+	console.log("Current longitude is null");
+	return;
+    }
+
+    var data = {"longitude" : current_position['longitude'], 
+		"latitude" : current_position['latitude'], 
+		"number_of_locations" : 3};
+
+    console.log("Sending data:");
+    console.log(data);
 
     function successfulCallback(data) {
 

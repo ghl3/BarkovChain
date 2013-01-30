@@ -72,21 +72,6 @@ function createTableFromData(data, columns) {
 	}
     }
 
-    /*
-      var cell = row.insertCell(0);
-      cell.innerHTML = dict['name'];
-      cell.width='60px';
-      var cell = row.insertCell(1);
-      cell.innerHTML = parseFloat(dict['val']).toPrecision(4);
-      cell.width='100px';
-      var cell = row.insertCell(2);
-      cell.innerHTML = parseFloat(dict['errorLo']).toPrecision(4);
-      cell.width='100px';
-      var cell = row.insertCell(3);
-      cell.innerHTML = parseFloat(dict['errorHi']).toPrecision(4);
-      cell.width='100px';
-    */
-    
     return table;
 
 }
@@ -94,14 +79,27 @@ function createTableFromData(data, columns) {
 
 function createPath(data) {
 
+    var coordinates = new Array();
+
+    for(var data_itr=0; data_itr<data.length; ++data_itr) {
+	if(data_itr > 3) break;
+	var dict = data[data_itr];
+	var lat = dict['latitude'];
+	var lon = dict['longitude'];
+	var position = new google.maps.LatLng(lat, lon);
+	coordinates.push(position);
+    }
+
+    /*
     var flightPlanCoordinates = [
         new google.maps.LatLng(37.772323, -122.214897),
         new google.maps.LatLng(21.291982, -157.821856),
         new google.maps.LatLng(-18.142599, 178.431),
         new google.maps.LatLng(-27.46758, 153.027892)
     ];
+    */
     var flightPath = new google.maps.Polyline({
-	path: flightPlanCoordinates,
+	path: coordinates,
 	strokeColor: "#FF0000",
 	strokeOpacity: 1.0,
 	strokeWeight: 2
@@ -138,6 +136,10 @@ function submitLocationToServer() {
 	// Add the data to the table
 	var table = createTableFromData(data, ["name", "address"]);
 	$("#venue_list").append(table);
+
+	// Create a path on the map
+	createPath(data);
+
 	console.log("successfulCallback: Table");
 	console.log(table);
 	//addDataToTable(data, "#venue_list");

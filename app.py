@@ -116,11 +116,13 @@ def api_locations( methods=['GET']):
     return resp
 
 
-def get_lat_lon_square(lat, lon, blocks=10):
+def get_lat_lon_square_query(current_location, blocks=10):
     """
     Return the min/max of lat and lon
     to be used in the query's bounding box.
     """
+
+    lat, lon = current_location['latitude'], current_location['longitude']
     
     # New York Block dimensions
     block_lat = 0.0003
@@ -135,8 +137,13 @@ def get_lat_lon_square(lat, lon, blocks=10):
     lon_min = lon - block_distance*block_lon
     lon_max = lon + block_distance*block_lon
 
-    return (lat_min, lat_max), (lon_min, lon_max)
-    
+    query = {
+        "nymag.latitude": {"$gt": lat_min, "$lt": lat_max},
+        "nymag.longitude": {"$gt": lon_min, "$lt": lon_max}
+        }
+
+    #return (lat_min, lat_max), (lon_min, lon_max)
+    return query
 
 def get_next_location(current_location):
     """
@@ -152,21 +159,31 @@ def get_next_location(current_location):
     """
 
     # Get the position bounding box for the query
-    lat, lon = current_location['latitude'], current_location['longitude']
-    (lat_min, lat_max), (lon_min, lon_max) = get_lat_lon_square(lat, lon, blocks=10)
+    #
+    #(lat_min, lat_max), (lon_min, lon_max) = get_lat_lon_square(lat, lon, blocks=10)
 
     # Build the db query
+    blocks=10
     db_query = {}
-    db_query.update({
-        "nymag.latitude": {"$gt": lat_min, "$lt": lat_max},
-        "nymag.longitude": {"$gt": lon_min, "$lt": lon_max}
-        })
+    #db_query.update()
+    db_query.update(get_lat_lon_square_query(current_location, blocks=blocks))
     db_query.update(valid_entry_dict())
 
     # Get the nearby locations
     db, connection = connect_to_database(table_name="barkov_chain")
     bars = db['bars']
     locations = list(bars.find(db_query))
+
+    # If we didn't grab enough locations,
+    # try a larger search block
+    while len(locations) < 5:
+        print "Too few nearby locations found within %s blocks (%s). Extending query" % (blocks, len(locations))
+        blocks += 10
+        updated_distance = get_lat_lon_square_query(current_location, blocks=blocks)
+        for key, val in updated_distance.iteritems():
+            db_query[key] = val
+        print db_query
+        locations = list(bars.find(db_query))
 
     # Select the next location in the chain
     next_location = next_location_from_mc(locations, current_location)

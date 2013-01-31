@@ -75,11 +75,11 @@ function addDataToTable(data, columns) {
 	}
 	table.append(row);
     }
+    var rowCount = $('#venue_table tr').length;
     
-    var tail_row = createTableRow(data, columns, table.length-1);
+    var tail_row = createTableRow(data, columns, rowCount-1 ); //current_chain_locationstable.length-1);
     //table.insertRow(tail_row);
     table.append(tail_row);
-
 }
 
 
@@ -97,7 +97,9 @@ function createTableRow(data, columns, row_index) {
 	    cell.innerHTML = data[var_name];
 	}
 	else {
-	    var collapsable = createCollapsable("row_" + row_index, "review", data[var_name]); 
+	    console.log("creating collapsable: " + row_index);
+	    var collapsable = createCollapsable("row_" + row_index, 
+						"review", data[var_name]); 
 	    cell.innerHTML = collapsable; //appendChild(collapsable);
 	}
 	cell.className += "table_column_" + column_idx;

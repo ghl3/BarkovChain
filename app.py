@@ -13,8 +13,6 @@ from flask import jsonify
 from flask import Response
 from bson import json_util
 
-#import unicodedata
-
 from database import connect_to_database
 from database import valid_entry_dict
 
@@ -22,6 +20,7 @@ import geopy
 import geopy.distance
 
 import scipy.stats
+
 
 app = Flask(__name__)
 
@@ -109,35 +108,15 @@ def api_locations( methods=['GET']):
     current_location = {'longitude' : float(request.args['longitude']),
                         'latitude' : float(request.args['latitude'])}
     next_location = get_next_location(current_location)
-    print "Next location:", next_location
-
-    # number_of_locations = int(request.args['number_of_locations'])
-    # locations = get_close_locations(position=position, 
-    #                                number_of_locations=number_of_locations)
-
-    data_for_app = next_location['nymag'] #[location['nymag'] for location in locations]
+    data_for_app = next_location['nymag']
 
     js = json.dumps(data_for_app, default=json_util.default)
     resp = Response(js, status=200, mimetype='application/json')
     #resp.headers['Link'] = 'http://luisrei.com'
-
     return resp
 
 
-def get_random_locations(number_of_locations=3):
-    """
-    Return 3 random locations from the database
-    """
-    
-    db, connection = connect_to_database(table_name="barkov_chain")
-    nymag = db['bars']
-    locations = nymag.find({ 'review' : {'$exists':True} },
-                         limit = 100)
-    locations = [locations[random.randint(0, 100)] for i in range(number_of_locations)]
-    return locations
-
-
-def get_lat_lon_square(lat, lon, block_distance=10):
+def get_lat_lon_square(lat, lon, blocks=10):
     """
     Return the min/max of lat and lon
     to be used in the query's bounding box.
@@ -159,7 +138,6 @@ def get_lat_lon_square(lat, lon, block_distance=10):
     return (lat_min, lat_max), (lon_min, lon_max)
     
 
-
 def get_next_location(current_location):
     """
     Return the next location based on the current markov chain.
@@ -175,8 +153,7 @@ def get_next_location(current_location):
 
     # Get the position bounding box for the query
     lat, lon = current_location['latitude'], current_location['longitude']
-    (lat_min, lat_max), (lon_min, lon_max) = get_lat_lon_square(lat, lon, 10)
-
+    (lat_min, lat_max), (lon_min, lon_max) = get_lat_lon_square(lat, lon, blocks=10)
 
     # Build the db query
     db_query = {}
@@ -185,39 +162,25 @@ def get_next_location(current_location):
         "nymag.longitude": {"$gt": lon_min, "$lt": lon_max}
         })
     db_query.update(valid_entry_dict())
-    print "db query: ", db_query
 
     # Get the nearby locations
     db, connection = connect_to_database(table_name="barkov_chain")
     bars = db['bars']
     locations = list(bars.find(db_query))
-    
-    next_location = select_next_location_from_list(locations, current_location)
+
+    # Select the next location in the chain
+    next_location = next_location_from_mc(locations, current_location)
 
     return next_location
 
-    # # Here, we would do some magic to pick
-    # # out the 'best' locations
-    # nearest_locations = []
-    # for location in locations:
-    #     nymag = location['nymag']
-    #     distance = distance_dr(lat, lon,
-    #                            nymag['latitude'], 
-    #                            nymag['longitude'])
-    #     nearest_locations.append( (location, distance) )
 
-    # nearest_locations.sort(key=lambda x: x[1])
-
-    # return [location[0] for location in nearest_locations[:number_of_locations]]
-
-    # #for location in locations:
-    # #    print location
-    # #return list(locations)
-
-
-def select_next_location_from_list(locations, current_location):
+def next_location_from_mc(locations, current_location):
     """
     Here, we implement the markov chain and pick the next location.
+
+    We simply get the probability of transition and throw
+    a random number betwen 0 and 1 to determine if we
+    accept it or not.
     """
 
     # Calculate the weight function
@@ -248,8 +211,6 @@ def distance_dr(loc0, loc1):
     dist = geopy.distance.distance(pt1, pt2).km*1000
     return dist
 
-#    d2 = (lat0-lat1)*(lat0-lat1) + (lon0-lon1)*(lon0-lon1)
-#    return math.sqrt(d2)
 
 def mc_weight(proposed, current):
     """ 
@@ -266,54 +227,22 @@ def mc_weight(proposed, current):
 
     return probability
 
-'''
-def create_static_map_src(locations, path_color = '0x0000ff', 
-                          path_weight=5):
+
+def get_random_locations(number_of_locations=3):
     """
-    Create a static google map based on 
-    the list of venues.
-
-    Each venue is a dict that contains
-    "latitude" and "longitude".
-
-    Return an image string to be put as the 'src'
-    of an html image tag.
+    Return 3 random locations from the database
     """
+    
+    db, connection = connect_to_database(table_name="barkov_chain")
+    nymag = db['bars']
+    locations = nymag.find({ 'review' : {'$exists':True} },
+                         limit = 100)
+    locations = [locations[random.randint(0, 100)] for i in range(number_of_locations)]
+    return locations
 
-    colors = ["red", "green", "blue", "orange", "purple", "yellow"]
-
-    points = []
-    for venue, color in zip(locations, colors):
-        points.append((venue['latitude'], venue['longitude'], color))
-
-    image_src = 'http://maps.googleapis.com/maps/api/staticmap'
-    image_src += '?center=Washington+Square+Park,New+York,NY'
-    image_src += '&zoom=12'
-    image_src += '&size=500x700'
-    image_src += '&maptype=roadmap'
-    image_src += ''
-
-    for (lat, lon, color) in points:
-        image_src += '&markers=color:{color}%7Clabel:S%7C{lat},{lon}' \
-            .format(lat=lat, lon=lon, color=color)
-
-    image_src += '&sensor=false'
-    image_src += '&path=color:{path_color}|weight:{path_weight}' \
-        .format(path_color=path_color, path_weight=path_weight)
-
-    for (lat, lon, color) in points:
-        image_src += '|{lat},{lon}'.format(lat=lat, lon=lon)
-    image_src += '&'
-
-    return image_src
-'''
-
-# &markers=color:green%7Clabel:G%7C40.711614,-74.012318&markers=color:red%7Ccolor:red%7Clabel:C%7C40.718217,-73.998284&sensor=false&path=color:0x0000ff|weight:5|40.702147,-74.015794|40.711614,-74.012318|40.718217,-73.998284&
  
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.
     port = int(os.environ.get('PORT', 5000))
     app.debug = True
     app.run(host='0.0.0.0', port=port)
-    
-

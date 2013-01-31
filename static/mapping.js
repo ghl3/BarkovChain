@@ -364,7 +364,7 @@ function submitLocationToServer() {
 
 	// Create a path on the map
 	// createPath(data);
-	addToChain(data[0]);
+	addToChain(data);
     }
     
     function errorCallback(data) {

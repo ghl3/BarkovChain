@@ -58,9 +58,59 @@ function createCollapsable(id, title, content) {
 
 }
 
+function addDataToTable(data, columns) {
+    
+    var table = $("#venue_table");
+    var rowCount = $('#venue_table tr').length;
+    
+    // Create the header, if necessary
+    if( rowCount==0 ) {
+	// var row = $('<tr></tr>');
+	// var row = table.insertRow(0);
+	var row = document.createElement("tr");
+	for( var column_idx = 0; column_idx < columns.length; ++column_idx ) {
+	    var cell = row.insertCell(column_idx);
+	    cell.innerHTML = columns[column_idx];
+	    cell.setAttribute("class", "table_header");
+	}
+	table.append(row);
+    }
+    
+    var tail_row = createTableRow(data, columns, table.length-1);
+    //table.insertRow(tail_row);
+    table.append(tail_row);
+
+}
+
+
+function createTableRow(data, columns, row_index) {
+
+    // Recall that the header row is row=0
+    // var row = table.insertRow(data_itr+1);
+
+    var row = document.createElement("tr");
+
+    for( var column_idx = 0; column_idx < columns.length; ++column_idx ) {
+	var cell = row.insertCell(column_idx);
+	var var_name = columns[column_idx];
+	if(var_name != 'review') {
+	    cell.innerHTML = data[var_name];
+	}
+	else {
+	    var collapsable = createCollapsable("row_" + row_index, "review", data[var_name]); 
+	    cell.innerHTML = collapsable; //appendChild(collapsable);
+	}
+	cell.className += "table_column_" + column_idx;
+    }
+    
+    return row;
+
+}
+
 
 // Clear a table and recreate based
 // on the input list of data points
+/*
 function createTableFromData(data, columns) {
 
     // Create the Table
@@ -101,15 +151,8 @@ function createTableFromData(data, columns) {
     }
 
     return table;
-
 }
-
-
-
-// Put the marker on the map
-// (creating if necessary)
-function placeMarker(map, location) {
-}
+*/
 
 
 function beginChain(event) {
@@ -156,6 +199,7 @@ function beginChain(event) {
 
 }
 
+
 function addToChain(location_dict) {
 
     current_chain_locations.push(location_dict);
@@ -184,11 +228,40 @@ function addToChain(location_dict) {
     });
     current_path.setMap(map);
 
+    // Append to the table
+    addDataToTable(location_dict, ["name", "address", "review"]);
+
     console.log("Current Chain state after addToChain");
     console.log(current_chain_locations);
     console.log(current_chain_markers);
     console.log(current_chain_latlon);
     console.log(current_path);
+
+
+    /* Consier having the path follow streets:
+       See: http://stackoverflow.com/questions/10513360/polyline-snap-to-road-using-google-maps-api-v3
+
+       google.maps.event.addListener(map, "click", function(evt) {
+       if (path.length == 0) {
+       path.push(evt.latLng);
+       poly = new google.maps.Polyline({ map: map });
+       poly.setPath(path);
+       } else {
+       service.route({
+       origin: path[path.length - 1],
+       destination: evt.latLng,
+       travelMode: google.maps.DirectionsTravelMode.DRIVING
+       }, function(result, status) {
+       if (status == google.maps.DirectionsStatus.OK) {
+       path = path.concat(result.routes[0].overview_path);
+       poly.setPath(path);
+       }
+       });
+       }
+       });
+
+    */
+
 }
 
 
@@ -207,11 +280,14 @@ function clearChain() {
     if( current_path != null ) current_path.setMap(null);
     current_path = null;
 
+    // Clear the table
+    $('#venue_table').empty();
+
     active_chain = false;
 
 }
 
-
+/*
 function createPath(data) {
 
     var coordinates = new Array();
@@ -223,15 +299,6 @@ function createPath(data) {
 	var position = new google.maps.LatLng(lat, lon);
 	coordinates.push(position);
     }
-
-    /*
-    var flightPlanCoordinates = [
-        new google.maps.LatLng(37.772323, -122.214897),
-        new google.maps.LatLng(21.291982, -157.821856),
-        new google.maps.LatLng(-18.142599, 178.431),
-        new google.maps.LatLng(-27.46758, 153.027892)
-    ];
-    */
 
     // Clear everything in the current points:
     for (var i = 0; i < location_points.length; i++) {
@@ -265,33 +332,8 @@ function createPath(data) {
 
     itinerary_path.setMap(map);
 
-
-
-    /* Consier having the path follow streets:
-       See: http://stackoverflow.com/questions/10513360/polyline-snap-to-road-using-google-maps-api-v3
-
-       google.maps.event.addListener(map, "click", function(evt) {
-       if (path.length == 0) {
-       path.push(evt.latLng);
-       poly = new google.maps.Polyline({ map: map });
-       poly.setPath(path);
-       } else {
-       service.route({
-       origin: path[path.length - 1],
-       destination: evt.latLng,
-       travelMode: google.maps.DirectionsTravelMode.DRIVING
-       }, function(result, status) {
-       if (status == google.maps.DirectionsStatus.OK) {
-       path = path.concat(result.routes[0].overview_path);
-       poly.setPath(path);
-       }
-       });
-       }
-       });
-
-    */
-
 }
+*/
 
 // SubmitLocationToServer
 function submitLocationToServer() {
@@ -306,25 +348,9 @@ function submitLocationToServer() {
 	return;
     }
 
-    /*
-    if( current_position['latitude'] == null ) {
-	console.log("Current latitude is null");
-	return;
-    }
-    if( current_position['longitude'] == null ) {
-	console.log("Current longitude is null");
-	return;
-    }
-    */
-
     var location_data = current_chain_locations[current_chain_locations.length-1];
     location_data['number_of_locations'] = 1;
 
-    /*
-    var data = {"longitude" : current_position['longitude'], 
-		"latitude" : current_position['latitude'], 
-		"number_of_locations" : 3};
-		*/
     console.log("Sending data:");
     console.log(location_data);
 
@@ -332,18 +358,13 @@ function submitLocationToServer() {
 
 	// Add the data to the table
 	console.log(data);
-	var table = createTableFromData(data, ["name", "address", "review"]);
-	$("#venue_list").empty();
-	$("#venue_list").append(table);
+	// var table = createTableFromData(data, ["name", "address", "review"]);
+	//$("#venue_list").empty();
+	//$("#venue_list").append(table);
 
 	// Create a path on the map
 	// createPath(data);
 	addToChain(data[0]);
-
-	console.log("successfulCallback: Table");
-	console.log(table);
-	//addDataToTable(data, "#venue_list");
-	//console.log(data);
     }
     
     function errorCallback(data) {

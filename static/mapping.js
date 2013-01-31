@@ -114,6 +114,13 @@ function placeMarker(map, location) {
 
 function beginChain(event) {
 
+
+    // First, check if there is an existing
+    // chain.  If so, we kill it.
+    if(active_chain==true) {
+	clearChain();
+    }
+
     // To be done by clicking
     latlon = event.latLng;
     current_chain_latlon.push(latlon);
@@ -151,6 +158,8 @@ function beginChain(event) {
 
 function addToChain(location_dict) {
 
+    current_chain_locations.push(location_dict);
+
     var lat = location_dict['latitude'];
     var lon = location_dict['longitude'];
     var latlon = new google.maps.LatLng(lat, lon);
@@ -169,19 +178,29 @@ function addToChain(location_dict) {
     if( current_path != null ) current_path.setMap(null);
     current_path = new google.maps.Polyline({
 	path: current_chain_latlon,
-	strokeColor: "0x0000ff", // "#FF0000",
-	strokeOpacity: 1.0,
-	strokeWeight: 2
+	strokeColor: "#0000FF", // "#FF0000",
+	strokeOpacity: 0.8,
+	strokeWeight: 4
     });
+    current_path.setMap(map);
 
+    console.log("Current Chain state after addToChain");
+    console.log(current_chain_locations);
+    console.log(current_chain_markers);
+    console.log(current_chain_latlon);
+    console.log(current_path);
 }
 
 
 function clearChain() {
 
     // Clear the arrays
-    current_chain_locations.length = 0;
+    for(var i=0; i<current_chain_markers.length; ++i) {
+	current_chain_markers[i].setMap(null);
+    }
+
     current_chain_markers.length = 0;
+    current_chain_locations.length = 0;
     current_chain_latlon.length = 0;
 
     // Clear the path
@@ -319,7 +338,7 @@ function submitLocationToServer() {
 
 	// Create a path on the map
 	// createPath(data);
-	addToChain(data);
+	addToChain(data[0]);
 
 	console.log("successfulCallback: Table");
 	console.log(table);

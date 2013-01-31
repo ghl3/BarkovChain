@@ -1,13 +1,14 @@
 
-from nymag_scrape import connect_to_database
-
+import argparse
+import time
 import json
 import os
 import foursquare
 import nltk
-
 import unicodedata
 
+from database import connect_to_database
+from database import BadDBField, APIError
 
 '''
 To Do:
@@ -66,6 +67,8 @@ def get_foursquare_id(api, name, longitude, latitude, radius=100):
 
     matches = []
 
+    if u'minivenues' not in response:
+        raise APIError()
     venues = response[u'minivenues']
     if len(venues)==0:
         return None, None
@@ -116,6 +119,9 @@ def match_foursquare_id(db, api, num_to_match=10):
                         limit = num_to_match)
 
     for entry in entries:
+
+        time.sleep(1.0)
+
         nymag = entry['nymag']
         name = nymag['name']
         lon = nymag['longitude']
@@ -123,14 +129,17 @@ def match_foursquare_id(db, api, num_to_match=10):
         ascii_name = unicodedata.normalize('NFKD', name).encode('ascii','ignore')
 
         if len(ascii_name) < 3: 
-            print "Failed to find match for: ", name
-            continue
+            print "Can't get match for foursquare, name is too short: ", name
+            fsq_match = None
+        else:
+            fsq_match, distance = get_foursquare_id(api, ascii_name, lon, lat)
 
-        #print name, ascii_name, lon, lat
-        fsq_match, distance = get_foursquare_id(api, ascii_name, lon, lat)
         if fsq_match==None: 
             print "Failed to find match for: ", name
-            continue
+            distance = None
+        else:
+            fsq_match['distance_to_nymag'] = distance
+            print fsq_match['name'], nymag['name'],
 
         #print fsq_match
         #(fsq_name, fsq_id) = (fsq_match[u'name'], fsq_match[u'id'])
@@ -139,26 +148,33 @@ def match_foursquare_id(db, api, num_to_match=10):
         #foursquare_info = {'foursquare_name' : fsq_name,
         #                   'foursquare_id' : fsq_id,
         #                   'foursquare_nymag_overlap' : distance}
+        #entry['foursquare']['distance_to_nymag'] = distance
 
         entry['foursquare'] = fsq_match
-        entry['foursquare']['distance_to_nymag'] = distance
-
-        print fsq_match['name'], nymag['name'],
-        print entry
-        # key = {"_id": entry['_id']}
-        # nymag.update(key, entry)
+        db_key = {"_id": entry['_id']}
+        print db_key, entry
+        bars.update(db_key, entry)
 
     return
 
 
 def main():
 
+    parser = argparse.ArgumentParser(description='Scrape data from NYMag.')
+    parser.add_argument('--match', '-m', dest='match', type=int, 
+                        default=None, help='Find the closest matching foursquare location to a nymag location')
+    args = parser.parse_args()
+
+    # Get the mongo database
+    db, connection = connect_to_database()
+
+    # Get the foursquare api
     api = get_api()
     auth_uri = api.oauth.auth_url()
 
-    db, connection = connect_to_database()
-
-    match_foursquare_id(db, api, 50)
+    num_to_match = args.match
+    if num_to_match != None:
+        match_foursquare_id(db, api, num_to_match)
     return
 
 ##############

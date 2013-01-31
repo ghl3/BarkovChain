@@ -12,9 +12,6 @@ from bs4 import BeautifulSoup
 
 from database import connect_to_database
 
-class BadDBField(Exception):
-    pass	
-
 
 # def connect_to_database(table_name="barkov_chain"):
 #     """ 

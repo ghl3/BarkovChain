@@ -278,8 +278,7 @@ $(document).ready(function() {
     // Define clicking on the 'submit' button
     // Send an ajax request to the flask server
     // and get some info
-    $("#button_create").click(submitLocationToServer);
-
+    $("#button_accept").click(submitLocationToServer);
 
     /*
     collapsable = createCollapsable("id", "title", "content");

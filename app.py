@@ -92,6 +92,7 @@ def api_locations( methods=['GET']):
         return not_found()
 
     # Check validity of body
+    print "Request Args: ", request.args
     required_args = ['longitude', 'latitude', 'number_of_locations']
     for arg in required_args:
         if arg not in request.args:

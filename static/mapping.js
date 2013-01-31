@@ -4,8 +4,22 @@ var map = null;
 var marker = null;
 var current_latlong = null;
 var current_position = {'latitude' : null, 'longitude' : null};
+
+
 var location_points = new Array();
+
+// The current 'path' polyline
 var itinerary_path = null;
+
+// The current chain, stored in 
+// two arrays.  The first is a dictionary
+// of locations, the second is the list
+// of google maps markers
+var active_chain = false;
+var current_path = null;
+var current_chain_locations = new Array();
+var current_chain_markers = new Array();
+var current_chain_latlon = new Array();
 
 var mapOptions = {
     center: new google.maps.LatLng(40.7, -74),
@@ -16,25 +30,6 @@ var mapOptions = {
     minZoom: 13, maxZoom: 18
 };
 
-
-// Put the marker on the map
-// (creating if necessary)
-function placeMarker(map, location) {
-
-    if( marker ){
-	marker.setMap(null);
-	marker = null;
-    }
-
-    // Create if necessary
-    if( !marker ){
-	marker = new google.maps.Marker({
-	    position: location, 
-	    map: map,
-	    animation: google.maps.Animation.DROP
-	});
-    }
-}
 
 // Create a twitter bootstrap collapsable
 // Object on-th-fly
@@ -106,6 +101,94 @@ function createTableFromData(data, columns) {
     }
 
     return table;
+
+}
+
+
+
+// Put the marker on the map
+// (creating if necessary)
+function placeMarker(map, location) {
+}
+
+
+function beginChain(event) {
+
+    // To be done by clicking
+    latlon = event.latLng;
+    current_chain_latlon.push(latlon);
+
+    // Create the 'begin' marker
+    marker = new google.maps.Marker({
+	position: latlon,
+	map: map,
+	animation: google.maps.Animation.DROP,
+	name : "Starting Point"
+    });
+    current_chain_markers.push(marker);
+
+    // Create a 'location'
+    var location = {}; //new Array();
+    location['latitude'] = latlon.lat();
+    location['longitude'] = latlon.lng();
+    current_chain_locations.push(location);
+
+    //placeMarker(map, latlon);
+
+    /*
+    var lat = marker['position']['Ya'];
+    var lon = marker['position']['Za'];
+    //console.log(lat);
+    //console.log(lon);
+    current_position['latitude'] = lat;
+    current_position['longitude'] = lon;
+    console.log(current_position);
+    */
+
+    active_chain = true;
+
+}
+
+function addToChain(location_dict) {
+
+    var lat = location_dict['latitude'];
+    var lon = location_dict['longitude'];
+    var latlon = new google.maps.LatLng(lat, lon);
+    current_chain_latlon.push(latlon);
+
+    var marker = new google.maps.Marker({
+	position: latlon,
+	map: map,
+	animation: google.maps.Animation.DROP
+    });
+    current_chain_markers.push(marker);
+
+    // Clear the current path and create
+    // a new one (there may be a better
+    // way to do this...)
+    if( current_path != null ) current_path.setMap(null);
+    current_path = new google.maps.Polyline({
+	path: current_chain_latlon,
+	strokeColor: "0x0000ff", // "#FF0000",
+	strokeOpacity: 1.0,
+	strokeWeight: 2
+    });
+
+}
+
+
+function clearChain() {
+
+    // Clear the arrays
+    current_chain_locations.length = 0;
+    current_chain_markers.length = 0;
+    current_chain_latlon.length = 0;
+
+    // Clear the path
+    if( current_path != null ) current_path.setMap(null);
+    current_path = null;
+
+    active_chain = false;
 
 }
 
@@ -195,6 +278,16 @@ function createPath(data) {
 function submitLocationToServer() {
     console.log('Submitting Location To Server');
 
+    if(active_chain == false) {
+	console.log("Cannot submit to server, chain isn't yet active");
+	return;
+    }
+    if( current_chain_locations.length == 0 ) {
+	console.log("Invalid chain locations");
+	return;
+    }
+
+    /*
     if( current_position['latitude'] == null ) {
 	console.log("Current latitude is null");
 	return;
@@ -203,13 +296,18 @@ function submitLocationToServer() {
 	console.log("Current longitude is null");
 	return;
     }
+    */
 
+    var location_data = current_chain_locations[current_chain_locations.length-1];
+    location_data['number_of_locations'] = 1;
+
+    /*
     var data = {"longitude" : current_position['longitude'], 
 		"latitude" : current_position['latitude'], 
 		"number_of_locations" : 3};
-
+		*/
     console.log("Sending data:");
-    console.log(data);
+    console.log(location_data);
 
     function successfulCallback(data) {
 
@@ -220,7 +318,8 @@ function submitLocationToServer() {
 	$("#venue_list").append(table);
 
 	// Create a path on the map
-	createPath(data);
+	// createPath(data);
+	addToChain(data);
 
 	console.log("successfulCallback: Table");
 	console.log(table);
@@ -237,7 +336,7 @@ function submitLocationToServer() {
 	url: "/api/locations",
 	dataType: 'json',
 	contentType:"application/json; charset=utf-8",
-	data: data
+	data: location_data
     })
 	.done(successfulCallback)
 	.fail(errorCallback)
@@ -261,6 +360,8 @@ $(document).ready(function() {
     map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
 
     // Define clicking on the map
+    google.maps.event.addListener(map, 'click', beginChain); 
+    /*
     google.maps.event.addListener(map, 'click', function(event) {
 	current_latlong = event.latLng;
 	placeMarker(map, event.latLng);
@@ -272,12 +373,14 @@ $(document).ready(function() {
 	current_position['longitude'] = lon;
 	console.log(current_position);
     });
-    
+    */
+
     console.log("Loaded Map");
 
     // Define clicking on the 'submit' button
     // Send an ajax request to the flask server
     // and get some info
+    //$("#button_accept").click(submitLocationToServer);
     $("#button_accept").click(submitLocationToServer);
 
     /*

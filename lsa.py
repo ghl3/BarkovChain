@@ -121,7 +121,6 @@ class LSA(object):
         column = self.doc_dict[name]
         return self.Vt[:,column]
 
-
     def cosine(self, docA, docB, 
                size=None, reduced=True):
         """
@@ -141,6 +140,7 @@ class LSA(object):
             vecB = vecB[:size]
             
         return numpy.dot(vecA, vecB)
+
 
     def get_word_overlaps(self, docA, docB, num_words=10):
         """
@@ -188,9 +188,20 @@ def main():
     lsa.run_svd()
     lsa.printA()
 
-    
+    test_name = u"Art Bar"
 
-    print lsa.top_svd()
+    print location_list
+    overlaps = []
+    for name, review in location_list:
+        overlap = lsa.cosine(test_name, name, size=20)
+        overlaps.append((overlap, name))
+    overlaps.sort(key=lambda x: x[0], reverse=True)
+    for overlap in overlaps:
+        print overlap
+    return
+
+
+
     return
 
     #numpy.save("lsa", lsa.A)
@@ -199,21 +210,6 @@ def main():
     print lsa.U.shape
     print lsa.S.shape
     print lsa.Vt.shape
-
-
-
-    test_name = u"Art Bar"
-
-    print location_list
-    overlaps = []
-    for name, review in location_list:
-        overlap = lsa.cosine(test_name, name)
-        overlaps.append((overlap, name))
-    overlaps.sort(key=lambda x: x[0], reverse=True)
-    for overlap in overlaps:
-        print overlap
-    return
-        
 
     print lsa.get_document_vector("Art Bar").shape
     print lsa.get_reduced_document_vector("Art Bar").shape

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import division
+
 import os
 import random
 import math
@@ -142,6 +144,7 @@ def get_lat_lon_square_query(current_location, blocks=10):
     #return (lat_min, lat_max), (lon_min, lon_max)
     return query
 
+
 def get_next_location(current_chain):
     """
     Return the next location based on the current markov chain.
@@ -200,10 +203,15 @@ def next_location_from_mc(locations, current_location):
     accept it or not.
     """
 
+    # Calculate the total probability for normalization
+    total_probability = 0
+    for location in locations:
+        total_probability += mc_weight(location, current_location)
+
     # Calculate the weight function
     while True:
         proposed = random.choice(locations)
-        probability = mc_weight(proposed, current_location)
+        probability = mc_weight(proposed, current_location) / total_probability
         mc_throw = random.uniform(0.0, 1.0)
         print "throw %s" % mc_throw
         if probability > mc_throw:
@@ -245,7 +253,7 @@ def mc_weight(proposed, current):
         probability *= .1
 
     # Boost Factor
-    probability *= 2
+    #probability *= 2
 
     """
 {'foursquare': {'distance_to_nymag': 0, u'location': {u'city': u'', u'distance': 44, u'country': u'United States', u'lat': 40.748041, u'state': u'NY', u'crossStreet': u'', u'address': u'', u'postalCode': u'', u'lng': -73.987197}, u'id': u'4e7d3b8bb8f724f0c24f3f7d', u'categories': [{u'shortName': u'Karaoke', u'pluralName': u'Karaoke Bars', u'id': u'4bf58dd8d48988d120941735', u'icon': {u'prefix': u'https://foursquare.com/img/categories/nightlife/karaoke_', u'name': u'.png', u'sizes': [32, 44, 64, 88, 256]}, u'name': u'Karaoke Bar'}], u'name': u'32 Karaoke'}, u'_id': ObjectId('51043ce2d08ce64b3c2f64a6'), u'nymag': {u'average_score': None, u'user_review_url': u'?map_view=1&N=0&No=1&listing_id=75735', u'locality': u'New York', u'url': u'http://nymag.com/listings/bar/32-karaoke/index.html', u'region': u'NY', u'categories': [u'After Hours', u' Karaoke Nights'], u'longitude': -73.987249, u'map_url': u'javascript:void(null)', u'postal_code': u'10001', u'best': None, u'address': u'2 W. 32nd St.', u'latitude': 40.747639, u'critics_pic': False, u'desc_short': u'See the profile of this NYC bar at 2 W. 32nd St. in Manhattan.', u'review': u'Have a BYOB sing-along (till 5 a.m.) without the weekend throngs of students.', u'street_address': u'2 W. 32nd St.', u'name': u'32 Karaoke'}}

@@ -14,7 +14,6 @@
   - Create the marker from the dictionary
 */
 
-
 // Global Variables
 var map = null;
 var marker = null;
@@ -91,22 +90,33 @@ function addDataToTable(data, columns) {
 }
 
 
-
-
 function createTableRow(data, columns, row_index) {
 
     console.log("Creating row Object " + row_index);
 
-    var address = data['address'];
     var name = data['name'];
+    var address = data['address'];
+
+    var category_string = '';
+    var category_list = data['categories'];
+    for(var i=0; i < category_list.length; ++i) {
+	category_string += category_list[i];
+	if(i != category_list.length-1) {
+	    category_string += ", ";   
+	}
+    }
 
     var row_html_string = ' \
 <div class="row" id="row_' + row_index + '"> \
+<div class="span3"> \
+<p><strong>' + name + '</strong></p> \
+<p>' + address + '</p> \
+</div> \
+<div class="span3">' + category_string + '</div> \
 <div class="span6"> \
-<p>' + name + '</p> \
-<p><strong>' + address + '</strong></p> \
 <div class="review"> </div> \
 </div> \
+<hr> \
 </div>';
 
 /*

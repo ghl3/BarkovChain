@@ -238,11 +238,11 @@ function submitLocationToServer() {
 	return;
     }
 
-    var location_data = current_chain_locations[current_chain_locations.length-1];
-    location_data['number_of_locations'] = 1;
-
+    // var location_data = current_chain_locations[current_chain_locations.length-1];
+    // location_data['number_of_locations'] = 1;
+    var chain_data = {'chain' : current_chain_locations};
     console.log("Sending data:");
-    console.log(location_data);
+    console.log(chain_data);
 
     function successfulCallback(data) {
 	console.log(data);
@@ -256,9 +256,10 @@ function submitLocationToServer() {
 
     $.ajax({
 	url: "/api/locations",
+	type: "POST",
 	dataType: 'json',
 	contentType:"application/json; charset=utf-8",
-	data: location_data
+	data: JSON.stringify(chain_data) //location_data
     })
 	.done(successfulCallback)
 	.fail(errorCallback)

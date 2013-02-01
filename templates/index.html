@@ -23,31 +23,32 @@
 
   <body>
 
-    <div class="container-narrow">
-      <hr>
+    <!-- Header -->
+    <div class="container-narrow" >
       <div class="page-header">
 	<h1>Barkov Chain <small>Planning your night made easy</small></h1>
       </div>
-
       <p class="lead centered">Select a location on the map to begin</p>
-      <div id="map_canvas" style="width:500px; height:600px; border: 2px solid black;"></div>
-      
-      <div class="centered" style="margin-top: 10px;">
+    </div>
 
-      <a id="button_accept" class="btn btn-large btn-success">Get Next</a>
-      <a id="button_reject" class="btn btn-large btn-danger">Reject</a>
+    <!-- Map Section -->
+    <div id="middle_container" class="row">
+      <div id="map_container" class="span6 offset2">
+	<div id="map_canvas" style="width:500px; height:500px; border: 2px solid black;"></div>
+	<div class="centered" style="margin-top: 10px;">
+	  <a id="button_accept" class="btn btn-large btn-success">Get Next</a>
+	  <a id="button_reject" class="btn btn-large btn-danger">Reject</a>
+	</div>
       </div>
+      <div id="venue_list" class="well span4" ></div>
+    </div>
 
-      <hr>
+    <hr>
 
-      <div class="span3">
-      <div id="venue_list" class="well span6"></div>
-      <div class="span3">
+    <div class="span12"></div>
 
-      <div class="footer">
-        <p>&copy; George H. Lewis, 2013</p>
-      </div>
-
+    <div class="footer">
+      <p>&copy; George H. Lewis, 2013</p>
     </div>
 
     <script src="/static/bootstrap/js/bootstrap.min.js"></script>

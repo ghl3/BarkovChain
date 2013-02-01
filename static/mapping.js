@@ -113,7 +113,7 @@ function createTableRow(data, columns, row_index) {
 <p>' + address + '</p> \
 </div> \
 <div class="span3">' + category_string + '</div> \
-<div class="span6"> \
+<div class="span4"> \
 <div class="review"> </div> \
 </div> \
 <hr> \

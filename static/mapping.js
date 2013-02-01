@@ -136,6 +136,7 @@ function beginChain(event) {
 }
 
 
+
 function addToChain(location_dict) {
 
     current_chain_locations.push(location_dict);
@@ -151,16 +152,16 @@ function addToChain(location_dict) {
 	animation: google.maps.Animation.DROP
     });
     current_chain_markers.push(marker);
-    
-    // Clear the current path and create
-    // a new one (there may be a better
-    // way to do this...)
-    //if( current_path != null ) current_path.setMap(null);
-    if( current_path == null ) current_path = new google.maps.Polyline({
-	strokeColor: "#0000FF",
-	strokeOpacity: 0.8,
-	strokeWeight: 4
-    });
+
+    // Create the path, including directions
+    if( current_path == null ) {
+	current_path = new google.maps.Polyline({
+	    strokeColor: "#0000FF",
+	    strokeOpacity: 0.8,
+	    strokeWeight: 4
+	});
+        current_path.setMap(map);
+    }
 
     var service = new google.maps.DirectionsService();
     service.route({
@@ -177,15 +178,7 @@ function addToChain(location_dict) {
 	}
     });
 
-    /*
-    current_path = new google.maps.Polyline({
-	path: current_chain_latlon,
-	strokeColor: "#0000FF",
-	strokeOpacity: 0.8,
-	strokeWeight: 4
-    });
-*/
-	current_path.setMap(map);
+
 
     // Append to the table
     addDataToTable(location_dict, ["name", "address", "review"]);

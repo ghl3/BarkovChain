@@ -95,43 +95,15 @@ def api_locations():
     if 'json' not in request.headers['Content-Type']:
         print "Bad Content-Type : Expected JSON"
         return not_found()
-    print "Content Type is okay"
-
-    # Check validity of body
-    #print "Request Args: ", request.args, ''
-    #required_args = ['longitude', 'latitude', 'number_of_locations']
-    #for arg in required_args:
-    #    if arg not in request.args:
-    #        print "Didn't find: %s" % arg
-    #        return invalid_content
-    #print "Chain: ", request.args['chain'], ''
-
-    '''
-    json_data = json.loads(request.data)
-    print request.form
-    print request.json
-    '''
-
-    """
-    print request.method
-    data = json.loads(request.data)
-    print data
-    print request.data
-    print request.data['chain']
-    print "About to check form"
-    print request.form
-    print request.form.get('chain', "None")
-    print "Successfully checked form"
-    """
 
     current_chain = request.json['chain']
     current_location = current_chain[-1]
 
-    # Generate and return the response
-    #current_location = {'longitude' : float(request.args['longitude']),
-    #                    'latitude' : float(request.args['latitude'])}
+    # Get the next location, package it up
+    # and send it to the client
     next_location = get_next_location(current_location)
     data_for_app = next_location['nymag']
+    data_for_app["_id"] = next_location['_id']
 
     js = json.dumps(data_for_app, default=json_util.default)
     resp = Response(js, status=200, mimetype='application/json')
@@ -273,7 +245,7 @@ def mc_weight(proposed, current):
     """
     
 
-    #print "Monte Carlo: distance %s probability %s" % (distance, probability),
+    print "Monte Carlo: distance %s probability %s" % (distance, probability),
 
     return probability
 

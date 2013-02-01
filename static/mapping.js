@@ -330,8 +330,9 @@ function rejectLastPoint() {
     current_chain_locations.pop();
     
     current_chain_latlon.pop();
-
     updatePath();
+
+    $("#venue_table").find('tr:last').remove();
 
 }
 

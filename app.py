@@ -12,6 +12,7 @@ from flask import request
 from flask import jsonify
 from flask import Response
 from bson import json_util
+from bson import ObjectId
 
 from database import connect_to_database
 from database import valid_entry_dict
@@ -97,13 +98,14 @@ def api_locations():
         return not_found()
 
     current_chain = request.json['chain']
-    current_location = current_chain[-1]
 
     # Get the next location, package it up
     # and send it to the client
-    next_location = get_next_location(current_location)
+    next_location = get_next_location(current_chain)
+    print "Next Location"
+    print next_location
     data_for_app = next_location['nymag']
-    data_for_app["_id"] = next_location['_id']
+    data_for_app["_id"] = str(next_location['_id'])
 
     js = json.dumps(data_for_app, default=json_util.default)
     resp = Response(js, status=200, mimetype='application/json')
@@ -140,7 +142,7 @@ def get_lat_lon_square_query(current_location, blocks=10):
     #return (lat_min, lat_max), (lon_min, lon_max)
     return query
 
-def get_next_location(current_location):
+def get_next_location(current_chain):
     """
     Return the next location based on the current markov chain.
 
@@ -153,16 +155,19 @@ def get_next_location(current_location):
     Return a list
     """
 
-    # Get the position bounding box for the query
-    #
-    #(lat_min, lat_max), (lon_min, lon_max) = get_lat_lon_square(lat, lon, blocks=10)
+    current_location = current_chain[-1]
+    for location in current_chain:
+        if '_id' in location: 
+            print repr(location['_id'])
+    used_ids = [ObjectId(location['_id']) for location in current_chain
+                if '_id' in location]
 
     # Build the db query
     blocks=10
     db_query = {}
-    #db_query.update()
     db_query.update(get_lat_lon_square_query(current_location, blocks=blocks))
     db_query.update(valid_entry_dict())
+    db_query.update( {'_id' : {'$nin' :used_ids}})
 
     # Get the nearby locations
     db, connection = connect_to_database(table_name="barkov_chain")
@@ -239,12 +244,13 @@ def mc_weight(proposed, current):
     if proposed['nymag'].get(u'critics_pic', False) != True:
         probability *= .1
 
+    # Boost Factor
+    probability *= 2
 
     """
 {'foursquare': {'distance_to_nymag': 0, u'location': {u'city': u'', u'distance': 44, u'country': u'United States', u'lat': 40.748041, u'state': u'NY', u'crossStreet': u'', u'address': u'', u'postalCode': u'', u'lng': -73.987197}, u'id': u'4e7d3b8bb8f724f0c24f3f7d', u'categories': [{u'shortName': u'Karaoke', u'pluralName': u'Karaoke Bars', u'id': u'4bf58dd8d48988d120941735', u'icon': {u'prefix': u'https://foursquare.com/img/categories/nightlife/karaoke_', u'name': u'.png', u'sizes': [32, 44, 64, 88, 256]}, u'name': u'Karaoke Bar'}], u'name': u'32 Karaoke'}, u'_id': ObjectId('51043ce2d08ce64b3c2f64a6'), u'nymag': {u'average_score': None, u'user_review_url': u'?map_view=1&N=0&No=1&listing_id=75735', u'locality': u'New York', u'url': u'http://nymag.com/listings/bar/32-karaoke/index.html', u'region': u'NY', u'categories': [u'After Hours', u' Karaoke Nights'], u'longitude': -73.987249, u'map_url': u'javascript:void(null)', u'postal_code': u'10001', u'best': None, u'address': u'2 W. 32nd St.', u'latitude': 40.747639, u'critics_pic': False, u'desc_short': u'See the profile of this NYC bar at 2 W. 32nd St. in Manhattan.', u'review': u'Have a BYOB sing-along (till 5 a.m.) without the weekend throngs of students.', u'street_address': u'2 W. 32nd St.', u'name': u'32 Karaoke'}}
     """
     
-
     print "Monte Carlo: distance %s probability %s" % (distance, probability),
 
     return probability

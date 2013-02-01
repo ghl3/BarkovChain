@@ -59,8 +59,6 @@ function createCollapsable(id, title, content) {
 	</div> \
       </div>'
 
-    //var htmlObject = $(html_string);
-    //return htmlObject;
     return html_string;
 
 }
@@ -73,8 +71,6 @@ function addDataToTable(data, columns) {
     
     // Create the header, if necessary
     if( rowCount==0 ) {
-	// var row = $('<tr></tr>');
-	// var row = table.insertRow(0);
 	var row = document.createElement("tr");
 	for( var column_idx = 0; column_idx < columns.length; ++column_idx ) {
 	    var cell = row.insertCell(column_idx);
@@ -202,15 +198,6 @@ function addToChain(location_dict) {
 	    var new_path = result.routes[0].overview_path;
 	    current_chain_latlon.push(new_path);	    
 	    updatePath();
-	    /*
-	    // Concatenate the list of lists into a list
-	    var total_chain = new Array();
-	    for(var i=0; i < current_chain_latlon.length; ++i) {
-		total_chain = total_chain.concat(current_chain_latlon[i]);
-	    }
-	    //current_chain_latlon = current_chain_latlon.concat(result.routes[0].overview_path);
-	    current_path.setPath(total_chain);
-	    */
 	}
 	else {
 	    console.log("Travel Directions Error");
@@ -219,30 +206,6 @@ function addToChain(location_dict) {
 
     // Append to the table
     addDataToTable(location_dict, ["name", "address", "review"]);
-
-    /* Consier having the path follow streets:
-       See: http://stackoverflow.com/questions/10513360/polyline-snap-to-road-using-google-maps-api-v3
-*/
-/*
-    google.maps.event.addListener(map, "click", function(evt) {
-	if (path.length == 0) {
-	    path.push(evt.latLng);
-	    poly = new google.maps.Polyline({ map: map });
-	    poly.setPath(path);
-	} else {
-	    service.route({
-		origin: path[path.length - 1],
-		destination: evt.latLng,
-		travelMode: google.maps.DirectionsTravelMode.DRIVING
-	    }, function(result, status) {
-		if (status == google.maps.DirectionsStatus.OK) {
-		    // path = path.concat(result.routes[0].overview_path);
-		    poly.setPath(path);
-		}
-	    });
-	}
-    });
-*/
 
 }
 
@@ -283,8 +246,6 @@ function submitLocationToServer() {
 	return;
     }
 
-    // var location_data = current_chain_locations[current_chain_locations.length-1];
-    // location_data['number_of_locations'] = 1;
     var chain_data = {'chain' : current_chain_locations};
     console.log("Sending data:");
     console.log(chain_data);
@@ -306,7 +267,7 @@ function submitLocationToServer() {
 	dataType: 'json',
 	contentType:"application/json; charset=utf-8",
 	mimeType : "string",
-	data: JSON.stringify(chain_data) //location_data
+	data: JSON.stringify(chain_data)
     })
 	.done(successfulCallback)
 	.fail(errorCallback)

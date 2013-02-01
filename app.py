@@ -174,7 +174,7 @@ def get_next_location(current_chain):
     # try a larger search block
     while len(locations) < 5:
         print "Too few nearby locations found within %s blocks (%s).",
-        print "Extending query" % (blocks, len(locations))
+        print "Extending query: %s %s" % (blocks, len(locations))
         blocks += 10
         updated_distance = get_lat_lon_square_query(current_location, blocks=blocks)
         db_query.update(updated_distance)
@@ -277,4 +277,4 @@ if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.
     port = int(os.environ.get('PORT', 5000))
     app.debug = True
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='192.168.1.5', port=8001)

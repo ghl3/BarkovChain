@@ -287,7 +287,7 @@ function clearChain() {
     $('#venue_table').empty();
 
     active_chain = false;
-
+    $("#venue_list").hide();
 }
 
 
@@ -312,6 +312,7 @@ function submitLocationToServer() {
 	console.log("Server successfully returned data:");
 	console.log(data);
 	addToChain(data);
+	$("#venue_list").show();
     }
     
     function errorCallback(data) {
@@ -357,10 +358,17 @@ function rejectLastPoint() {
 
     $("#venue_list").find('.row:last').remove();
 
+    var rowCount = $('#venue_list').find(".row").length;
+    if(rowCount==0) {
+	clearChain();
+    }
+
 }
 
 // Load the page! 
 $(document).ready(function() {
+
+    $("#venue_list").hide();
     
     // Create the map
     map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);

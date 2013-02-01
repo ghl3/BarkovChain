@@ -259,6 +259,7 @@ function submitLocationToServer() {
 	type: "POST",
 	dataType: 'json',
 	contentType:"application/json; charset=utf-8",
+	mimeType : "string",
 	data: JSON.stringify(chain_data) //location_data
     })
 	.done(successfulCallback)

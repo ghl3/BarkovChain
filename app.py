@@ -106,7 +106,12 @@ def api_locations():
     #        return invalid_content
     #print "Chain: ", request.args['chain'], ''
 
+    '''
     json_data = json.loads(request.data)
+    print request.form
+    print request.json
+    '''
+
     """
     print request.method
     data = json.loads(request.data)
@@ -119,7 +124,7 @@ def api_locations():
     print "Successfully checked form"
     """
 
-    current_chain = json_data['chain']
+    current_chain = request.json['chain']
     current_location = current_chain[-1]
 
     # Generate and return the response
@@ -268,7 +273,7 @@ def mc_weight(proposed, current):
     """
     
 
-    print "Monte Carlo: distance %s probability %s" % (distance, probability),
+    #print "Monte Carlo: distance %s probability %s" % (distance, probability),
 
     return probability
 

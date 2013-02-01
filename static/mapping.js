@@ -7,6 +7,7 @@
   - Location Marker
   - Set of path LatLong (from previous location)
   - Marker color, additional info
+  - Table entry as a javascript/jquery object
 
   And has methods to:
   - populat the path LatLon based on a previous destination
@@ -42,7 +43,7 @@ var mapOptions = {
 // Object on-th-fly
 function createCollapsable(id, title, content) {
 
-    html_string = ' \
+    var html_string = ' \
 	<div class="accordion" id="' + id + '"> \
 	 <div class="accordion-group"> \
           <div class="accordion-heading"> \
@@ -57,7 +58,7 @@ function createCollapsable(id, title, content) {
 	    </div> \
 	  </div> \
 	</div> \
-      </div>'
+      </div>';
 
     return html_string;
 
@@ -65,10 +66,11 @@ function createCollapsable(id, title, content) {
 
 
 function addDataToTable(data, columns) {
-    
+
+    /*    
     var table = $("#venue_table");
+
     var rowCount = $('#venue_table tr').length;
-    
     // Create the header, if necessary
     if( rowCount==0 ) {
 	var row = document.createElement("tr");
@@ -80,14 +82,60 @@ function addDataToTable(data, columns) {
 	table.append(row);
     }
     var rowCount = $('#venue_table tr').length;
-    
-    var tail_row = createTableRow(data, columns, rowCount-1 );
+    */
+
+    var table = $("#venue_list");
+    var rowCount = $('#venue_list').find(".row").length;
+    var tail_row = createTableRow(data, columns, rowCount );
     table.append(tail_row);
 }
 
 
+
+
 function createTableRow(data, columns, row_index) {
 
+    console.log("Creating row Object " + row_index);
+
+    var address = data['address'];
+    var name = data['name'];
+
+    var row_html_string = ' \
+<div class="row" id="row_' + row_index + '"> \
+<div class="span6"> \
+<p>' + name + '</p> \
+<p><strong>' + address + '</strong></p> \
+<div class="review"> </div> \
+</div> \
+</div>';
+
+/*
+
+<div class="span1"><a href="http://critterapp.pagodabox.com/others/admin" class="thumbnail"> \
+<img src="http://critterapp.pagodabox.com/img/user.jpg" alt=""></a>\
+</div> \
+
+
+<span class="badge badge-info review" ></span> \
+
+*/
+
+    console.log("Row String:");
+    console.log(row_html_string);
+    
+// Create the object
+    var row = $(row_html_string);
+
+    // Add the collapsable review
+    var collapsable = createCollapsable("row_" + row_index, "review", data['review']);
+    row.find(".review").html(collapsable);
+
+    console.log("Created Row:");
+    console.log(row);
+
+    return row;
+
+    /*
     // Recall that the header row is row=0
     var row = document.createElement("tr");
 
@@ -106,7 +154,7 @@ function createTableRow(data, columns, row_index) {
     }
     
     return row;
-
+*/
 }
 
 
@@ -297,7 +345,7 @@ function rejectLastPoint() {
     current_chain_latlon.pop();
     updatePath();
 
-    $("#venue_table").find('tr:last').remove();
+    $("#venue_list").find('.row:last').remove();
 
 }
 

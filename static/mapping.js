@@ -320,7 +320,8 @@ function submitLocationToServer() {
 function rejectLastPoint() {
 
     // Delete the last set of points in the array
-    current_chain_markers.pop();
+    var last_marker = current_chain_markers.pop();
+    last_marker.setMap(null);
 
     // WARNING: 
     // IF THE USER REJECTS THE LAST POINT, WE WANT TO

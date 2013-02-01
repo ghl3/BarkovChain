@@ -1,4 +1,19 @@
 
+// To Do:
+/*
+  Consider creating a 'location' class that
+  stores the following information:
+  - Location Dictionary
+  - Location Marker
+  - Set of path LatLong (from previous location)
+  - Marker color, additional info
+
+  And has methods to:
+  - populat the path LatLon based on a previous destination
+  - Create the marker from the dictionary
+*/
+
+
 // Global Variables
 var map = null;
 var marker = null;
@@ -22,10 +37,6 @@ var mapOptions = {
     minZoom: 13, maxZoom: 18
 };
 
-// var itinerary_path = null;
-// var current_latlong = null;
-// var current_position = {'latitude' : null, 'longitude' : null};
-// var location_points = new Array();
 
 // Create a twitter bootstrap collapsable
 // Object on-th-fly
@@ -91,7 +102,6 @@ function createTableRow(data, columns, row_index) {
 	    cell.innerHTML = data[var_name];
 	}
 	else {
-	    console.log("creating collapsable: " + row_index);
 	    var collapsable = createCollapsable("row_" + row_index, 
 						"review", data[var_name]); 
 	    cell.innerHTML = collapsable;
@@ -136,7 +146,21 @@ function beginChain(event) {
 }
 
 
+// Update the shown path based on the current
+// List of LatLon points
+function updatePath() {
+    var total_chain = new Array();
+    for(var i=0; i < current_chain_latlon.length; ++i) {
+	total_chain = total_chain.concat(current_chain_latlon[i]);
+    }
+    current_path.setPath(total_chain);
+}
+
+
 function addToChain(location_dict) {
+
+    console.log("Adding new location:");
+    console.log(location_dict);
 
     current_chain_locations.push(location_dict);
 
@@ -175,6 +199,8 @@ function addToChain(location_dict) {
 	if (status == google.maps.DirectionsStatus.OK) {
 	    var new_path = result.routes[0].overview_path;
 	    current_chain_latlon.push(new_path);	    
+	    updatePath();
+	    /*
 	    // Concatenate the list of lists into a list
 	    var total_chain = new Array();
 	    for(var i=0; i < current_chain_latlon.length; ++i) {
@@ -182,6 +208,7 @@ function addToChain(location_dict) {
 	    }
 	    //current_chain_latlon = current_chain_latlon.concat(result.routes[0].overview_path);
 	    current_path.setPath(total_chain);
+	    */
 	}
 	else {
 	    console.log("Travel Directions Error");
@@ -190,12 +217,6 @@ function addToChain(location_dict) {
 
     // Append to the table
     addDataToTable(location_dict, ["name", "address", "review"]);
-
-    console.log("Current Chain state after addToChain");
-    console.log(current_chain_locations);
-    console.log(current_chain_markers);
-    console.log(current_chain_latlon);
-    console.log(current_path);
 
     /* Consier having the path follow streets:
        See: http://stackoverflow.com/questions/10513360/polyline-snap-to-road-using-google-maps-api-v3
@@ -265,13 +286,14 @@ function submitLocationToServer() {
     console.log(chain_data);
 
     function successfulCallback(data) {
+	console.log("Server successfully returned data:");
 	console.log(data);
 	addToChain(data);
     }
     
     function errorCallback(data) {
+	console.log("Server encountered an error");
 	console.log(data);
-	console.log("Error");
     }
 
     $.ajax({
@@ -285,10 +307,10 @@ function submitLocationToServer() {
 	.done(successfulCallback)
 	.fail(errorCallback)
 	.always(function() { 
-	    console.log("Done with 'submitLocationToServer'");
+	    console.log("Server transaction complete");
 	});
     
-    console.log("Sent request to get locations.  Waiting...");    
+    console.log("Sent 'next_location' request to server. Waiting...");    
 
 }
 
@@ -297,22 +319,29 @@ function submitLocationToServer() {
 // the current chain
 function rejectLastPoint() {
 
+    // Delete the last set of points in the array
+    current_chain_markers.pop();
+
+    // WARNING: 
+    // IF THE USER REJECTS THE LAST POINT, WE WANT TO
+    // BLACKLIST IT SOMEHOW.  WE'LL NEED TO MAINTAIN
+    // SUCH A LIST
+    current_chain_locations.pop();
     
+    current_chain_latlon.pop();
+
+    updatePath();
 
 }
 
 // Load the page! 
 $(document).ready(function() {
     
-    console.log("Loading Map");
-    
     // Create the map
     map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
 
     // Define clicking on the map
     google.maps.event.addListener(map, 'click', beginChain); 
-
-    console.log("Loaded Map");
 
     // Define clicking on the 'submit' button
     // Send an ajax request to the flask server

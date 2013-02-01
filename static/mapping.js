@@ -114,7 +114,7 @@ function beginChain(event) {
 
     // To be done by clicking
     latlon = event.latLng;
-    current_chain_latlon.push(latlon);
+    current_chain_latlon.push(new Array(latlon));
 
     // Create the 'begin' marker
     marker = new google.maps.Marker({
@@ -136,7 +136,6 @@ function beginChain(event) {
 }
 
 
-
 function addToChain(location_dict) {
 
     current_chain_locations.push(location_dict);
@@ -144,7 +143,6 @@ function addToChain(location_dict) {
     var lat = location_dict['latitude'];
     var lon = location_dict['longitude'];
     var latlon = new google.maps.LatLng(lat, lon);
-    // current_chain_latlon.push(latlon);
 
     var marker = new google.maps.Marker({
 	position: latlon,
@@ -163,22 +161,32 @@ function addToChain(location_dict) {
         current_path.setMap(map);
     }
 
+    // Get the origin
+    // Recall, current_chain_latlon is a list of lists
+    var last_chain_group = current_chain_latlon[current_chain_latlon.length-1];
+    var last_point = last_chain_group[last_chain_group.length-1];
+
     var service = new google.maps.DirectionsService();
     service.route({
-	origin: current_chain_latlon[current_chain_latlon.length-1],
+	origin: last_point,
 	destination: latlon,
 	travelMode: google.maps.DirectionsTravelMode.WALKING
     }, function(result, status) {
 	if (status == google.maps.DirectionsStatus.OK) {
-	    current_chain_latlon = current_chain_latlon.concat(result.routes[0].overview_path);
-	    current_path.setPath(current_chain_latlon);
+	    var new_path = result.routes[0].overview_path;
+	    current_chain_latlon.push(new_path);	    
+	    // Concatenate the list of lists into a list
+	    var total_chain = new Array();
+	    for(var i=0; i < current_chain_latlon.length; ++i) {
+		total_chain = total_chain.concat(current_chain_latlon[i]);
+	    }
+	    //current_chain_latlon = current_chain_latlon.concat(result.routes[0].overview_path);
+	    current_path.setPath(total_chain);
 	}
 	else {
 	    console.log("Travel Directions Error");
 	}
     });
-
-
 
     // Append to the table
     addDataToTable(location_dict, ["name", "address", "review"]);
@@ -211,11 +219,6 @@ function addToChain(location_dict) {
 	    });
 	}
     });
-    
-
-    
-
-
 }
 
 
@@ -290,6 +293,14 @@ function submitLocationToServer() {
 }
 
 
+// Remove the last restaurant from
+// the current chain
+function rejectLastPoint() {
+
+    
+
+}
+
 // Load the page! 
 $(document).ready(function() {
     
@@ -307,5 +318,6 @@ $(document).ready(function() {
     // Send an ajax request to the flask server
     // and get some info
     $("#button_accept").click(submitLocationToServer);
+    $("#button_reject").click(rejectLastPoint);
 
 });

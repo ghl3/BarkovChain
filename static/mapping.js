@@ -143,7 +143,7 @@ function addToChain(location_dict) {
     var lat = location_dict['latitude'];
     var lon = location_dict['longitude'];
     var latlon = new google.maps.LatLng(lat, lon);
-    current_chain_latlon.push(latlon);
+    // current_chain_latlon.push(latlon);
 
     var marker = new google.maps.Marker({
 	position: latlon,
@@ -151,18 +151,41 @@ function addToChain(location_dict) {
 	animation: google.maps.Animation.DROP
     });
     current_chain_markers.push(marker);
-
+    
     // Clear the current path and create
     // a new one (there may be a better
     // way to do this...)
-    if( current_path != null ) current_path.setMap(null);
+    //if( current_path != null ) current_path.setMap(null);
+    if( current_path == null ) current_path = new google.maps.Polyline({
+	strokeColor: "#0000FF",
+	strokeOpacity: 0.8,
+	strokeWeight: 4
+    });
+
+    var service = new google.maps.DirectionsService();
+    service.route({
+	origin: current_chain_latlon[current_chain_latlon.length-1],
+	destination: latlon,
+	travelMode: google.maps.DirectionsTravelMode.WALKING
+    }, function(result, status) {
+	if (status == google.maps.DirectionsStatus.OK) {
+	    current_chain_latlon = current_chain_latlon.concat(result.routes[0].overview_path);
+	    current_path.setPath(current_chain_latlon);
+	}
+	else {
+	    console.log("Travel Directions Error");
+	}
+    });
+
+    /*
     current_path = new google.maps.Polyline({
 	path: current_chain_latlon,
 	strokeColor: "#0000FF",
 	strokeOpacity: 0.8,
 	strokeWeight: 4
     });
-    current_path.setMap(map);
+*/
+	current_path.setMap(map);
 
     // Append to the table
     addDataToTable(location_dict, ["name", "address", "review"]);
@@ -175,27 +198,28 @@ function addToChain(location_dict) {
 
     /* Consier having the path follow streets:
        See: http://stackoverflow.com/questions/10513360/polyline-snap-to-road-using-google-maps-api-v3
+*/
 
-       google.maps.event.addListener(map, "click", function(evt) {
-       if (path.length == 0) {
-       path.push(evt.latLng);
-       poly = new google.maps.Polyline({ map: map });
-       poly.setPath(path);
-       } else {
-       service.route({
-       origin: path[path.length - 1],
-       destination: evt.latLng,
-       travelMode: google.maps.DirectionsTravelMode.DRIVING
-       }, function(result, status) {
-       if (status == google.maps.DirectionsStatus.OK) {
-       path = path.concat(result.routes[0].overview_path);
-       poly.setPath(path);
-       }
-       });
-       }
-       });
+    google.maps.event.addListener(map, "click", function(evt) {
+	if (path.length == 0) {
+	    path.push(evt.latLng);
+	    poly = new google.maps.Polyline({ map: map });
+	    poly.setPath(path);
+	} else {
+	    service.route({
+		origin: path[path.length - 1],
+		destination: evt.latLng,
+		travelMode: google.maps.DirectionsTravelMode.DRIVING
+	    }, function(result, status) {
+		if (status == google.maps.DirectionsStatus.OK) {
+		    // path = path.concat(result.routes[0].overview_path);
+		    poly.setPath(path);
+		}
+	    });
+	}
+    });
+    
 
-    */
     
 
 

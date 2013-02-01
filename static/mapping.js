@@ -29,8 +29,8 @@ var current_chain_markers = new Array();
 var current_chain_latlon = new Array();
 
 var mapOptions = {
-    center: new google.maps.LatLng(40.7, -74),
-    zoom: 12,
+    center: new google.maps.LatLng(40.77482, -73.96872),
+    zoom: 13,
     mapTypeId: google.maps.MapTypeId.ROADMAP,
     //draggable: false,
     //scrollwheel: false,
@@ -125,7 +125,7 @@ function beginChain(event) {
     // To be done by clicking
     latlon = event.latLng;
     current_chain_latlon.push(new Array(latlon));
-
+    
     // Create the 'begin' marker
     marker = new google.maps.Marker({
 	position: latlon,
@@ -140,6 +140,8 @@ function beginChain(event) {
     location['latitude'] = latlon.lat();
     location['longitude'] = latlon.lng();
     current_chain_locations.push(location);
+    console.log("Starting Point:");
+    console.log(location);
 
     active_chain = true;
 
@@ -221,7 +223,7 @@ function addToChain(location_dict) {
     /* Consier having the path follow streets:
        See: http://stackoverflow.com/questions/10513360/polyline-snap-to-road-using-google-maps-api-v3
 */
-
+/*
     google.maps.event.addListener(map, "click", function(evt) {
 	if (path.length == 0) {
 	    path.push(evt.latLng);
@@ -240,6 +242,8 @@ function addToChain(location_dict) {
 	    });
 	}
     });
+*/
+
 }
 
 

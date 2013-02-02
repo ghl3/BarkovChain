@@ -1,4 +1,9 @@
 
+from __future__ import division
+
+import json
+import itertools
+import argparse
 import numpy
 from numpy import zeros, asarray
 from scipy.linalg import svd
@@ -17,7 +22,7 @@ from nymag_scrape import connect_to_database
 # plsa:
 # http://www.mblondel.org/journal/2010/06/13/lsa-and-plsa-in-python/
 
-ignorechars = '''!"#$%&()*+,-./:;<=>?@[\]^_`{|}~'''
+
 
 def get_stopwords():
     """
@@ -121,6 +126,7 @@ class LSA(object):
         column = self.doc_dict[name]
         return self.Vt[:,column]
 
+
     def cosine(self, docA, docB, 
                size=None, reduced=True):
         """
@@ -160,51 +166,101 @@ class LSA(object):
 
         return
 
+    
+    def save(self):
+        """
+        Save any items that we need to a file
+        """
+
+        # Save the matrices
+        print "Saving 'A' %s %s kb " % (self.A.shape, self.A.nbytes/1000)
+        numpy.save("lsa_A.npy", self.A)
+
+        print "Saving 'U' %s %s kb" % (self.U.shape, self.U.nbytes/1000)
+        numpy.save("lsa_U.npy", self.U)
+
+        print "Saving 'S' %s %s kb" % (self.S.shape, self.S.nbytes/1000)
+        numpy.save("lsa_S.npy", self.S)
+
+        print "Saving 'Vt' %s %s kb" % (self.Vt.shape, self.Vt.nbytes/1000)
+        numpy.save("lsa_Vt.npy", self.Vt)
+
+        # Save the document dictionary
+        with open('doc_dict.json', 'wb') as fp:
+            json.dump(self.doc_dict, fp)
+
+        # Save the document dictionary
+        with open('keys.json', 'wb') as fp:
+            json.dump(self.keys, fp)
+
+
+    def load(self):
+        """
+        Load the saved state from a file
+        """
+
+        # Load the 'A' matrix
+        self.A = numpy.load("lsa_A.npy")
+        self.U = numpy.load("lsa_U.npy")
+        self.S = numpy.load("lsa_S.npy")
+        self.Vt = numpy.load("lsa_Vt.npy")
+
+        with open('doc_dict.json', 'rb') as fp:
+            self.doc_dict = json.load(fp)
+
+        with open('keys.json', 'rb') as fp:
+            self.keys = json.load(fp)
+
 
 def main():
 
-    # Create a lsa
+    parser = argparse.ArgumentParser(description='Scrape data from NYMag.')
+    parser.add_argument('--create', '-c', dest='create', action="store_true", default=False, 
+                        help='Create and save the lsa object')
+    parser.add_argument('--test', '-t', dest='test', action="store_true", default=False, 
+                        help='Test the lsa')
+    args = parser.parse_args()
+
+    ignorechars = '''!"#$%&()*+,-./:;<=>?@[\]^_`{|}~'''
     stopwords = get_stopwords()
     lsa = LSA(stopwords, ignorechars)
 
-    # Add documents
-    db, connection = connect_to_database(table_name="barkov_chain")
-    nymag = db['bars']
-    locations = nymag.find({ 'nymag.review' : {'$ne':None} },
-                           limit = 100)
+    if args.create:
 
-    location_list = []
+        # Add documents
+        db, connection = connect_to_database(table_name="barkov_chain")
+        nymag = db['bars']
+        locations = nymag.find({ 'nymag.review' : {'$ne':None} },
+                               limit = 100)
 
-    for location in locations:
-        location = location['nymag']
-        name = location['name']
-        review = location['review']
-        location_list.append( (name, review) )
-        #print name, review
-        lsa.parse_document(location['name'], location['review'])
+        location_list = []
 
-    lsa.build_matrix()
-    lsa.tf_idf()
-    lsa.run_svd()
-    lsa.printA()
+        for location in locations:
+            location = location['nymag']
+            name = location['name']
+            review = location['review']
+            location_list.append( (name, review) )
+            lsa.parse_document(location['name'], location['review'])
 
-    test_name = u"Art Bar"
+        lsa.build_matrix()
+        lsa.tf_idf()
+        lsa.run_svd()
+        lsa.printA()
+        lsa.save()
 
-    print location_list
-    overlaps = []
-    for name, review in location_list:
-        overlap = lsa.cosine(test_name, name, size=20)
-        overlaps.append((overlap, name))
-    overlaps.sort(key=lambda x: x[0], reverse=True)
-    for overlap in overlaps:
-        print overlap
+    if args.test:
+
+        lsa.load()
+        test_bars = ["Bantam", "1 Oak", "Amity Hall", "Ainsworth Park", "B Bar & Grill", "Ajna Bar",
+                     "Amsterdam Ale House", "2nd Floor on Clinton"]
+        #test_bars = [u"Art Bar", u"The Back Room", u"The Back Fence"]
+
+        for (barA, barB) in itertools.combinations(test_bars, 2):
+            overlap = lsa.cosine(barA, barB, size=20)
+            #print lsa.get_word_overlaps(barA, barB)
+            print "Overlap between %s and %s: %s" % (barA, barB, overlap)
+
     return
-
-
-
-    return
-
-    #numpy.save("lsa", lsa.A)
 
     print lsa.A.shape
     print lsa.U.shape
@@ -220,19 +276,12 @@ def main():
         print valA, valB, valA*valB
         total += valA*valB
     print "Total: ", total
-    return
     
     print "Cosine Overlaps:"
-    print lsa.cosine(u"The Back Room", u"The Back Fence")
     print lsa.cosine(u"The Back Room", u"Art Bar")
     print lsa.cosine(u"The Back Room", u"The Back Room")
-    return
 
     lsa.get_word_overlaps(u"The Back Room", u"Art Bar")
-    return
-
-    return
-
 
     column = lsa.get_column(name)
     important_words = []

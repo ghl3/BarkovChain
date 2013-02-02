@@ -4,3 +4,4 @@ NOTES.txt
 *.log
 venv
 *.npy
+*.json

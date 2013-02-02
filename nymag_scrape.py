@@ -11,6 +11,7 @@ import bson.objectid
 from bs4 import BeautifulSoup
 
 from database import connect_to_database
+from database import BadDBField
 
 
 # def connect_to_database(table_name="barkov_chain"):
@@ -214,12 +215,13 @@ def get_reviews(db, num_reviews_to_fetch):
     #nymag = database['bars']
     nymag = db['bars']
 
-    entries = nymag.find({ 'review' : {'$exists':False} },
+    entries = nymag.find({ 'nymag.review' : {'$exists':False} },
                          limit = num_reviews_to_fetch)    
+
+    failures = []
     
     for entry in entries:
 
-        
         name = entry['nymag']['name']
         url = entry['nymag']['url']        
         print "Getting review for: ", name,
@@ -237,6 +239,7 @@ def get_reviews(db, num_reviews_to_fetch):
             review = get_restaurant_review(soup)
         except BadDBField:
             print "Skipping url: ", url
+            failures.append(entry)
             continue
 
         review_name = review.pop('name')
@@ -251,6 +254,11 @@ def get_reviews(db, num_reviews_to_fetch):
         print "Updating:", key, entry
         print "NOT UPDATING"
         #nymag.update(key, entry)
+
+    if len(failures) > 0:
+        print "Failed to get reviews for the following:"
+        for failure in failures:
+            print failure
 
     return
 
@@ -282,7 +290,7 @@ if __name__ == "__main__":
         if num_to_clean != None:
             clean(db, num_to_clean)
 
-    except (ConnectionFailure, InvalidName) as err:
+    except (pymongo.errors.ConnectionFailure, pymongo.errors.InvalidName) as err:
         print err
         connection.disconnect()
         sys.exit(1)

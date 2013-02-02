@@ -23,7 +23,6 @@ from nymag_scrape import connect_to_database
 # http://www.mblondel.org/journal/2010/06/13/lsa-and-plsa-in-python/
 
 
-
 def get_stopwords():
     """
     Load the collection of stop words
@@ -39,7 +38,7 @@ def get_stopwords():
 
 class LSA(object):
 
-    def __init__(self, stopwords, ignorechars):
+    def __init__(self, stopwords=None, ignorechars=None):
         self.stopwords = stopwords
         self.ignorechars = ignorechars
         # dict[word] = [documents it appears in]
@@ -47,6 +46,7 @@ class LSA(object):
         self.dcount = 0
         # doc_dict[doc_name] = column
         self.doc_dict = {}
+        self.dimensions = 20
 
     def parse_document(self, doc_name, doc):
         words = doc.split();
@@ -102,9 +102,6 @@ class LSA(object):
         print "S Sorted: ", numpy.sort(self.S)
         return numpy.sort(self.S)[::-1]
 
-    def generate_cosine_matrix(self):
-        pass
-                
     def printA(self):
         print self.A
 
@@ -117,7 +114,7 @@ class LSA(object):
         column = self.doc_dict[name]
         return self.A[:,column]
 
-    def get_reduced_document_vector(self, name):
+    def get_svd_document_vector(self, name):
         """
         Print the row corresponding to
         the given restaurant
@@ -125,6 +122,35 @@ class LSA(object):
         # Get the column for the document
         column = self.doc_dict[name]
         return self.Vt[:,column]
+
+
+    def user_cosine(self, user_vec, doc):
+        """
+        Get the cosine between the user's current state
+        and the proposed document.
+        """
+        
+        doc_vec = self.get_svd_document_vector(doc)
+        doc_vec = doc_vec[:len(user_vec)]
+        return numpy.dot(vecA, vecB)
+
+    
+    def update(self, user_vec, doc_vec, accepted=True, beta=0.5):
+        """
+        This is the all-important update step
+        Based on whether a user accepted or rejected a
+        proposed 
+
+        This update method is probably wrong, but I'm keeping
+        it for now just to move along.
+        """
+        
+        delta = doc_vec - user_vec
+        
+        if accepted:
+            return user_vec + beta*delta
+        else:
+            return user_vec - beta*delta
 
 
     def cosine(self, docA, docB, 
@@ -135,8 +161,8 @@ class LSA(object):
         If 'reduced', use the svd vector
         """
         if reduced:
-            vecA = self.get_reduced_document_vector(docA)
-            vecB = self.get_reduced_document_vector(docB)
+            vecA = self.get_svd_document_vector(docA)
+            vecB = self.get_svd_document_vector(docB)
         else:
             vecA = self.get_document_vector(docA)
             vecB = self.get_document_vector(docB)
@@ -251,8 +277,8 @@ def main():
     if args.test:
 
         lsa.load()
-        test_bars = ["Bantam", "1 Oak", "Amity Hall", "Ainsworth Park", "B Bar & Grill", "Ajna Bar",
-                     "Amsterdam Ale House", "2nd Floor on Clinton"]
+        test_bars = ["Bantam", "1 Oak", "Amity Hall", "Ainsworth Park", "B Bar & Grill", 
+                     "Ajna Bar", "Amsterdam Ale House", "2nd Floor on Clinton"]
         #test_bars = [u"Art Bar", u"The Back Room", u"The Back Fence"]
 
         for (barA, barB) in itertools.combinations(test_bars, 2):
@@ -268,11 +294,11 @@ def main():
     print lsa.Vt.shape
 
     print lsa.get_document_vector("Art Bar").shape
-    print lsa.get_reduced_document_vector("Art Bar").shape
+    print lsa.get_svd_document_vector("Art Bar").shape
 
     total = 0
-    for valA, valB in zip(lsa.get_reduced_document_vector("Art Bar"),
-                          lsa.get_reduced_document_vector("The Back Room")):
+    for valA, valB in zip(lsa.get_svd_document_vector("Art Bar"),
+                          lsa.get_svd_document_vector("The Back Room")):
         print valA, valB, valA*valB
         total += valA*valB
     print "Total: ", total

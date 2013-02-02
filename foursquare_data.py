@@ -118,14 +118,26 @@ def match_foursquare_id(db, api, num_to_match=10):
     entries = bars.find({ 'foursquare' : {'$exists':False}},
                         limit = num_to_match)
 
+    failures = []
+
     for entry in entries:
 
         time.sleep(1.0)
 
-        nymag = entry['nymag']
-        name = nymag['name']
-        lon = nymag['longitude']
-        lat = nymag['latitude']
+        print "Trying Entry:"
+        print entry
+
+        try:
+            nymag = entry['nymag']
+            name = nymag['name']
+            lon = nymag['longitude']
+            lat = nymag['latitude']
+        except (AttributeError, KeyError):
+            print "Failed to match id for entry:"
+            print entry
+            failures.append(entry)
+            continue
+
         ascii_name = unicodedata.normalize('NFKD', name).encode('ascii','ignore')
 
         if len(ascii_name) < 3: 

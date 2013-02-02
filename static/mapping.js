@@ -27,6 +27,7 @@ var current_path = null;
 var current_chain_locations = new Array();
 var current_chain_markers = new Array();
 var current_chain_latlon = new Array();
+var rejected_points = new Array();
 
 var mapOptions = {
     center: new google.maps.LatLng(40.77482, -73.96872),
@@ -304,7 +305,8 @@ function submitLocationToServer() {
 	return;
     }
 
-    var chain_data = {'chain' : current_chain_locations};
+    var chain_data = {'chain' : current_chain_locations,
+		      'rejected' : rejected_points};
     console.log("Sending data:");
     console.log(chain_data);
 
@@ -351,8 +353,9 @@ function rejectLastPoint() {
     // IF THE USER REJECTS THE LAST POINT, WE WANT TO
     // BLACKLIST IT SOMEHOW.  WE'LL NEED TO MAINTAIN
     // SUCH A LIST
-    current_chain_locations.pop();
-    
+    var last_location = current_chain_locations.pop();
+    rejected_points.push(last_location);
+
     current_chain_latlon.pop();
     updatePath();
 
@@ -380,6 +383,9 @@ $(document).ready(function() {
     // Send an ajax request to the flask server
     // and get some info
     $("#button_accept").click(submitLocationToServer);
-    $("#button_reject").click(rejectLastPoint);
+    $("#button_try_another").click(function() {
+	rejectLastPoint();
+	submitLocationToServer()
+    });
 
 });

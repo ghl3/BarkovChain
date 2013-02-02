@@ -7,6 +7,7 @@ import random
 import math
 import json
 import random
+import itertools
 
 from flask import Flask
 from flask import render_template
@@ -100,10 +101,11 @@ def api_locations():
         return not_found()
 
     current_chain = request.json['chain']
+    rejected_points = request.json['rejected']
 
     # Get the next location, package it up
     # and send it to the client
-    next_location = get_next_location(current_chain)
+    next_location = get_next_location(current_chain, rejected_points)
     print "Next Location: ",
     print next_location
     data_for_app = next_location['nymag']
@@ -141,7 +143,7 @@ def get_lat_lon_square_query(current_location, blocks):
     return query
 
 
-def get_next_location(current_chain):
+def get_next_location(current_chain, rejected_locations):
     """
     Return the next location based on the current markov chain.
 
@@ -155,7 +157,8 @@ def get_next_location(current_chain):
     """
 
     current_location = current_chain[-1]
-    used_ids = [ObjectId(location['_id']) for location in current_chain
+    used_ids = [ObjectId(location['_id']) 
+                for location in itertools.chain(current_chain, rejected_locations) 
                 if '_id' in location]
 
     # Build the db query
@@ -163,7 +166,7 @@ def get_next_location(current_chain):
     db_query = {}
     db_query.update(get_lat_lon_square_query(current_location, blocks=blocks))
     db_query.update(valid_entry_dict())
-    db_query.update( {'_id' : {'$nin' :used_ids}})
+    db_query.update( {'_id' : {'$nin' : used_ids}})
 
     # Get the nearby locations
     db, connection = connect_to_database(table_name="barkov_chain")

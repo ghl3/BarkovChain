@@ -169,7 +169,12 @@ def main():
     db, connection = connect_to_database()
 
     # Get the foursquare api
-    api = get_api()
+    try:
+        api = get_api()
+    except KeyError:
+        print "Cannot get foursquare info from environment"
+        print "Ensure that your environment is properly setup by sourcing 'setup.sh'"
+        return 255
     auth_uri = api.oauth.auth_url()
 
     num_to_match = args.match

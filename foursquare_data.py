@@ -83,30 +83,6 @@ def get_foursquare_id(api, name, longitude, latitude, radius=100):
     return matches[0]
 
 
-def get_nearby_venues(api, latitude, longitude, radius=800):
-    """
-    Return a list of venues
-    Based on api:
-    https://developer.foursquare.com/docs/venues/search
-
-    Each venue is defined by:
-    https://developer.foursquare.com/docs/responses/venue
-
-    Radius in meters
-    """
-
-    params = {}
-    params['query'] = 'coffee'
-    params['radius'] = radius
-    params['ll'] = '%.4s,%.4s' % (latitude, longitude)
-    params['intent'] = 'browse'
-    params['limit'] = 50
-    response = api.venues.search(params=params)
-    venues = response[u'venues']
-
-    return venues
-
-
 def match_foursquare_id(db, api, num_to_match=10):
     """
     Get the corresponding foursquare id to the
@@ -167,14 +143,111 @@ def match_foursquare_id(db, api, num_to_match=10):
         print db_key, entry
         bars.update(db_key, entry)
 
+    if len(failures) > 0:
+        print "Failed to get reviews for the following:"
+        for failure in failures:
+            print failure
+
     return
+
+
+def get_tip_list(api, foursquare_id):
+    """
+    Get a set of tips for the given venue with foursquare_id
+    """
+
+    keys_to_keep = ['text', 'id']
+
+    params = {"limit" : 500, 'sort' : 'popular'}
+    response = api.venues.tips(params=params)
+    tips = response['response']['tips']['items']
+
+    info_list = []
+
+    for tip in tips:
+        info = {}
+        for key in keys_to_keep:
+            info[key] = tip[key]
+        info_list.append(info)
+
+    return info_list
+
+
+def add_tips_to_db(db, api, num_to_match=10):
+    """
+    Find db entries without foursquare tips
+    and add the tip to those entries
+    """
+
+    bars = db['bars']
+    
+    # Find bars with a foursquare entry
+    # but without foursquare tips
+    entries = bars.find({ 'foursquare' : {'$exists':True},
+                          'foursquare.tips' : {'$exists':False}},
+                        limit = num_to_match)
+
+    failures = []
+
+    for entry in entries:
+        
+        time.sleep(1.0)
+
+        print "Trying Entry:"
+        print entry
+
+        try:
+            foursquare_id = entry['foursquare']['id']
+        except (AttributeError, KeyError):
+            print "Failed to get tip for entry:"
+            print entry
+            failures.append(entry)
+            continue
+
+        tip_list = get_tip_list(api, foursquare_id)
+
+        entry['foursquare']['tips'] = tip_list
+        print entry
+
+
+    if len(failures) > 0:
+        print "Failed to get reviews for the following:"
+        for failure in failures:
+            print failure
+
+
+
+def get_nearby_venues(api, latitude, longitude, radius=800):
+    """
+    Return a list of venues
+    Based on api:
+    https://developer.foursquare.com/docs/venues/search
+
+    Each venue is defined by:
+    https://developer.foursquare.com/docs/responses/venue
+
+    Radius in meters
+    """
+
+    params = {}
+    params['query'] = 'coffee'
+    params['radius'] = radius
+    params['ll'] = '%.4s,%.4s' % (latitude, longitude)
+    params['intent'] = 'browse'
+    params['limit'] = 50
+    response = api.venues.search(params=params)
+    venues = response[u'venues']
+
+    return venues
 
 
 def main():
 
     parser = argparse.ArgumentParser(description='Scrape data from NYMag.')
-    parser.add_argument('--match', '-m', dest='match', type=int, 
-                        default=None, help='Find the closest matching foursquare location to a nymag location')
+    parser.add_argument('--match', '-m', dest='match', type=int, default=None, 
+                        help='Find the closest matching foursquare location to a nymag location')
+    parser.add_argument('--tips', '-t', dest='tips', type=int, default=None, 
+                        help='Add foursquare tips to the database')
     args = parser.parse_args()
 
     # Get the mongo database
@@ -192,6 +265,11 @@ def main():
     num_to_match = args.match
     if num_to_match != None:
         match_foursquare_id(db, api, num_to_match)
+
+    tips_to_get = args.tips
+    if tips_to_get != None:
+        add_tips_to_db(db, api, tips_to_get)
+
     return
 
 ##############

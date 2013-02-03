@@ -44,8 +44,15 @@ def valid_entry_dict():
     A query string defining a valid
     entry in the Mongo DB
     """
-
-    return { 'nymag.review' : {'$ne':None} }
+    
+    criteria = { 
+        'nymag.review' : {'$exists':True}, 
+        'nymag.review' : {'$ne':None}, 
+        'foursquare.tips' : {'$exists':True}, 
+        'foursquare.tips' : {'$ne':None} 
+        }
+    return criteria
+    #return { 'nymag.review' : {'$ne':None} }
 
 
 def reformat_database(db, num_to_reformat):

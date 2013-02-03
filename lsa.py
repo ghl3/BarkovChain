@@ -55,11 +55,14 @@ class LSA(object):
         self.doc_dict = {}
 
     def parse_document(self, doc_name, doc):
+        """
+        Take an input document (with a given name)
+        and use nltk and some heuristic to parse
+        it, tokenize it, and add key words to our
+        matrix of words/documents
+        """
 
-        #doc = doc.decode("utf8")
-        #words = doc.split()
         words = nltk.word_tokenize(doc)
-        #words_in_doc = []
         for w in words:
             w = unicodedata.normalize('NFC', w).encode('ascii', 'ignore')
             w = w.lower().translate(None, self.ignorechars)
@@ -70,12 +73,12 @@ class LSA(object):
             if w in self.stopwords:
                 continue
             if not wordnet.synsets(w):
-                print "%s is not a valid word" % w
+                #print "%s is not a valid word" % w
                 continue
             has_number = False
             for num in [str(num) for num in range(10)]:
                 if num in w:
-                    print "Removing word %s with number: %s" % (w, num)
+                    #print "Removing word %s with number: %s" % (w, num)
                     has_number = True
                     break
             if has_number:
@@ -90,7 +93,6 @@ class LSA(object):
                 self.wdict[w].append(self.dcount)
             else:
                 self.wdict[w] = [self.dcount]
-            #words_in_doc.append(w)
 
         # Add this document to the name map
         self.doc_dict[doc_name] = self.dcount
@@ -148,12 +150,8 @@ class LSA(object):
             word = self.keys[i]
             docs_per_word = DocsPerWord[i]
             word_list.append((word, docs_per_word))
-                #self.A[i,j] = (self.A[i,j] / WordsPerDoc[j]) * log(float(cols) / DocsPerWord[i])
                 
         with open('tf_idf.txt', 'wb') as fp:
-            #for word, docs_per_word in zip(self.keys, DocsPerWord):
-            #    tfidf = log(float(cols) / docs_per_word)
-            #    word_list.append((word, docs_per_word, tfidf))
             word_list.sort(key=lambda x: x[1], reverse=True)
             for word, docs_per_word in word_list:
                 line = "%s %s \n" % (word, docs_per_word)
@@ -241,9 +239,6 @@ class LSA(object):
         
         doc_vec = self.get_svd_document_vector(doc)
         doc_vec = doc_vec[:len(user_vec)]
-        print "Getting Cosine: ",
-        for a, b in zip(user_vec, doc_vec):
-            print "(%s, %s)" % (a, b),
         return numpy.dot(user_vec, doc_vec)
 
     
@@ -316,16 +311,22 @@ class LSA(object):
         with open('lsa_info.txt', 'wb') as fp:
             fp.write(str(self))
             words_per_row = 10
+
+            # Print Keys
             fp.write("\n\nKeys:\n")
             for i, key in enumerate(self.keys):
                 if i % words_per_row == 0:
                     fp.write('\n')
                 fp.write("%s " % key)
+
+            # Print Stop Words
             fp.write("\n\nStop Words:\n")
             for i, word in enumerate(self.stopwords):
                 if i % words_per_row == 0:
                     fp.write('\n')
                 fp.write("%s " % word)
+
+            # Print the singular values
             fp.write("\n\nSingular Values:\n")
             for val in self.S:
                 fp.write("%s \n" % val)
@@ -431,13 +432,10 @@ def main():
 
         lsa.build_matrix()
         numpy.set_printoptions(threshold='nan')
-        #lsa.tf_idf(tf=True, idf=False)
         lsa.tf_idf()
         lsa.run_svd()
         lsa.check_consistency()
         lsa.reduce()
-        #if args.size != None:
-        #    lsa.reduce(args.size)
         lsa.save()
 
     if args.test:
@@ -448,11 +446,12 @@ def main():
                      "Amsterdam Ale House", "2nd Floor on Clinton","The Griffin", "Artifakt Bar", 
                      "Forty Eight Lounge", "129", "Bar Seine", "Bar d'Eau", "Blind Tiger Ale House",
                      "Apoth\u00e9ke", "Bill\u2019s Place","Enoteca I Trulli","Bar Baresco",
-                     "Glass Bar", "Lovers of Today", "Guilty Goose", "Japas 27", "East End Bar & Grill", 
-                     "Experimental Cocktail Club", "Diva Restaurant and Bar", "Blackbird", 
-                     "The Lounge at Dixon Place", "The Beatrice Inn", "Josie Wood's Pub", 
-                     "Carriage House","Henrietta Hudson", "Failte Irish Whiskey Bar", "A60", "Celsius",
-                     "The Lobby Bar at the Ace Hotel", "Above 6", "Great Hall Balcony Bar", "32 Karaoke",
+                     "Glass Bar", "Lovers of Today", "Guilty Goose", "Japas 27", 
+                     "East End Bar & Grill", "Experimental Cocktail Club", 
+                     "Diva Restaurant and Bar", "Blackbird", "The Lounge at Dixon Place", 
+                     "The Beatrice Inn", "Josie Wood's Pub", "Carriage House","Henrietta Hudson", 
+                     "Failte Irish Whiskey Bar", "A60", "Celsius","The Lobby Bar at the Ace Hotel",
+                     "Above 6", "Great Hall Balcony Bar", "32 Karaoke", 
                      "BB&R; (Blonde, Brunette and a Redhead)", "Beekman Beer Garden Beach Club",
                      "116", "McAnn's on 46th", "Bill's Food & Drink"]
 

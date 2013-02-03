@@ -113,8 +113,8 @@ def api_locations():
     # Get the next location, package it up
     # and send it to the client
     next_location = get_next_location(current_chain, rejected_points)
-    print "Next Location: ",
-    print next_location
+    print "Next Location: ", next_location['nymag']['name']
+    #print next_location
     data_for_app = next_location['nymag']
     data_for_app["_id"] = str(next_location['_id'])
 
@@ -219,8 +219,8 @@ def next_location_from_mc(locations, current_location):
         proposed = random.choice(locations)
         probability = mc_weight(proposed, current_location) / total_probability
         mc_throw = random.uniform(0.0, 1.0)
-        print "Monte Carlo: probability %s, throw %s" % (probability, mc_throw)
         if probability > mc_throw:
+            print "Monte Carlo: probability %s, throw %s" % (probability, mc_throw)
             return proposed
     return
 
@@ -262,27 +262,23 @@ def mc_weight(proposed, current):
     # Get the lsa cosine
     cosine = 1.0
     similarity_pdf = 1.0
-    try:
-        # For now, the 'user_vec' is the vector
-        # from the last restaurant
-        if len(current) > 0:
-            last_venue_name = current['name']
+    if len(current) > 0 and 'name' in current:
+        last_venue_name = current['name']
+        try:
+            # For now, the 'user_vec' is the vector
+            # from the last restaurant
             user_vec = lsa.get_svd_document_vector(last_venue_name)
             cosine = lsa.user_cosine(user_vec, name)
-            # Cosine goes from -1 to 1, we add 1 to make it positive definite
-            #similarity_pdf = scipy.stats.expon.pdf(cosine+1.0, scale=0.001)
-            if cosine > 0:
-                similarity_pdf = cosine                
-            else:
-                similarity_pdf = cosine                
-            probability *= similarity_pdf
-    except KeyError:
-        print "Error: Couldn't find venue %s in corpus" % name
-        print "Not considering LSA"
-
-    """
-{'foursquare': {'distance_to_nymag': 0, u'location': {u'city': u'', u'distance': 44, u'country': u'United States', u'lat': 40.748041, u'state': u'NY', u'crossStreet': u'', u'address': u'', u'postalCode': u'', u'lng': -73.987197}, u'id': u'4e7d3b8bb8f724f0c24f3f7d', u'categories': [{u'shortName': u'Karaoke', u'pluralName': u'Karaoke Bars', u'id': u'4bf58dd8d48988d120941735', u'icon': {u'prefix': u'https://foursquare.com/img/categories/nightlife/karaoke_', u'name': u'.png', u'sizes': [32, 44, 64, 88, 256]}, u'name': u'Karaoke Bar'}], u'name': u'32 Karaoke'}, u'_id': ObjectId('51043ce2d08ce64b3c2f64a6'), u'nymag': {u'average_score': None, u'user_review_url': u'?map_view=1&N=0&No=1&listing_id=75735', u'locality': u'New York', u'url': u'http://nymag.com/listings/bar/32-karaoke/index.html', u'region': u'NY', u'categories': [u'After Hours', u' Karaoke Nights'], u'longitude': -73.987249, u'map_url': u'javascript:void(null)', u'postal_code': u'10001', u'best': None, u'address': u'2 W. 32nd St.', u'latitude': 40.747639, u'critics_pic': False, u'desc_short': u'See the profile of this NYC bar at 2 W. 32nd St. in Manhattan.', u'review': u'Have a BYOB sing-along (till 5 a.m.) without the weekend throngs of students.', u'street_address': u'2 W. 32nd St.', u'name': u'32 Karaoke'}}
-    """
+        except KeyError:
+            print "Error: Couldn't find venue %s in corpus" % name
+            raise
+        # Cosine goes from -1 to 1, we add 1 to make it positive definite
+        # similarity_pdf = scipy.stats.expon.pdf(cosine+1.0, scale=0.001)
+        if cosine > 0:
+            similarity_pdf = cosine                
+        else:
+            similarity_pdf = 0.0000001
+        probability *= similarity_pdf
     
     print "Weight Function:", 
     print "Distance(%s m) = %s" % (distance, distance_pdf),
@@ -290,6 +286,9 @@ def mc_weight(proposed, current):
 
     return probability
 
+"""
+{'foursquare': {'distance_to_nymag': 0, u'location': {u'city': u'', u'distance': 44, u'country': u'United States', u'lat': 40.748041, u'state': u'NY', u'crossStreet': u'', u'address': u'', u'postalCode': u'', u'lng': -73.987197}, u'id': u'4e7d3b8bb8f724f0c24f3f7d', u'categories': [{u'shortName': u'Karaoke', u'pluralName': u'Karaoke Bars', u'id': u'4bf58dd8d48988d120941735', u'icon': {u'prefix': u'https://foursquare.com/img/categories/nightlife/karaoke_', u'name': u'.png', u'sizes': [32, 44, 64, 88, 256]}, u'name': u'Karaoke Bar'}], u'name': u'32 Karaoke'}, u'_id': ObjectId('51043ce2d08ce64b3c2f64a6'), u'nymag': {u'average_score': None, u'user_review_url': u'?map_view=1&N=0&No=1&listing_id=75735', u'locality': u'New York', u'url': u'http://nymag.com/listings/bar/32-karaoke/index.html', u'region': u'NY', u'categories': [u'After Hours', u' Karaoke Nights'], u'longitude': -73.987249, u'map_url': u'javascript:void(null)', u'postal_code': u'10001', u'best': None, u'address': u'2 W. 32nd St.', u'latitude': 40.747639, u'critics_pic': False, u'desc_short': u'See the profile of this NYC bar at 2 W. 32nd St. in Manhattan.', u'review': u'Have a BYOB sing-along (till 5 a.m.) without the weekend throngs of students.', u'street_address': u'2 W. 32nd St.', u'name': u'32 Karaoke'}}
+"""
 
 def get_random_locations(number_of_locations=3):
     """

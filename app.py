@@ -271,7 +271,10 @@ def mc_weight(proposed, current):
             cosine = lsa.user_cosine(user_vec, name)
             # Cosine goes from -1 to 1, we add 1 to make it positive definite
             #similarity_pdf = scipy.stats.expon.pdf(cosine+1.0, scale=0.001)
-            similarity_pdf = (1.0 + cosine)/2.0
+            if cosine > 0:
+                similarity_pdf = cosine                
+            else:
+                similarity_pdf = cosine                
             probability *= similarity_pdf
     except KeyError:
         print "Error: Couldn't find venue %s in corpus" % name

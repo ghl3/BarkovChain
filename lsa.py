@@ -41,16 +41,18 @@ def get_stopwords():
 
 class LSA(object):
 
-
-    def __init__(self, stopwords=None, ignorechars=None):
+    def __init__(self, stopwords=None, ignorechars=None,
+                 size=None, tf=False, idf=False):
         self.stopwords = stopwords
         self.ignorechars = ignorechars
+        self.tf = tf
+        self.idf = idf
+        self.size = size
         # dict[word] = [documents it appears in]
         self.wdict = {}
         self.dcount = 0
         # doc_dict[doc_name] = column
         self.doc_dict = {}
-        self.dimensions = 20
 
     def parse_document(self, doc_name, doc):
 
@@ -79,12 +81,20 @@ class LSA(object):
             if has_number:
                 continue
 
+            # Add to wdict
+            # wdict[word] is a list of document id numbers
+            # that contain the word 'word'
+            # Document id numbers can appear multiple times,
+            # indicating multiple times a word appears in a doc
             if w in self.wdict:
                 self.wdict[w].append(self.dcount)
             else:
                 self.wdict[w] = [self.dcount]
             #words_in_doc.append(w)
+
+        # Add this document to the name map
         self.doc_dict[doc_name] = self.dcount
+        # Increase the number of documents viewed
         self.dcount += 1
 
 
@@ -95,8 +105,15 @@ class LSA(object):
         """
 
         print "Building Matrix"
+        # Get keys that appear in more than 1 document
         self.keys = [k for k in self.wdict.keys() if len(self.wdict[k]) > 1]
         self.keys.sort()
+
+        # Loop over words.
+        # For each word, get the document it appears in, 
+        # increase that count in the matrix.
+        # Recall, words can appear in the same document 
+        # multiple times, so they will be in wdict[k] multiple times
         self.A = zeros([len(self.keys), self.dcount])
         for i, k in enumerate(self.keys):
             for d in self.wdict[k]:
@@ -113,23 +130,35 @@ class LSA(object):
         Implement Term Frequency, Inverse Document Frequency
         Include logarithmic suppression
         """
+        if not self.tf and not self.idf:
+            return
+
         print "TF_IDF"
         WordsPerDoc = numpy.sum(self.A, axis=0)
         DocsPerWord = numpy.sum(asarray(self.A > 0, 'i'), axis=1)
+        word_list = []
         rows, cols = self.A.shape
         for i in range(rows):
             for j in range(cols):
-                self.A[i,j] = (self.A[i,j] / WordsPerDoc[j]) * log(float(cols) / DocsPerWord[i])
+                val = self.A[i, j]
+                if self.tf: val /= WordsPerDoc[j]
+                if self.idf: val *= log(float(cols) / DocsPerWord[i])
+                self.A[i, j] = val
+        for i in range(rows):
+            word = self.keys[i]
+            docs_per_word = DocsPerWord[i]
+            word_list.append((word, docs_per_word))
+                #self.A[i,j] = (self.A[i,j] / WordsPerDoc[j]) * log(float(cols) / DocsPerWord[i])
                 
         with open('tf_idf.txt', 'wb') as fp:
-            word_list = []
-            for word, docs_per_word in zip(self.keys, DocsPerWord):
-                tfidf = log(float(cols) / docs_per_word)
-                word_list.append((word, docs_per_word, tfidf))
-            word_list.sort(key=lambda x: x[2], reverse=True)
-            for word, docs_per_word, tf_idf in word_list:
-                line = "%s %s %s \n" % (word, docs_per_word, tfidf)
+            #for word, docs_per_word in zip(self.keys, DocsPerWord):
+            #    tfidf = log(float(cols) / docs_per_word)
+            #    word_list.append((word, docs_per_word, tfidf))
+            word_list.sort(key=lambda x: x[1], reverse=True)
+            for word, docs_per_word in word_list:
+                line = "%s %s \n" % (word, docs_per_word)
                 fp.write(line)
+
 
     def run_svd(self):
         """
@@ -139,7 +168,7 @@ class LSA(object):
         self.U, self.S, self.Vt = svd(self.A, full_matrices=False)
 
 
-    def reduce(self, size):
+    def reduce(self):
         """
         Reduce the size of the svd matrices 
         
@@ -148,6 +177,7 @@ class LSA(object):
              (word, dim) * (dim, dim) * (dim, document)
 
         """
+        size = self.size
         if size == None: return
 
         print "Initial shape of U: ", self.U.shape
@@ -285,17 +315,20 @@ class LSA(object):
         # Save an info text file about the lsa
         with open('lsa_info.txt', 'wb') as fp:
             fp.write(str(self))
-            fp.write('\n')
             words_per_row = 10
-            fp.write("Keys: \n")
+            fp.write("\n\nKeys:\n")
             for i, key in enumerate(self.keys):
+                if i % words_per_row == 0:
+                    fp.write('\n')
                 fp.write("%s " % key)
-                if i % words_per_row == 0:
-                    fp.write('\n')
+            fp.write("\n\nStop Words:\n")
             for i, word in enumerate(self.stopwords):
-                fp.write("%s " % word)
                 if i % words_per_row == 0:
                     fp.write('\n')
+                fp.write("%s " % word)
+            fp.write("\n\nSingular Values:\n")
+            for val in self.S:
+                fp.write("%s \n" % val)
 
         # Save the matrices
         numpy.save("lsa_A.npy", self.A)
@@ -334,7 +367,13 @@ class LSA(object):
         """
         Implement the string representation
         """
-        lsa_str = "LSA Object \n"
+        lsa_str = "LSA Object"
+        if self.tf: lsa_str += ", scaled by term frequency (tf)"
+        if self.idf: lsa_str += ", scaled by inverse document frequency (idf)"
+        lsa_str += '\n'
+        lsa_str += "Num words: %s \n" % len(self.keys)
+        lsa_str += "Num documents: %s \n" % len(self.doc_dict)
+        lsa_str += "Num Singular Values: %s \n" % self.size
         lsa_str += "A %s %s kb \n" % (self.A.shape, self.A.nbytes/1000)
         lsa_str += "U %s %s kb \n" % (self.U.shape, self.U.nbytes/1000)
         lsa_str += "S %s %s kb \n" % (self.S.shape, self.S.nbytes/1000)
@@ -353,91 +392,79 @@ def main():
                         help='Maximum number of venues to use in sva matrix (default is all)')
     parser.add_argument('--size', '-s', dest='size', type=int, default=None, 
                         help='Number of Support Vector dimensions to use')
+    parser.add_argument('--tf', dest='tf', action="store_true", default=False, 
+                        help='Scale values by term frequency')
+    parser.add_argument('--idf', dest='idf', action="store_true", default=False, 
+                        help='Scale values by inverse document frequency')
+
     args = parser.parse_args()
 
     ignorechars = '''!"#$%&()*+,-./:;<=>?@[\]^_`{|}~'''
     stopwords = get_stopwords()
-    lsa = LSA(stopwords, ignorechars)
+    lsa = LSA(stopwords, ignorechars, size=args.size,
+              tf=args.tf, idf=args.idf )
 
     if args.create:
 
         # Add documents
         db, connection = connect_to_database(table_name="barkov_chain")
-        nymag = db['bars']
+        bars = db['bars']
         if args.limit:
-            locations = nymag.find({ 'nymag.review' : {'$ne':None} }).limit(args.limit)
+            locations = bars.find({ 'nymag.review' : {'$ne':None}, 
+                                    'foursquare.tips' : {'$exists':True}, 
+                                    'foursquare.tips' : {'$ne':None} 
+                                    }).limit(args.limit)
         else:
-            locations = nymag.find({ 'nymag.review' : {'$ne':None} })
-
-        location_list = []
+            locations = bars.find({ 'nymag.review' : {'$ne':None},
+                                    'foursquare.tips' : {'$exists':True}, 
+                                    'foursquare.tips' : {'$ne':None}
+                                    })
 
         for location in locations:
-            location = location['nymag']
-            name = location['name']
-            review = location['review']
-            location_list.append( (name, review) )
-            lsa.parse_document(location['name'], location['review'])
+            nymag = location['nymag']
+            name = nymag['name']
+            # Get the text for the semantic processing
+            description = nymag['review']
+            fsq_tips = location['foursquare']['tips']
+            description.join([tip['text'] for tip in fsq_tips])
+            lsa.parse_document(name, description)
 
         lsa.build_matrix()
+        numpy.set_printoptions(threshold='nan')
+        #lsa.tf_idf(tf=True, idf=False)
         lsa.tf_idf()
         lsa.run_svd()
         lsa.check_consistency()
-        if args.size != None:
-            lsa.reduce(args.size)
+        lsa.reduce()
+        #if args.size != None:
+        #    lsa.reduce(args.size)
         lsa.save()
 
     if args.test:
 
         lsa.load()
+        lsa.reduce()
+        test_bars = ["Bantam", "1 Oak", "Amity Hall", "Ainsworth Park", "B Bar & Grill", "Ajna Bar",
+                     "Amsterdam Ale House", "2nd Floor on Clinton","The Griffin", "Artifakt Bar", 
+                     "Forty Eight Lounge", "129", "Bar Seine", "Bar d'Eau", "Blind Tiger Ale House",
+                     "Apoth\u00e9ke", "Bill\u2019s Place","Enoteca I Trulli","Bar Baresco",
+                     "Glass Bar", "Lovers of Today", "Guilty Goose", "Japas 27", "East End Bar & Grill", 
+                     "Experimental Cocktail Club", "Diva Restaurant and Bar", "Blackbird", 
+                     "The Lounge at Dixon Place", "The Beatrice Inn", "Josie Wood's Pub", 
+                     "Carriage House","Henrietta Hudson", "Failte Irish Whiskey Bar", "A60", "Celsius",
+                     "The Lobby Bar at the Ace Hotel", "Above 6", "Great Hall Balcony Bar", "32 Karaoke",
+                     "BB&R; (Blonde, Brunette and a Redhead)", "Beekman Beer Garden Beach Club",
+                     "116", "McAnn's on 46th", "Bill's Food & Drink"]
 
-        if args.size != None:
-            lsa.reduce(args.size)
-
-        print "Singular Values:"
-        for value in lsa.S:
-            print value
-
-        test_bars = ["Bantam", "1 Oak", "Amity Hall", "Ainsworth Park", "B Bar & Grill", 
-                     "Ajna Bar", "Amsterdam Ale House", "2nd Floor on Clinton"]
-        #test_bars = [u"Art Bar", u"The Back Room", u"The Back Fence"]
-
+        cosine_list = []
         for (barA, barB) in itertools.combinations(test_bars, 2):
-            overlap = lsa.cosine(barA, barB, size=20)
-            #print lsa.get_word_overlaps(barA, barB)
-            print "Overlap between %s and %s: %s" % (barA, barB, overlap)
+            if barA in lsa.doc_dict and barB in lsa.doc_dict:
+                overlap = lsa.cosine(barA, barB, size=20)
+                cosine_list.append((barA, barB, overlap))
+        cosine_list.sort(key=lambda x: x[2], reverse=True)
+        for barA, barB, overlap in itertools.chain(cosine_list[0:20], cosine_list[-21:-1]):
+            print "Overlap is %s between %s and %s" % (overlap, barA, barB)
 
-    return
-
-    print lsa.A.shape
-    print lsa.U.shape
-    print lsa.S.shape
-    print lsa.Vt.shape
-
-    print lsa.get_document_vector("Art Bar").shape
-    print lsa.get_svd_document_vector("Art Bar").shape
-
-    total = 0
-    for valA, valB in zip(lsa.get_svd_document_vector("Art Bar"),
-                          lsa.get_svd_document_vector("The Back Room")):
-        print valA, valB, valA*valB
-        total += valA*valB
-    print "Total: ", total
-    
-    print "Cosine Overlaps:"
-    print lsa.cosine(u"The Back Room", u"Art Bar")
-    print lsa.cosine(u"The Back Room", u"The Back Room")
-
-    lsa.get_word_overlaps(u"The Back Room", u"Art Bar")
-
-    column = lsa.get_column(name)
-    important_words = []
-    for word, val in zip(lsa.keys, column):
-        if val == 0: continue
-        important_words.append((word, val))
-    important_words.sort(key=lambda x: x[1], reverse=True)
-    for word, val in important_words:
-        print word, val
-    #lsa.print_restaurant(location_name)
     return
 
 

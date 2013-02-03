@@ -50,7 +50,7 @@ class LSA(object):
 
     def parse_document(self, doc_name, doc):
         words = doc.split();
-        words_in_doc = []
+        #words_in_doc = []
         for w in words:
             w = unicodedata.normalize('NFC', w).encode('ascii', 'ignore')
             w = w.lower().translate(None, self.ignorechars)
@@ -62,10 +62,9 @@ class LSA(object):
                 self.wdict[w].append(self.dcount)
             else:
                 self.wdict[w] = [self.dcount]
-            words_in_doc.append(w)
+            #words_in_doc.append(w)
         self.doc_dict[doc_name] = self.dcount
         self.dcount += 1
-        print doc_name, words_in_doc
 
     def build_matrix(self):
         """
@@ -79,6 +78,11 @@ class LSA(object):
             for d in self.wdict[k]:
                 self.A[i,d] += 1
 
+        print "Successfully built lsa matrix:"
+        print "words: %s" % len(self.keys)
+        print "Documents: %s" % len(self.doc_dict)
+        print "Shape: ", self.A.shape 
+
     def tf_idf(self):
         WordsPerDoc = numpy.sum(self.A, axis=0)
         DocsPerWord = numpy.sum(asarray(self.A > 0, 'i'), axis=1)
@@ -88,8 +92,48 @@ class LSA(object):
                 self.A[i,j] = (self.A[i,j] / WordsPerDoc[j]) * log(float(cols) / DocsPerWord[i])
 
     def run_svd(self):
-        self.U, self.S, self.Vt = svd(self.A)
+        print "Running SVD"
+        self.U, self.S, self.Vt = svd(self.A, full_matrices=False)
 
+
+    def reduce(self, size):
+        """
+        Reduce the size of the svd matrices 
+        
+        Initial shape:
+        (word, document) = 
+             (word, dim) * (dim, dim) * (dim, document)
+
+        """
+        if size == None: return
+
+        print "Initial shape of U: ", self.U.shape
+        print "Initial shape of S: ", self.S.shape
+        print "Initial shape of Vt: ", self.Vt.shape
+
+        self.U = self.U[:, 0:size]
+        self.S = self.S[0:size]
+        self.Vt = self.Vt[0:size,:]
+
+        print "Reduced shape of U: ", self.U.shape
+        print "Reduced shape of S: ", self.S.shape
+        print "Reduced shape of Vt: ", self.Vt.shape
+
+        print "Reduced column for %s" % 'Bantam'
+        print self.get_svd_document_vector('Bantam').shape
+
+    def check_consistency(self):
+        
+        middle = numpy.zeros((len(self.S), len(self.S)))
+        for i, point in enumerate(self.S):
+            middle[i, i] = point
+        prod = numpy.dot(self.U, numpy.dot(middle, self.Vt))
+        print prod.shape 
+        print prod[0:5, 0:5]
+        print self.A.shape
+        print self.A[0:5, 0:5]
+        print "Matrix is consistent: ", numpy.allclose(self.A, prod, 0.0001)
+        
     def top_svd(self, num=None):
         
         # Get the index for sorting:
@@ -245,6 +289,10 @@ def main():
                         help='Create and save the lsa object')
     parser.add_argument('--test', '-t', dest='test', action="store_true", default=False, 
                         help='Test the lsa')
+    parser.add_argument('--limit', '-l', dest='limit', type=int, default=None, 
+                        help='Maximum number of venues to use in sva matrix (default is all)')
+    parser.add_argument('--size', '-s', dest='size', type=int, default=40, 
+                        help='Number of Support Vector dimensions to use')
     args = parser.parse_args()
 
     ignorechars = '''!"#$%&()*+,-./:;<=>?@[\]^_`{|}~'''
@@ -256,8 +304,10 @@ def main():
         # Add documents
         db, connection = connect_to_database(table_name="barkov_chain")
         nymag = db['bars']
-        locations = nymag.find({ 'nymag.review' : {'$ne':None} },
-                               limit = 100)
+        if args.limit:
+            locations = nymag.find({ 'nymag.review' : {'$ne':None} }).limit(args.limit)
+        else:
+            locations = nymag.find({ 'nymag.review' : {'$ne':None} })
 
         location_list = []
 
@@ -271,6 +321,8 @@ def main():
         lsa.build_matrix()
         lsa.tf_idf()
         lsa.run_svd()
+        lsa.check_consistency()
+        lsa.reduce(args.size)
         lsa.printA()
         lsa.save()
 

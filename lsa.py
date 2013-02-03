@@ -9,6 +9,9 @@ from numpy import zeros, asarray
 from scipy.linalg import svd
 import unicodedata
 
+import nltk
+from nltk.corpus import wordnet
+
 from math import log
 
 from nymag_scrape import connect_to_database
@@ -49,18 +52,34 @@ class LSA(object):
         self.doc_dict = {}
         self.dimensions = 20
 
-
     def parse_document(self, doc_name, doc):
-        words = doc.split();
+
+        #doc = doc.decode("utf8")
+        #words = doc.split()
+        words = nltk.word_tokenize(doc)
         #words_in_doc = []
         for w in words:
             w = unicodedata.normalize('NFC', w).encode('ascii', 'ignore')
             w = w.lower().translate(None, self.ignorechars)
-            #w = w.lower()
-            if w == '': continue
+
+            # Skip invalid words
+            if w == '': 
+                continue
             if w in self.stopwords:
                 continue
-            elif w in self.wdict:
+            if not wordnet.synsets(w):
+                print "%s is not a valid word" % w
+                continue
+            has_number = False
+            for num in [str(num) for num in range(10)]:
+                if num in w:
+                    print "Removing word %s with number: %s" % (w, num)
+                    has_number = True
+                    break
+            if has_number:
+                continue
+
+            if w in self.wdict:
                 self.wdict[w].append(self.dcount)
             else:
                 self.wdict[w] = [self.dcount]
@@ -90,7 +109,10 @@ class LSA(object):
 
 
     def tf_idf(self):
-
+        """
+        Implement Term Frequency, Inverse Document Frequency
+        Include logarithmic suppression
+        """
         print "TF_IDF"
         WordsPerDoc = numpy.sum(self.A, axis=0)
         DocsPerWord = numpy.sum(asarray(self.A > 0, 'i'), axis=1)
@@ -98,7 +120,16 @@ class LSA(object):
         for i in range(rows):
             for j in range(cols):
                 self.A[i,j] = (self.A[i,j] / WordsPerDoc[j]) * log(float(cols) / DocsPerWord[i])
-
+                
+        with open('tf_idf.txt', 'wb') as fp:
+            word_list = []
+            for word, docs_per_word in zip(self.keys, DocsPerWord):
+                tfidf = log(float(cols) / docs_per_word)
+                word_list.append((word, docs_per_word, tfidf))
+            word_list.sort(key=lambda x: x[2], reverse=True)
+            for word, docs_per_word, tf_idf in word_list:
+                line = "%s %s %s \n" % (word, docs_per_word, tfidf)
+                fp.write(line)
 
     def run_svd(self):
         """
@@ -251,14 +282,26 @@ class LSA(object):
 
         print "Saving: ", self
 
+        # Save an info text file about the lsa
+        with open('lsa_info.txt', 'wb') as fp:
+            fp.write(str(self))
+            fp.write('\n')
+            words_per_row = 10
+            fp.write("Keys: \n")
+            for i, key in enumerate(self.keys):
+                fp.write("%s " % key)
+                if i % words_per_row == 0:
+                    fp.write('\n')
+            for i, word in enumerate(self.stopwords):
+                fp.write("%s " % word)
+                if i % words_per_row == 0:
+                    fp.write('\n')
+
         # Save the matrices
         numpy.save("lsa_A.npy", self.A)
         numpy.save("lsa_U.npy", self.U)
         numpy.save("lsa_S.npy", self.S)
         numpy.save("lsa_Vt.npy", self.Vt)
-
-        with open('lsa_info.txt', 'wb') as fp:
-            fp.write(str(self))
 
         # Save the document dictionary
         with open('doc_dict.json', 'wb') as fp:

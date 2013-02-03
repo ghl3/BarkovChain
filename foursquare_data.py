@@ -159,8 +159,8 @@ def get_tip_list(api, foursquare_id):
     keys_to_keep = ['text', 'id']
 
     params = {"limit" : 500, 'sort' : 'popular'}
-    response = api.venues.tips(params=params)
-    tips = response['response']['tips']['items']
+    response = api.venues.tips(foursquare_id, params=params)
+    tips = response['tips']['items']
 
     info_list = []
 
@@ -184,6 +184,7 @@ def add_tips_to_db(db, api, num_to_match=10):
     # Find bars with a foursquare entry
     # but without foursquare tips
     entries = bars.find({ 'foursquare' : {'$exists':True},
+                          'foursquare' : {'$ne':None},
                           'foursquare.tips' : {'$exists':False}},
                         limit = num_to_match)
 
@@ -205,16 +206,18 @@ def add_tips_to_db(db, api, num_to_match=10):
             continue
 
         tip_list = get_tip_list(api, foursquare_id)
-
         entry['foursquare']['tips'] = tip_list
-        print entry
 
+        db_key = {"_id": entry['_id']}
+        print db_key, entry
+        bars.update(db_key, entry)
+
+        print '\n'
 
     if len(failures) > 0:
         print "Failed to get reviews for the following:"
         for failure in failures:
             print failure
-
 
 
 def get_nearby_venues(api, latitude, longitude, radius=800):

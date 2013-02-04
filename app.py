@@ -86,20 +86,15 @@ def not_found(error=None):
     resp.status_code = 404
     return resp
 
-
-# @app.route('/api/update_user', methods=['POST'] )
-# def udpate_user():
-#     """
-#     Take the current 'user' semantic vector and update
-#     it based on the supplied 'location'
-#     """
-
 @app.route('/api/initial_location', methods=['POST'] )
 def api_initial_location():
     """
     Take lat/lon coordinates and return
     the initial location, as well as the
     initial user vector
+
+    Input: 
+    [ {'latitude' : lat, 'longitude' : lon}]
 
     Takes a dictionary with a 'location' key
     consisting of 'latitude' and 'longitude'
@@ -109,7 +104,7 @@ def api_initial_location():
         print "Bad Content-Type : Expected JSON"
         return not_found()
 
-    marker_location = request.json['chain'][0]
+    marker_location = request.json['location']
     marker_location['initial'] = True
     current_chain = [marker_location]
     rejected_points = []

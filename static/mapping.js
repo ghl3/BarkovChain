@@ -298,8 +298,13 @@ function clearChain() {
 // chain of locations
 function getNextLocation(accepted) {
 
+    if( current_chain_locations.length == 0 ) {
+	console.log("Error: No locations exist yet");
+	return;
+    }
+
     if( current_chain_locations.length == 1 ){
-	var data = {'chain' : current_chain_locations}
+	var data = {'location' : current_chain_locations[0]}
 	submitToServer('/api/initial_location', data);
     }
     
@@ -308,7 +313,6 @@ function getNextLocation(accepted) {
 		    'rejected_points' : rejected_points,
 		    'user_vector' : current_user_vector,
 		    'accepted' : accepted};
-	
 	submitToServer('/api/next_location', data);
     }
 }
@@ -340,6 +344,9 @@ function submitToServer(api, data) {
 
 	// Update the current user vector
 	current_user_vector = data['user_vector'];
+	console.log("Updated user vector:");
+	console.log(current_user_vector);
+
 	
 	$("#venue_list").show();
     }

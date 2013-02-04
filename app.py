@@ -169,7 +169,7 @@ def api_next_location():
                                      accepted, len(current_chain))
 
     data_for_app = {}
-    data_for_app['location'] = location['nymag']
+    data_for_app['location'] = next_location['nymag']
     data_for_app['location']['_id'] = str(next_location['_id'])
     data_for_app['user_vector'] = user_vector
 
@@ -373,7 +373,8 @@ def update_user_vector(user_vector, last_location,
     # Get the vector of the last location
     last_loc_name = last_location['name']
     last_loc_vec = lsa.get_svd_document_vector(last_loc_name)
-    
+    last_loc_vec = [val for val in last_loc_vec]
+
     return last_loc_vec
 
 

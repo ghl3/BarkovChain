@@ -307,4 +307,5 @@ if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.
     port = int(os.environ.get('PORT', 5000))
     app.debug = True
-    app.run(host='192.168.1.5', port=8001)
+    #app.run(host='192.168.1.5', port=8001)
+    app.run(host='0.0.0.0', port=port)

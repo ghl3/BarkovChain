@@ -1,5 +1,6 @@
 
 // To Do:
+
 /*
   Consider creating a 'location' class that
   stores the following information:
@@ -19,6 +20,56 @@ var map = null;
 var marker = null;
 var current_user_vector = null;
 
+
+function venue(location) {
+
+    // self = this;
+    this.location = location;
+
+    // Create the lat/lon object
+    var lat = location_dict['latitude'];
+    var lon = location_dict['longitude'];
+    this.latlon = new google.maps.LatLng(lat, lon);
+
+    // Create the marker
+    var marker = new google.maps.Marker({
+	position: latlon,
+	map: map,
+	animation: google.maps.Animation.DROP
+    });
+    this.marker = marker;
+    
+    // To be filled later
+    this.path = null;
+
+}
+
+venue.prototype.clear = function() {
+
+    this.marker.setMap(null);
+
+}
+
+venue.prototype.add_path = function(last_point) {
+    var self = this;
+    var service = new google.maps.DirectionsService();
+    service.route({
+	origin: last_point,
+	destination: latlon,
+	travelMode: google.maps.DirectionsTravelMode.WALKING
+    }, function(result, status) {
+	if (status == google.maps.DirectionsStatus.OK) {
+	    var new_path = result.routes[0].overview_path;
+	    self.path = new_path;
+	    return new_path;
+	}
+	else {
+	    console.log("Travel Directions Error");
+	}
+    });
+}
+
+
 // The current chain, stored in 
 // two arrays.  The first is a dictionary
 // of locations, the second is the list
@@ -29,15 +80,6 @@ var current_chain_locations = new Array();
 var current_chain_markers = new Array();
 var current_chain_latlon = new Array();
 var rejected_points = new Array();
-
-var mapOptions = {
-    center: new google.maps.LatLng(40.77482, -73.96872),
-    zoom: 13,
-    mapTypeId: google.maps.MapTypeId.ROADMAP,
-    //draggable: false,
-    //scrollwheel: false,
-    minZoom: 13, maxZoom: 18
-};
 
 
 // Create a twitter bootstrap collapsable
@@ -402,13 +444,32 @@ function rejectLastPoint() {
 
 }
 
+
+// Create the google maps MAP
+function create_map() {
+
+    var mapOptions = {
+	center: new google.maps.LatLng(40.77482, -73.96872),
+	zoom: 13,
+	mapTypeId: google.maps.MapTypeId.ROADMAP,
+	//draggable: false,
+	//scrollwheel: false,
+	minZoom: 13, maxZoom: 18
+    };
+
+    return new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+
+}
+
+
 // Load the page! 
 $(document).ready(function() {
 
     $("#venue_list").hide();
     
     // Create the map
-    map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+    // map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+    map = create_map();
 
     // Define clicking on the map
     google.maps.event.addListener(map, 'click', beginChain); 

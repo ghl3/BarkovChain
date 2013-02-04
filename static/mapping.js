@@ -43,6 +43,12 @@ function venue(location) {
 
 }
 
+venue.prototype.clear = function() {
+
+    this.marker.setMap(null);
+
+}
+
 venue.prototype.add_path = function(last_point) {
     var self = this;
     var service = new google.maps.DirectionsService();

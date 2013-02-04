@@ -86,8 +86,53 @@ def not_found(error=None):
     resp.status_code = 404
     return resp
 
-@app.route('/api/locations', methods=['POST'] )
-def api_locations():
+
+# @app.route('/api/update_user', methods=['POST'] )
+# def udpate_user():
+#     """
+#     Take the current 'user' semantic vector and update
+#     it based on the supplied 'location'
+#     """
+
+@app.route('/api/initial_location', methods=['POST'] )
+def api_initial_location():
+    """
+    Take lat/lon coordinates and return
+    the initial location, as well as the
+    initial user vector
+
+    Takes a dictionary with a 'location' key
+    consisting of 'latitude' and 'longitude'
+    """
+
+    if 'json' not in request.headers['Content-Type']:
+        print "Bad Content-Type : Expected JSON"
+        return not_found()
+
+    marker_location = request.json['chain'][0]
+    marker_location['initial'] = True
+    current_chain = [marker_location]
+    rejected_points = []
+
+    next_location = get_next_location(current_chain, rejected_points)
+    user_vector = lsa.get_svd_document_vector(next_location['nymag']['name'])
+    user_vector = [val for val in user_vector]
+    #user_vector = update_user_vector(current_chain[-1], accept_reject, 
+    #                                 len(current_chain))
+    
+    data_for_app = {}
+    data_for_app['location'] = next_location['nymag']
+    data_for_app['location']['_id'] = str(next_location['_id'])
+    data_for_app['user_vector'] = user_vector
+
+    js = json.dumps(data_for_app, default=json_util.default)
+    resp = Response(js, status=200, mimetype='application/json')
+
+    return resp
+
+
+@app.route('/api/next_location', methods=['POST'] )
+def api_next_location():
     """
     Get locations and return as JSON
     Requires the following parameters:
@@ -108,15 +153,28 @@ def api_locations():
         return not_found()
 
     current_chain = request.json['chain']
-    rejected_points = request.json['rejected']
+    rejected_points = request.json['rejected_points']
+    accepted = request.json['accepted']
+    user_vector = request.json['user_vector']
+
 
     # Get the next location, package it up
     # and send it to the client
     next_location = get_next_location(current_chain, rejected_points)
     print "Next Location: ", next_location['nymag']['name']
-    #print next_location
-    data_for_app = next_location['nymag']
-    data_for_app["_id"] = str(next_location['_id'])
+
+    # Update the user's semantic vector based on
+    # whether he accepted or rejected the last location
+    user_vector = update_user_vector(user_vector, current_chain[-1], 
+                                     accepted, len(current_chain))
+
+    data_for_app = {}
+    data_for_app['location'] = location['nymag']
+    data_for_app['location']['_id'] = str(next_location['_id'])
+    data_for_app['user_vector'] = user_vector
+
+    #data_for_app = next_location['nymag']
+    #data_for_app["_id"] = str(next_location['_id'])
 
     js = json.dumps(data_for_app, default=json_util.default)
     resp = Response(js, status=200, mimetype='application/json')
@@ -160,6 +218,9 @@ def get_next_location(current_chain, rejected_locations):
     We return a single dictionary containing the information
     about the next location.
 
+    The 'initial' boolean determines if this will be the first
+    entry or not.  This is passed to the 'monte carlo' function
+
     Return a list
     """
 
@@ -188,10 +249,6 @@ def get_next_location(current_chain, rejected_locations):
         blocks += 10
         updated_distance = get_lat_lon_square_query(current_location, blocks=blocks)
         db_query.update(updated_distance)
-        #print "Updated Distance: ", blocks, updated_distance
-        #for key, val in updated_distance.iteritems():
-        #    db_query[key] = val
-        #print db_query
         locations = list(bars.find(db_query))
 
     # Select the next location in the chain
@@ -199,6 +256,17 @@ def get_next_location(current_chain, rejected_locations):
 
     return next_location
 
+
+def get_initial_location(locations):
+    """
+    Get the initial starting point.
+    The algorithm for this is differnet since we
+    don't yet have a chain of location or a
+    user vector defined.
+    It is therefore based only on long/lat
+    """
+    pass
+    
 
 def next_location_from_mc(locations, current_location):
     """
@@ -251,6 +319,8 @@ def mc_weight(proposed, current):
     probability = 1.0
 
     name = proposed['nymag']['name']
+    initial = current.get('initial', False)
+
     distance = distance_dr(proposed['nymag'], current)
     distance_pdf = scipy.stats.expon.pdf(distance, scale=200) # size is 100 meters
     probability *= distance_pdf
@@ -259,10 +329,11 @@ def mc_weight(proposed, current):
     if proposed['nymag'].get(u'critics_pic', False) != True:
         probability *= .1
         
-    # Get the lsa cosine
+    # Get the lsa cosine, but only if this isn't
+    # the initial marker
     cosine = 1.0
     similarity_pdf = 1.0
-    if len(current) > 0 and 'name' in current:
+    if not initial:
         last_venue_name = current['name']
         try:
             # For now, the 'user_vec' is the vector
@@ -289,6 +360,22 @@ def mc_weight(proposed, current):
 """
 {'foursquare': {'distance_to_nymag': 0, u'location': {u'city': u'', u'distance': 44, u'country': u'United States', u'lat': 40.748041, u'state': u'NY', u'crossStreet': u'', u'address': u'', u'postalCode': u'', u'lng': -73.987197}, u'id': u'4e7d3b8bb8f724f0c24f3f7d', u'categories': [{u'shortName': u'Karaoke', u'pluralName': u'Karaoke Bars', u'id': u'4bf58dd8d48988d120941735', u'icon': {u'prefix': u'https://foursquare.com/img/categories/nightlife/karaoke_', u'name': u'.png', u'sizes': [32, 44, 64, 88, 256]}, u'name': u'Karaoke Bar'}], u'name': u'32 Karaoke'}, u'_id': ObjectId('51043ce2d08ce64b3c2f64a6'), u'nymag': {u'average_score': None, u'user_review_url': u'?map_view=1&N=0&No=1&listing_id=75735', u'locality': u'New York', u'url': u'http://nymag.com/listings/bar/32-karaoke/index.html', u'region': u'NY', u'categories': [u'After Hours', u' Karaoke Nights'], u'longitude': -73.987249, u'map_url': u'javascript:void(null)', u'postal_code': u'10001', u'best': None, u'address': u'2 W. 32nd St.', u'latitude': 40.747639, u'critics_pic': False, u'desc_short': u'See the profile of this NYC bar at 2 W. 32nd St. in Manhattan.', u'review': u'Have a BYOB sing-along (till 5 a.m.) without the weekend throngs of students.', u'street_address': u'2 W. 32nd St.', u'name': u'32 Karaoke'}}
 """
+
+def update_user_vector(user_vector, last_location, 
+                       accepted, chain_length):
+    """
+    Update the user's vector 
+    based on whether he accepted the last location
+    The size of the update is based on how many 
+    entries in the chain that we've had so far
+    """
+
+    # Get the vector of the last location
+    last_loc_name = last_location['name']
+    last_loc_vec = lsa.get_svd_document_vector(last_loc_name)
+    
+    return last_loc_vec
+
 
 def get_random_locations(number_of_locations=3):
     """

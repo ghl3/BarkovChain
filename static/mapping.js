@@ -17,6 +17,7 @@
 // Global Variables
 var map = null;
 var marker = null;
+var current_user_vector = null;
 
 // The current chain, stored in 
 // two arrays.  The first is a dictionary
@@ -194,6 +195,7 @@ function beginChain(event) {
     var location = {}; //new Array();
     location['latitude'] = latlon.lat();
     location['longitude'] = latlon.lng();
+    location['initial'] = true;
     current_chain_locations.push(location);
     console.log("Starting Point:");
     console.log(location);
@@ -292,9 +294,33 @@ function clearChain() {
 }
 
 
-// SubmitLocationToServer
-function submitLocationToServer() {
-    console.log('Submitting Location To Server');
+// Get the next 'location' based on the current
+// chain of locations
+function getNextLocation(accepted) {
+
+    if( current_chain_locations.length == 1 ){
+	var data = {'chain' : current_chain_locations}
+	submitToServer('/api/initial_location', data);
+    }
+    
+    else {
+	var data = {'chain' : current_chain_locations,
+		    'rejected_points' : rejected_points,
+		    'user_vector' : current_user_vector,
+		    'accepted' : accepted};
+	
+	submitToServer('/api/next_location', data);
+    }
+}
+
+// Wrapper for the server POST request.
+// The returned JSON defines the next location
+// and the updated user_vector
+function submitToServer(api, data) {
+    console.log('Submitting Location To Server: ' + api);
+
+    console.log("Sending data:");
+    console.log(data);
 
     if(active_chain == false) {
 	console.log("Cannot submit to server, chain isn't yet active");
@@ -305,15 +331,16 @@ function submitLocationToServer() {
 	return;
     }
 
-    var chain_data = {'chain' : current_chain_locations,
-		      'rejected' : rejected_points};
-    console.log("Sending data:");
-    console.log(chain_data);
-
     function successfulCallback(data) {
 	console.log("Server successfully returned data:");
 	console.log(data);
-	addToChain(data);
+
+	// Add the new location to the chain
+	addToChain(data['location']);
+
+	// Update the current user vector
+	current_user_vector = data['user_vector'];
+	
 	$("#venue_list").show();
     }
     
@@ -323,12 +350,12 @@ function submitLocationToServer() {
     }
 
     $.ajax({
-	url: "/api/locations",
+	url: api,
 	type: "POST",
 	dataType: 'json',
 	contentType:"application/json; charset=utf-8",
 	mimeType : "string",
-	data: JSON.stringify(chain_data)
+	data: JSON.stringify(data)
     })
 	.done(successfulCallback)
 	.fail(errorCallback)
@@ -382,10 +409,13 @@ $(document).ready(function() {
     // Define clicking on the 'submit' button
     // Send an ajax request to the flask server
     // and get some info
-    $("#button_accept").click(submitLocationToServer);
+    $("#button_accept").click(function() {
+	getNextLocation(true);
+    });
+
     $("#button_try_another").click(function() {
 	rejectLastPoint();
-	submitLocationToServer()
+	getNextLocation(false);
     });
 
 });

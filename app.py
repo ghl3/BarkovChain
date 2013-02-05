@@ -169,6 +169,25 @@ def not_found(error=None):
     return resp
 
 
+class weight(object):
+    
+    def __init__(self):
+        self.probability = None
+        self.distance = None
+        self.critics_pic = None
+        self.cosine = None
+
+    def __repr__(self):
+        repr_str = ''
+        repr_str += "Probability = %.5s " % self.probability
+        repr_str += "("
+        repr_str += "Distance = %.5s, " % self.distance
+        repr_str += "Critics Pic = %s, " % self.critics_pic
+        repr_str += "Cosine = %.7s" % self.cosine
+        repr_str += ")"
+        return repr_str
+
+
 def get_lat_lon_square_query(current_location, blocks):
     """
     Return the min/max of lat and lon
@@ -273,15 +292,20 @@ def next_location_from_mc(proposed_locations, current_location, user_vector):
     # Calculate the total probability for normalization
     total_probability = 0
     for location in proposed_locations:
-        total_probability += mc_weight(location, current_location, user_vector)
+        weight_result = mc_weight(location, current_location, user_vector)
+        total_probability += weight_result.probability
 
     # Calculate the weight function
+    mc_steps = 0
     while True:
+        mc_steps += 1
         proposed = random.choice(proposed_locations)
-        probability = mc_weight(proposed, current_location, user_vector) / total_probability
+        weight_result = mc_weight(proposed, current_location, user_vector)
+        weight_result.probability /= total_probability
         mc_throw = random.uniform(0.0, 1.0)
-        if probability > mc_throw:
-            print "Monte Carlo: probability %s, throw %s" % (probability, mc_throw)
+        if weight_result.probability > mc_throw:
+            print "Monte Carlo Converged after %s throws: " % mc_steps,
+            print weight_result
             return proposed
     return
 
@@ -319,13 +343,16 @@ def mc_weight(proposed, current, user_vector):
     probability *= distance_pdf
 
     # Disfavor non critics-picks
-    if proposed['nymag'].get(u'critics_pic', False) != True:
+    critics_pic = False
+    if proposed['nymag'].get(u'critics_pic', False):
+        critics_pic = True
+    else:
         probability *= .1
         
     # Get the lsa cosine, but only if this isn't
     # the initial marker
-    cosine = 1.0
-    similarity_pdf = 1.0
+    cosine = None
+    #similarity_pdf = 1.0
     if not initial:
         last_venue_name = current['name']
         try:
@@ -343,12 +370,17 @@ def mc_weight(proposed, current, user_vector):
         else:
             similarity_pdf = 0.0000001
         probability *= similarity_pdf
-    
-    print "Weight Function:", 
-    print "Distance(%s m) = %s" % (distance, distance_pdf),
-    print "Similarity(%s) = %s" % (cosine, similarity_pdf)
 
-    return probability
+    # Return a weight object
+    result = weight()
+    result.probability = probability
+    result.distance = distance
+    result.cosine = cosine
+    result.critics_pic = critics_pic
+
+    return result
+
+    #return probability
 
 """
 {'foursquare': {'distance_to_nymag': 0, u'location': {u'city': u'', u'distance': 44, u'country': u'United States', u'lat': 40.748041, u'state': u'NY', u'crossStreet': u'', u'address': u'', u'postalCode': u'', u'lng': -73.987197}, u'id': u'4e7d3b8bb8f724f0c24f3f7d', u'categories': [{u'shortName': u'Karaoke', u'pluralName': u'Karaoke Bars', u'id': u'4bf58dd8d48988d120941735', u'icon': {u'prefix': u'https://foursquare.com/img/categories/nightlife/karaoke_', u'name': u'.png', u'sizes': [32, 44, 64, 88, 256]}, u'name': u'Karaoke Bar'}], u'name': u'32 Karaoke'}, u'_id': ObjectId('51043ce2d08ce64b3c2f64a6'), u'nymag': {u'average_score': None, u'user_review_url': u'?map_view=1&N=0&No=1&listing_id=75735', u'locality': u'New York', u'url': u'http://nymag.com/listings/bar/32-karaoke/index.html', u'region': u'NY', u'categories': [u'After Hours', u' Karaoke Nights'], u'longitude': -73.987249, u'map_url': u'javascript:void(null)', u'postal_code': u'10001', u'best': None, u'address': u'2 W. 32nd St.', u'latitude': 40.747639, u'critics_pic': False, u'desc_short': u'See the profile of this NYC bar at 2 W. 32nd St. in Manhattan.', u'review': u'Have a BYOB sing-along (till 5 a.m.) without the weekend throngs of students.', u'street_address': u'2 W. 32nd St.', u'name': u'32 Karaoke'}}

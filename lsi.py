@@ -1,5 +1,4 @@
 
-
 import logging
 import argparse
 import itertools
@@ -98,7 +97,15 @@ def load_lsi():
     corpus_tfidf = corpora.MmCorpus('lsi.corpus_tfidf.mm')
     dictionary = corpora.Dictionary.load('lsi.dict')
 
-    return (lsi, corpus, corpus_tfidf, dictionary)
+    with open('lsi_bar_idx_map.json', 'rb') as fp:
+        bar_idx_map = json.load(fp)
+
+    with open('lsi_idx_bar_map.json', 'rb') as fp:
+        idx_bar_map = json.load(fp)
+
+
+    return (lsi, corpus, corpus_tfidf, dictionary,
+            bar_idx_map, idx_bar_map)
     
 
 def create_lsi(db, num_topics=10, num_bars=None):
@@ -126,11 +133,14 @@ def create_lsi(db, num_topics=10, num_bars=None):
     stopwords = get_stopwords()
 
     texts = []
-    bar_map = {}
+    bar_idx_map = {}
+    idx_bar_map = {}
 
     print "Fetching texts from database and tokenizing"
     for idx, location in enumerate(locations):
-        bar_map[idx] = location['nymag']['name']
+        bar_name = location['nymag']['name']
+        bar_idx_map[bar_name] = idx
+        idx_bar_map[idx] = bar_name
         text = create_string_from_database(location)
         tokens = tokenize_document(text, stopwords, ignorechars)
         texts.append(tokens)
@@ -161,8 +171,11 @@ def create_lsi(db, num_topics=10, num_bars=None):
     lsi.save('model.lsi')
     
     # Save some additional info
-    with open('lsi_bar_map.json', 'wb') as fp:
-        json.dump(bar_map, fp)
+    with open('lsi_bar_idx_map.json', 'wb') as fp:
+        json.dump(bar_idx_map, fp)
+
+    with open('lsi_idx_bar_map.json', 'wb') as fp:
+        json.dump(idx_bar_map, fp)
 
     with open('lsi_info.txt', 'wb') as fp:
         ts = time.time()
@@ -170,20 +183,59 @@ def create_lsi(db, num_topics=10, num_bars=None):
         fp.write("LSI Model %s\n" % st)
         info = "Number of Docs: %s Number of Topics: %s\n" % (len(corpus), num_topics)
         fp.write(info)
-        
 
 
-def test_lsi():
+def test_lsi(db):
 
-    lsi, corpus, corpus_tfidf, dictionary = load_lsi()
+    # Grab random locations
+    bars = db['bars']
+    bar_names = []
+    locations = bars.find({ 'nymag.review' : {'$ne':None}, 
+                            'foursquare.tips' : {'$exists':True}, 
+                            'foursquare.tips' : {'$ne':None} 
+                            }).limit(10)
+    for location in locations:
+        bar_names.append(location['nymag']['name'])
 
-    # Now that everything is generated and saved,
-    # we can begin using the lsi
-    corpus_lsi = lsi[corpus_tfidf]
+    # Create a corpus from this
+
+    lsi, corpus, corpus_tfidf, dictionary, bar_idx_map, idx_bar_map = load_lsi()
+
     lsi.print_topics(10)
-    
+
+    # Get the tfidf vectors
+    corpus_tfidf = [corpus_tfidf[bar_idx_map[name]] for name in bar_names ]
+    print corpus_tfidf
+
+    # And transform to the lsi space
+    corpus_lsi = lsi[corpus_tfidf]
+    print corpus_lsi
+
+    # Create a matching function
+    index = similarities.MatrixSimilarity(corpus_lsi)
+    test_vector = lsi[corpus_tfidf[0]]
+    test_words = [dictionary[word[0]] for word in test_vector]    
+    sims = index[test_vector]
+    sims = sorted(enumerate(sims), key=lambda item: -item[1])
+
+    print test_vector
+    print "Comparing to: "
+    print test_words
+    print ''
+
+    for doc_idx, cosine in sims:
+        words = [dictionary[pair[0]] for pair in corpus_tfidf[doc_idx]]
+        print cosine, 
+        print '{', [word for word in words if word in test_words], '}',
+        print words
+        print ''
+
+    return
+
     # Create the similarity index
     index = similarities.MatrixSimilarity(lsi[corpus])
+    
+    #index = similarities.Similarity(lsi[corpus])
 
     # Test the similarities
     test_vector = lsi[corpus[0]]
@@ -198,6 +250,8 @@ def test_lsi():
 
     for doc_idx, cosine in itertools.chain(sims[0:10], sims[-10:-1]):
         words = [dictionary[pair[0]] for pair in corpus[doc_idx]]
+        
+        my_cosine = numpy.dot(self.index, query.T).T 
         print cosine, 
         print '{', [word for word in words if word in test_words], '}',
         print words
@@ -230,7 +284,7 @@ def main():
         create_lsi(db, args.size, args.limit)
 
     if args.test:
-        test_lsi()
+        test_lsi(db)
 
     return
 

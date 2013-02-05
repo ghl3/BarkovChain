@@ -26,15 +26,15 @@ import geopy.distance
 import numpy
 import scipy.stats
 
-from lsa import LSA
 from math import pi
 from math import tan                
 
+from lsi import load_lsi
 
 # Create the lsa object and load
 # its parameters from disk
-lsa = LSA()
-lsa.load()
+lsi, corpus, corpus_tfidf, dictionary, bar_idx_map, idx_bar_map = load_lsi()
+
 
 app = Flask(__name__)
 
@@ -330,8 +330,8 @@ def mc_weight(proposed, current, user_vector):
     cosine = None
     #similarity_pdf = 1.0
     if not initial:
-        last_venue_name = current['name']
         try:
+            proposed_bar_idx = bar_idx_map[name]
             cosine = lsa.user_cosine(user_vector, name)
         except KeyError:
             print "Error: Couldn't find venue %s in corpus" % name

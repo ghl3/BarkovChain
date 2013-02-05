@@ -1,6 +1,7 @@
 
 
 import logging
+import argparse
 
 import nltk
 from nltk.corpus import wordnet
@@ -96,7 +97,7 @@ def load_lsi():
     return (lsi, corpus, corpus_tfidf, dictionary)
     
 
-def create_lsi(db):
+def create_lsi(db, num_topics=10, num_bars=None):
     """
     Create and save a lsi object
     using data in the database.
@@ -105,11 +106,17 @@ def create_lsi(db):
     """
 
     bars = db['bars']
-    num_bars = 200
-    locations = bars.find({ 'nymag.review' : {'$ne':None}, 
-                            'foursquare.tips' : {'$exists':True}, 
-                            'foursquare.tips' : {'$ne':None} 
-                            }).limit(num_bars)
+
+    if num_bars == None:
+        locations = bars.find({ 'nymag.review' : {'$ne':None}, 
+                                'foursquare.tips' : {'$exists':True}, 
+                                'foursquare.tips' : {'$ne':None} 
+                                })
+    else:
+        locations = bars.find({ 'nymag.review' : {'$ne':None}, 
+                                'foursquare.tips' : {'$exists':True}, 
+                                'foursquare.tips' : {'$ne':None} 
+                                }).limit(num_bars)
 
     ignorechars = '''!"#$%&()*+,-./:;<=>?@[\]^_`{|}~'''
     stopwords = get_stopwords()
@@ -144,9 +151,11 @@ def create_lsi(db):
 
     # Create the model
     print "Creating LSI"
-    lsi = models.LsiModel(corpus_tfidf, id2word=dictionary, num_topics=10) 
+    lsi = models.LsiModel(corpus_tfidf, id2word=dictionary, num_topics=num_topics) 
     lsi.save('model.lsi')
     
+    # Save some additional info
+
 
 def test_lsi():
 
@@ -170,12 +179,25 @@ def test_lsi():
 
 def main():
 
+
+    parser = argparse.ArgumentParser(description='Scrape data from NYMag.')
+    parser.add_argument('--create', '-c', dest='create', action="store_true", default=False, 
+                        help='Create and save the lsa object')
+    parser.add_argument('--test', '-t', dest='test', action="store_true", default=False, 
+                        help='Test the lsa')
+    parser.add_argument('--limit', '-l', dest='limit', type=int, default=None, 
+                        help='Maximum number of venues to use in sva matrix (default is all)')
+    parser.add_argument('--size', '-s', dest='size', type=int, default=None, 
+                        help='Number of Support Vector dimensions to use')
+
+    args = parser.parse_args()
+
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
     
     # Add documents
     db, connection = connect_to_database(table_name="barkov_chain")
 
-    create_lsi(db)
+    create_lsi(db, args.size, args.limit)
 
     test_lsi()
 

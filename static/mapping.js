@@ -4,7 +4,7 @@ var map = null;
 var marker = null;
 var current_user_vector = null;
 var venue_list = new Array();
-var rejected_points = new Array();
+var rejected_locations = new Array();
 var current_path = null;
 var active_chain = false;
 
@@ -93,8 +93,6 @@ venue.prototype.create_path = function(last_lat_long, callback) {
 	    console.log("Travel Directions Error");
 	}
     });
-
-
 }
 
 
@@ -199,7 +197,6 @@ function beginChain(event) {
 // Update the shown path based on the current
 // List of LatLon points
 function updatePath() {
-    
     var total_chain = new Array();
     for(var i=0; i < venue_list.length; ++i) {
 	var path = venue_list[i].path;
@@ -222,27 +219,6 @@ function addToChain(location_dict) {
     // and the new point
     var last_lat_long = venue_list[venue_list.length - 1].latlon;
     next_venue.create_path(last_lat_long, updatePath);
-
-    /*
-    var next_lat_long = next_venue.latlon;
-
-    var service = new google.maps.DirectionsService();
-    service.route({
-	origin: last_lat_long,
-	destination: next_lat_long,
-	travelMode: google.maps.DirectionsTravelMode.WALKING
-    }, function(result, status) {
-	if (status == google.maps.DirectionsStatus.OK) {
-	    console.log("Successfully found gMaps path");
-	    var new_path = result.routes[0].overview_path;
-	    next_venue.path = new_path;
-	    updatePath();
-	}
-	else {
-	    console.log("Travel Directions Error");
-	}
-    });
-    */
 
     // Need to add the table
     next_venue.add_to_table();
@@ -279,39 +255,40 @@ function getNextLocation(accepted) {
     }
 
     if( venue_list.length == 0 ) {
-	console.log("Error: No locations exist yet");
+	console.log("Error: No venues exist yet");
 	return;
     }
 
+    // If we only have the inital marker, we
+    // must use a special api point
     if( venue_list.length == 1 ){
 	var data = {'location' : venue_list[0].data}
 	submitToServer('/api/initial_location', data);
     }
     
+    // Otherwise, we get the next venue basee
+    // on the current chain
     else {
-
-	// Create the chain of locations
 	var chain = new Array();
 	for( var i = 0; i < venue_list.length; ++i) {
 	    chain.push(venue_list[i].data);
 	}
 
 	var data = {'chain' : chain,
-		    'rejected_points' : rejected_points,
+		    'rejected_locations' : rejected_locations,
 		    'user_vector' : current_user_vector,
 		    'accepted' : accepted};
 	submitToServer('/api/next_location', data);
     }
 
-    return;
 }
 
 // Wrapper for the server POST request.
 // The returned JSON defines the next location
 // and the updated user_vector
 function submitToServer(api, data) {
-    console.log('Submitting Location To Server: ' + api);
 
+    console.log('Submitting Location To Server: ' + api);
     console.log("Sending data:");
     console.log(data);
 
@@ -356,21 +333,16 @@ function submitToServer(api, data) {
 
 // Remove the last restaurant from
 // the current chain
+// Add the last marker to the list of 
 function rejectLastPoint() {
-
-    // Add the last marker to the list of 
     var last_venue = venue_list.pop();
     last_venue.clear();
-    rejected_points.push(last_venue.data);
-
-    return;
-
+    rejected_locations.push(last_venue.data);
 }
 
 
 // Create the google maps MAP
 function create_map() {
-
     var mapOptions = {
 	center: new google.maps.LatLng(40.77482, -73.96872),
 	zoom: 13,
@@ -379,9 +351,7 @@ function create_map() {
 	//scrollwheel: false,
 	minZoom: 13, maxZoom: 18
     };
-
     return new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
-
 }
 
 

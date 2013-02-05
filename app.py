@@ -39,22 +39,104 @@ app = Flask(__name__)
 def index():
     return render_template('index.html')
 
-@app.route('/bootstrap')
-def bootstrap():
-    return render_template('bootstrap.html')
+@app.route('/api/initial_location', methods=['POST'] )
+def api_initial_location():
+    """
+    Take lat/lon coordinates and return
+    the initial location, as well as the
+    initial user vector.
 
-@app.route('/map')
-def map():
-    locations = get_random_locations()
-    for venue in locations:
-        print venue
-        print venue['name']
-        print venue['address']
-        print venue['desc_short']
-    img_src = create_static_map_src(locations)
-    return render_template('map.html',
-                           venue_list=locations,
-                           img_src=img_src)
+    Input - Takes a dictionary with a 'location' key
+    consisting of 'latitude' and 'longitude':
+
+    {'latitude' : lat, 'longitude' : lon}
+
+    Output - Return a dictionary consisting of the 
+    location dict, the id in the database, and the
+    updated user preference vector:
+
+    { 'location' : {'_id' : id, ...}, 'user_vector' : [...]}
+    """
+
+    if 'json' not in request.headers['Content-Type']:
+        print "Bad Content-Type : Expected JSON"
+        return not_found()
+
+    # Get the next location
+    marker_location = request.json['location']
+    marker_location['initial'] = True
+    current_chain = [marker_location]
+    next_location = get_next_location(current_chain, rejected_locations=[])
+
+    # Update the user vector
+    user_vector = lsa.get_svd_document_vector(next_location['nymag']['name'])
+    user_vector = [val for val in user_vector]
+    
+    # Return the data
+    data_for_app = {}
+    data_for_app['location'] = next_location['nymag']
+    data_for_app['location']['_id'] = str(next_location['_id'])
+    data_for_app['user_vector'] = user_vector
+
+    js = json.dumps(data_for_app, default=json_util.default)
+    resp = Response(js, status=200, mimetype='application/json')
+
+    return resp
+
+
+@app.route('/api/next_location', methods=['POST'] )
+def api_next_location():
+    """
+    Return the next location in the chain
+
+    Input - A 'chain' list of previously visited
+    location, a list of "rejected_locations' to not
+    consider, whether or not the user accepted or 
+    rejected the last point, and the user's 
+    preference vector:
+    { 'chain' : [{...}, {...}, ...],
+      'rejected_locations' : [...],
+      'accepted' : True (False),
+      'user_vector' : [...] }
+
+    Output - Return a dictionary consisting of the 
+    location dict, the id in the database, and the
+    updated user preference vector:
+
+    { 'location' : {'_id' : id, ...}, 'user_vector' : [...]}
+    """
+
+    # Check content type (only json for now)
+    # Be tolerent when recieving, 
+    # be string when sending
+    if 'json' not in request.headers['Content-Type']:
+        print "Bad Content-Type : Expected JSON"
+        return not_found()
+
+    current_chain = request.json['chain']
+    rejected_locations = request.json['rejected_locations']
+    accepted = request.json['accepted']
+    user_vector = request.json['user_vector']
+
+    # Update the user's semantic vector based on
+    # whether he accepted or rejected the last location
+    user_vector = update_user_vector(user_vector, current_chain[-1], 
+                                     accepted, len(current_chain))
+
+    # Get the next location, package it up
+    # and send it to the client
+    next_location = get_next_location(current_chain, rejected_locations)
+
+    data_for_app = {}
+    data_for_app['location'] = next_location['nymag']
+    data_for_app['location']['_id'] = str(next_location['_id'])
+    data_for_app['user_vector'] = user_vector
+
+    js = json.dumps(data_for_app, default=json_util.default)
+    resp = Response(js, status=200, mimetype='application/json')
+    #resp.headers['Link'] = 'http://luisrei.com'
+    return resp
+
 
 @app.errorhandler(400)
 def invalid_content(error=None):
@@ -86,96 +168,6 @@ def not_found(error=None):
     resp.status_code = 404
     return resp
 
-@app.route('/api/initial_location', methods=['POST'] )
-def api_initial_location():
-    """
-    Take lat/lon coordinates and return
-    the initial location, as well as the
-    initial user vector
-
-    Input: 
-    [ {'latitude' : lat, 'longitude' : lon}]
-
-    Takes a dictionary with a 'location' key
-    consisting of 'latitude' and 'longitude'
-    """
-
-    if 'json' not in request.headers['Content-Type']:
-        print "Bad Content-Type : Expected JSON"
-        return not_found()
-
-    marker_location = request.json['location']
-    marker_location['initial'] = True
-    current_chain = [marker_location]
-    rejected_points = []
-
-    next_location = get_next_location(current_chain, rejected_points)
-    user_vector = lsa.get_svd_document_vector(next_location['nymag']['name'])
-    user_vector = [val for val in user_vector]
-    #user_vector = update_user_vector(current_chain[-1], accept_reject, 
-    #                                 len(current_chain))
-    
-    data_for_app = {}
-    data_for_app['location'] = next_location['nymag']
-    data_for_app['location']['_id'] = str(next_location['_id'])
-    data_for_app['user_vector'] = user_vector
-
-    js = json.dumps(data_for_app, default=json_util.default)
-    resp = Response(js, status=200, mimetype='application/json')
-
-    return resp
-
-
-@app.route('/api/next_location', methods=['POST'] )
-def api_next_location():
-    """
-    Get locations and return as JSON
-    Requires the following parameters:
-
-    { 'position' : {
-             'longitude' : longitude,
-             'latitude' : latitude,
-             },
-      'number_of_locations' : number_of_locations
-    }
-    
-    """
-    # Check content type (only json for now)
-    # Be tolerent when recieving, 
-    # be string when sending
-    if 'json' not in request.headers['Content-Type']:
-        print "Bad Content-Type : Expected JSON"
-        return not_found()
-
-    current_chain = request.json['chain']
-    rejected_points = request.json['rejected_points']
-    accepted = request.json['accepted']
-    user_vector = request.json['user_vector']
-
-
-    # Get the next location, package it up
-    # and send it to the client
-    next_location = get_next_location(current_chain, rejected_points)
-    print "Next Location: ", next_location['nymag']['name']
-
-    # Update the user's semantic vector based on
-    # whether he accepted or rejected the last location
-    user_vector = update_user_vector(user_vector, current_chain[-1], 
-                                     accepted, len(current_chain))
-
-    data_for_app = {}
-    data_for_app['location'] = next_location['nymag']
-    data_for_app['location']['_id'] = str(next_location['_id'])
-    data_for_app['user_vector'] = user_vector
-
-    #data_for_app = next_location['nymag']
-    #data_for_app["_id"] = str(next_location['_id'])
-
-    js = json.dumps(data_for_app, default=json_util.default)
-    resp = Response(js, status=200, mimetype='application/json')
-    #resp.headers['Link'] = 'http://luisrei.com'
-    return resp
-
 
 def get_lat_lon_square_query(current_location, blocks):
     """
@@ -203,8 +195,12 @@ def get_lat_lon_square_query(current_location, blocks):
     return query
 
 
-def get_next_location(current_chain, rejected_locations):
+def get_next_location(current_chain, rejected_locations, user_vector=None):
     """
+    Return the next location based on the user's current
+    preference vector, his current location, and the list
+    of rejected (blacklisted) locations.
+
     Return the next location based on the current markov chain.
 
     'current_chain' is a list of location dictionaries that
@@ -220,6 +216,8 @@ def get_next_location(current_chain, rejected_locations):
     """
 
     current_location = current_chain[-1]
+
+    # Ensure no reject or current ids are selected
     used_ids = [ObjectId(location['_id']) 
                 for location in itertools.chain(current_chain, rejected_locations) 
                 if '_id' in location]
@@ -234,20 +232,20 @@ def get_next_location(current_chain, rejected_locations):
     # Get the nearby locations
     db, connection = connect_to_database(table_name="barkov_chain")
     bars = db['bars']
-    locations = list(bars.find(db_query))
+    proposed_locations = list(bars.find(db_query))
 
     # If we didn't grab enough locations,
     # try a larger search block
-    while len(locations) < 5:
+    while len(proposed_locations) < 5:
         print "Too few nearby locations found within %s blocks (%s).",
-        print "Extending query: %s %s" % (blocks, len(locations))
+        print "Extending query: %s %s" % (blocks, len(proposed_locations))
         blocks += 10
         updated_distance = get_lat_lon_square_query(current_location, blocks=blocks)
         db_query.update(updated_distance)
-        locations = list(bars.find(db_query))
+        proposed_locations = list(bars.find(db_query))
 
     # Select the next location in the chain
-    next_location = next_location_from_mc(locations, current_location)
+    next_location = next_location_from_mc(proposed_locations, current_location, user_vector)
 
     return next_location
 
@@ -263,7 +261,7 @@ def get_initial_location(locations):
     pass
     
 
-def next_location_from_mc(locations, current_location):
+def next_location_from_mc(proposed_locations, current_location, user_vector):
     """
     Here, we implement the markov chain and pick the next location.
 
@@ -274,13 +272,13 @@ def next_location_from_mc(locations, current_location):
 
     # Calculate the total probability for normalization
     total_probability = 0
-    for location in locations:
-        total_probability += mc_weight(location, current_location)
+    for location in proposed_locations:
+        total_probability += mc_weight(location, current_location, user_vector)
 
     # Calculate the weight function
     while True:
-        proposed = random.choice(locations)
-        probability = mc_weight(proposed, current_location) / total_probability
+        proposed = random.choice(proposed_locations)
+        probability = mc_weight(proposed, current_location, user_vector) / total_probability
         mc_throw = random.uniform(0.0, 1.0)
         if probability > mc_throw:
             print "Monte Carlo: probability %s, throw %s" % (probability, mc_throw)
@@ -306,7 +304,7 @@ def distance_dr(loc0, loc1):
     return dist
 
 
-def mc_weight(proposed, current):
+def mc_weight(proposed, current, user_vector):
     """ 
     Calculate the probability of jumping from current to proposed
     """

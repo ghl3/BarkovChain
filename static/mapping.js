@@ -278,6 +278,8 @@ function getNextLocation(accepted) {
 		    'rejected_locations' : rejected_locations,
 		    'user_vector' : current_user_vector,
 		    'accepted' : accepted};
+	if( accepted ) data['last_venue'] = chain[chain.length-1]; 
+	else data['last_venue'] = rejected_locations[rejected_locations.length-1];
 	submitToServer('/api/next_location', data);
     }
 

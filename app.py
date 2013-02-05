@@ -23,9 +23,12 @@ from database import valid_entry_dict
 import geopy
 import geopy.distance
 
+import numpy
 import scipy.stats
 
 from lsa import LSA
+from math import pi
+from math import tan                
 
 
 # Create the lsa object and load
@@ -96,6 +99,7 @@ def api_next_location():
     preference vector:
     { 'chain' : [{...}, {...}, ...],
       'rejected_locations' : [...],
+      'last
       'accepted' : True (False),
       'user_vector' : [...] }
 
@@ -115,17 +119,18 @@ def api_next_location():
 
     current_chain = request.json['chain']
     rejected_locations = request.json['rejected_locations']
-    accepted = request.json['accepted']
     user_vector = request.json['user_vector']
+    last_venue = request.json['last_venue']
+    accepted = request.json['accepted']
 
     # Update the user's semantic vector based on
     # whether he accepted or rejected the last location
-    user_vector = update_user_vector(user_vector, current_chain[-1], 
+    user_vector = update_user_vector(user_vector, last_venue, 
                                      accepted, len(current_chain))
-
+    
     # Get the next location, package it up
     # and send it to the client
-    next_location = get_next_location(current_chain, rejected_locations)
+    next_location = get_next_location(current_chain, rejected_locations, user_vector)
 
     data_for_app = {}
     data_for_app['location'] = next_location['nymag']
@@ -210,7 +215,6 @@ def get_lat_lon_square_query(current_location, blocks):
         "nymag.longitude": {"$gt": lon_min, "$lt": lon_max}
         }
 
-    #return (lat_min, lat_max), (lon_min, lon_max)
     return query
 
 
@@ -269,17 +273,6 @@ def get_next_location(current_chain, rejected_locations, user_vector=None):
     return next_location
 
 
-def get_initial_location(locations):
-    """
-    Get the initial starting point.
-    The algorithm for this is differnet since we
-    don't yet have a chain of location or a
-    user vector defined.
-    It is therefore based only on long/lat
-    """
-    pass
-    
-
 def next_location_from_mc(proposed_locations, current_location, user_vector):
     """
     Here, we implement the markov chain and pick the next location.
@@ -306,26 +299,9 @@ def next_location_from_mc(proposed_locations, current_location, user_vector):
         if weight_result.probability > mc_throw:
             print "Monte Carlo Converged after %s throws: " % mc_steps,
             print weight_result
+            print "User Vector: ", user_vector
             return proposed
     return
-
-
-def distance_dr(loc0, loc1):
-    """
-    Find the distance between two locations
-    Inputs are two dictionaries with
-    'longitude' and 'latitude'
-    Returns result in meters
-    """
-
-    lat0, lon0 = loc0['latitude'], loc0['longitude']
-    lat1, lon1 = loc1['latitude'], loc1['longitude']
-
-    pt1 = geopy.Point(lat0, lon0)
-    pt2 = geopy.Point(lat1, lon1)
-    
-    dist = geopy.distance.distance(pt1, pt2).km*1000
-    return dist
 
 
 def mc_weight(proposed, current, user_vector):
@@ -356,19 +332,18 @@ def mc_weight(proposed, current, user_vector):
     if not initial:
         last_venue_name = current['name']
         try:
-            # For now, the 'user_vec' is the vector
-            # from the last restaurant
-            user_vec = lsa.get_svd_document_vector(last_venue_name)
-            cosine = lsa.user_cosine(user_vec, name)
+            cosine = lsa.user_cosine(user_vector, name)
         except KeyError:
             print "Error: Couldn't find venue %s in corpus" % name
             raise
-        # Cosine goes from -1 to 1, we add 1 to make it positive definite
+
+        # We here directly use the cosine as the pdf, but one
+        # could be smarter about this
         # similarity_pdf = scipy.stats.expon.pdf(cosine+1.0, scale=0.001)
         if cosine > 0:
-            similarity_pdf = cosine                
+            similarity_pdf = tan(cosine*pi/2.0)
         else:
-            similarity_pdf = 0.0000001
+            similarity_pdf = 0.00000001
         probability *= similarity_pdf
 
     # Return a weight object
@@ -380,11 +355,6 @@ def mc_weight(proposed, current, user_vector):
 
     return result
 
-    #return probability
-
-"""
-{'foursquare': {'distance_to_nymag': 0, u'location': {u'city': u'', u'distance': 44, u'country': u'United States', u'lat': 40.748041, u'state': u'NY', u'crossStreet': u'', u'address': u'', u'postalCode': u'', u'lng': -73.987197}, u'id': u'4e7d3b8bb8f724f0c24f3f7d', u'categories': [{u'shortName': u'Karaoke', u'pluralName': u'Karaoke Bars', u'id': u'4bf58dd8d48988d120941735', u'icon': {u'prefix': u'https://foursquare.com/img/categories/nightlife/karaoke_', u'name': u'.png', u'sizes': [32, 44, 64, 88, 256]}, u'name': u'Karaoke Bar'}], u'name': u'32 Karaoke'}, u'_id': ObjectId('51043ce2d08ce64b3c2f64a6'), u'nymag': {u'average_score': None, u'user_review_url': u'?map_view=1&N=0&No=1&listing_id=75735', u'locality': u'New York', u'url': u'http://nymag.com/listings/bar/32-karaoke/index.html', u'region': u'NY', u'categories': [u'After Hours', u' Karaoke Nights'], u'longitude': -73.987249, u'map_url': u'javascript:void(null)', u'postal_code': u'10001', u'best': None, u'address': u'2 W. 32nd St.', u'latitude': 40.747639, u'critics_pic': False, u'desc_short': u'See the profile of this NYC bar at 2 W. 32nd St. in Manhattan.', u'review': u'Have a BYOB sing-along (till 5 a.m.) without the weekend throngs of students.', u'street_address': u'2 W. 32nd St.', u'name': u'32 Karaoke'}}
-"""
 
 def update_user_vector(user_vector, last_location, 
                        accepted, chain_length):
@@ -397,28 +367,49 @@ def update_user_vector(user_vector, last_location,
 
     # Get the vector of the last location
     last_loc_name = last_location['name']
-    last_loc_vec = lsa.get_svd_document_vector(last_loc_name)
-    last_loc_vec = [val for val in last_loc_vec]
+    last_loc_array = lsa.get_svd_document_vector(last_loc_name)
+    user_array = numpy.array(user_vector)
 
-    return last_loc_vec
-
-
-def get_random_locations(number_of_locations=3):
-    """
-    Return 3 random locations from the database
-    """
+    #return list(last_loc_array)
     
-    db, connection = connect_to_database(table_name="barkov_chain")
-    nymag = db['bars']
-    locations = nymag.find({ 'review' : {'$exists':True} },
-                         limit = 100)
-    locations = [locations[random.randint(0, 100)] for i in range(number_of_locations)]
-    return locations
+    beta = (.5)**chain_length
 
- 
+    if accepted:
+        user_array = user_array + beta*(last_loc_array - user_array)
+    else:
+        user_array = user_array - beta*(last_loc_array - user_array)
+
+    return list(user_array)
+
+
+def distance_dr(loc0, loc1):
+    """
+    Find the distance between two locations
+    Inputs are two dictionaries with
+    'longitude' and 'latitude'
+    Returns result in meters
+    """
+
+    lat0, lon0 = loc0['latitude'], loc0['longitude']
+    lat1, lon1 = loc1['latitude'], loc1['longitude']
+
+    pt1 = geopy.Point(lat0, lon0)
+    pt2 = geopy.Point(lat1, lon1)
+    
+    dist = geopy.distance.distance(pt1, pt2).km*1000
+    return dist
+
+
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.
     port = int(os.environ.get('PORT', 5000))
     app.debug = True
     #app.run(host='192.168.1.5', port=8001)
     app.run(host='0.0.0.0', port=port)
+
+
+
+"""
+{'foursquare': {'distance_to_nymag': 0, u'location': {u'city': u'', u'distance': 44, u'country': u'United States', u'lat': 40.748041, u'state': u'NY', u'crossStreet': u'', u'address': u'', u'postalCode': u'', u'lng': -73.987197}, u'id': u'4e7d3b8bb8f724f0c24f3f7d', u'categories': [{u'shortName': u'Karaoke', u'pluralName': u'Karaoke Bars', u'id': u'4bf58dd8d48988d120941735', u'icon': {u'prefix': u'https://foursquare.com/img/categories/nightlife/karaoke_', u'name': u'.png', u'sizes': [32, 44, 64, 88, 256]}, u'name': u'Karaoke Bar'}], u'name': u'32 Karaoke'}, u'_id': ObjectId('51043ce2d08ce64b3c2f64a6'), u'nymag': {u'average_score': None, u'user_review_url': u'?map_view=1&N=0&No=1&listing_id=75735', u'locality': u'New York', u'url': u'http://nymag.com/listings/bar/32-karaoke/index.html', u'region': u'NY', u'categories': [u'After Hours', u' Karaoke Nights'], u'longitude': -73.987249, u'map_url': u'javascript:void(null)', u'postal_code': u'10001', u'best': None, u'address': u'2 W. 32nd St.', u'latitude': 40.747639, u'critics_pic': False, u'desc_short': u'See the profile of this NYC bar at 2 W. 32nd St. in Manhattan.', u'review': u'Have a BYOB sing-along (till 5 a.m.) without the weekend throngs of students.', u'street_address': u'2 W. 32nd St.', u'name': u'32 Karaoke'}}
+"""
+

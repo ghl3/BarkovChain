@@ -4,6 +4,9 @@ import logging
 import argparse
 import itertools
 
+import time
+import datetime
+import json
 import nltk
 from nltk.corpus import wordnet
 import unicodedata
@@ -123,9 +126,11 @@ def create_lsi(db, num_topics=10, num_bars=None):
     stopwords = get_stopwords()
 
     texts = []
-    
+    bar_map = {}
+
     print "Fetching texts from database and tokenizing"
-    for location in locations:
+    for idx, location in enumerate(locations):
+        bar_map[idx] = location['nymag']['name']
         text = create_string_from_database(location)
         tokens = tokenize_document(text, stopwords, ignorechars)
         texts.append(tokens)
@@ -156,6 +161,16 @@ def create_lsi(db, num_topics=10, num_bars=None):
     lsi.save('model.lsi')
     
     # Save some additional info
+    with open('lsi_bar_map.json', 'wb') as fp:
+        json.dump(bar_map, fp)
+
+    with open('lsi_info.txt', 'wb') as fp:
+        ts = time.time()
+        st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+        fp.write("LSI Model %s\n" % st)
+        info = "Number of Docs: %s Number of Topics: %s\n" % (len(corpus), num_topics)
+        fp.write(info)
+        
 
 
 def test_lsi():

@@ -1,20 +1,4 @@
 
-// To Do:
-
-/*
-  Consider creating a 'location' class that
-  stores the following information:
-  - Location Dictionary
-  - Location Marker
-  - Set of path LatLong (from previous location)
-  - Marker color, additional info
-  - Table entry as a javascript/jquery object
-
-  And has methods to:
-  - populat the path LatLon based on a previous destination
-  - Create the marker from the dictionary
-*/
-
 // Global Variables
 var map = null;
 var marker = null;
@@ -24,6 +8,7 @@ var rejected_points = new Array();
 var current_path = null;
 var active_chain = false;
 
+// Venue class
 function venue(data) {
 
     var self = this;
@@ -58,7 +43,6 @@ venue.prototype.clear = function() {
 	console.log("Removing table entry");
 	this.table_row.remove();
     }
-
 }
 
 venue.prototype.add_path = function(last_point) {
@@ -81,28 +65,38 @@ venue.prototype.add_path = function(last_point) {
 }
 
 venue.prototype.add_to_table = function() {
-    
     var table = $("#venue_list");
     var rowCount = $('#venue_list').find(".row").length;
     var columns = ["name", "address", "review"];
     var tail_row = createTableRow(this.data, columns, rowCount );
     table.append(tail_row);
     this.table_row = tail_row;
-
 }
 
 
-// The current chain, stored in 
-// two arrays.  The first is a dictionary
-// of locations, the second is the list
-// of google maps markers
+venue.prototype.create_path = function(last_lat_long, callback) {
 
-/*
-var current_chain_locations = new Array();
-var current_chain_markers = new Array();
-var current_chain_latlon = new Array();
-var rejected_points = new Array();
-*/
+    var self = this;
+
+    var service = new google.maps.DirectionsService();
+    service.route({
+	origin: last_lat_long,
+	destination: self.latlon,
+	travelMode: google.maps.DirectionsTravelMode.WALKING
+    }, function(result, status) {
+	if (status == google.maps.DirectionsStatus.OK) {
+	    var new_path = result.routes[0].overview_path;
+	    self.path = new_path;
+	    callback();
+	}
+	else {
+	    console.log("Travel Directions Error");
+	}
+    });
+
+
+}
+
 
 // Create a twitter bootstrap collapsable
 // Object on-th-fly
@@ -129,15 +123,6 @@ function createCollapsable(id, title, content) {
 
 }
 
-/*
-function addDataToTable(data, columns) {
-
-    var table = $("#venue_list");
-    var rowCount = $('#venue_list').find(".row").length;
-    var tail_row = createTableRow(data, columns, rowCount );
-    table.append(tail_row);
-}
-*/
 
 function createTableRow(data, columns, row_index) {
 
@@ -168,18 +153,12 @@ function createTableRow(data, columns, row_index) {
 <hr> \
 </div>';
     
-    console.log("Row String:");
-    console.log(row_html_string);
-    
     // Create the object
     var row = $(row_html_string);
 
     // Add the collapsable review
     var collapsable = createCollapsable("row_" + row_index, "review", data['review']);
     row.find(".review").html(collapsable);
-
-    console.log("Created Row:");
-    console.log(row);
 
     return row;
 }
@@ -214,33 +193,6 @@ function beginChain(event) {
     active_chain = true;
     return;
 
-    /////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////
-
-    /*
-    current_chain_latlon.push(new Array(latlon));
-    
-    // Create the 'begin' marker
-    marker = new google.maps.Marker({
-	position: latlon,
-	map: map,
-	animation: google.maps.Animation.DROP,
-	name : "Starting Point"
-    });
-    current_chain_markers.push(marker);
-
-    // Create a 'location'
-    var location = {}; //new Array();
-    location['latitude'] = latlon.lat();
-    location['longitude'] = latlon.lng();
-    location['initial'] = true;
-    current_chain_locations.push(location);
-    console.log("Starting Point:");
-    console.log(location);
-
-    active_chain = true;
-    */
 }
 
 
@@ -248,8 +200,6 @@ function beginChain(event) {
 // List of LatLon points
 function updatePath() {
     
-    console.log("Updating Path");
-
     var total_chain = new Array();
     for(var i=0; i < venue_list.length; ++i) {
 	var path = venue_list[i].path;
@@ -271,6 +221,9 @@ function addToChain(location_dict) {
     // Get the updated path between the last point
     // and the new point
     var last_lat_long = venue_list[venue_list.length - 1].latlon;
+    next_venue.create_path(last_lat_long, updatePath);
+
+    /*
     var next_lat_long = next_venue.latlon;
 
     var service = new google.maps.DirectionsService();
@@ -289,64 +242,12 @@ function addToChain(location_dict) {
 	    console.log("Travel Directions Error");
 	}
     });
+    */
 
     // Need to add the table
     next_venue.add_to_table();
 
     return;
-
-    /////////////////////////////////////////////////
-    /////////////////////////////////////////////////
-    /////////////////////////////////////////////////
-
-    /*
-    current_chain_locations.push(location_dict);
-
-    var lat = location_dict['latitude'];
-    var lon = location_dict['longitude'];
-    var latlon = new google.maps.LatLng(lat, lon);
-
-    var marker = new google.maps.Marker({
-	position: latlon,
-	map: map,
-	animation: google.maps.Animation.DROP
-    });
-    current_chain_markers.push(marker);
-
-    // Create the path, including directions
-    if( current_path == null ) {
-	current_path = new google.maps.Polyline({
-	    strokeColor: "#0000FF",
-	    strokeOpacity: 0.8,
-	    strokeWeight: 4
-	});
-        current_path.setMap(map);
-    }
-
-    // Get the origin
-    // Recall, current_chain_latlon is a list of lists
-    var last_chain_group = current_chain_latlon[current_chain_latlon.length-1];
-    var last_point = last_chain_group[last_chain_group.length-1];
-
-    var service = new google.maps.DirectionsService();
-    service.route({
-	origin: last_point,
-	destination: latlon,
-	travelMode: google.maps.DirectionsTravelMode.WALKING
-    }, function(result, status) {
-	if (status == google.maps.DirectionsStatus.OK) {
-	    var new_path = result.routes[0].overview_path;
-	    current_chain_latlon.push(new_path);	    
-	    updatePath();
-	}
-	else {
-	    console.log("Travel Directions Error");
-	}
-    });
-
-    // Append to the table
-    addDataToTable(location_dict, ["name", "address", "review"]);
-    */
 }
 
 
@@ -365,30 +266,6 @@ function clearChain() {
     active_chain = false;
     return;
 
-    //////////////////////////////////////////////////
-    //////////////////////////////////////////////////
-    //////////////////////////////////////////////////
-
-    /*
-    // Clear the arrays
-    for(var i=0; i<current_chain_markers.length; ++i) {
-	current_chain_markers[i].setMap(null);
-    }
-
-    current_chain_markers.length = 0;
-    current_chain_locations.length = 0;
-    current_chain_latlon.length = 0;
-
-    // Clear the path
-    if( current_path != null ) current_path.setMap(null);
-    current_path = null;
-
-    // Clear the table
-    $('#venue_table').empty();
-
-    active_chain = false;
-    $("#venue_list").hide();
-    */
 }
 
 
@@ -427,28 +304,6 @@ function getNextLocation(accepted) {
     }
 
     return;
-
-	////////////////////////////////////////////////
-	////////////////////////////////////////////////
-	////////////////////////////////////////////////
-
-    if( current_chain_locations.length == 0 ) {
-	console.log("Error: No locations exist yet");
-	return;
-    }
-
-    if( current_chain_locations.length == 1 ){
-	var data = {'location' : current_chain_locations[0]}
-	submitToServer('/api/initial_location', data);
-    }
-    
-    else {
-	var data = {'chain' : current_chain_locations,
-		    'rejected_points' : rejected_points,
-		    'user_vector' : current_user_vector,
-		    'accepted' : accepted};
-	submitToServer('/api/next_location', data);
-    }
 }
 
 // Wrapper for the server POST request.
@@ -507,30 +362,8 @@ function rejectLastPoint() {
     var last_venue = venue_list.pop();
     last_venue.clear();
     rejected_points.push(last_venue.data);
+
     return;
-
-    //////////////////////////////////////////
-
-    // Delete the last set of points in the array
-    var last_marker = current_chain_markers.pop();
-    last_marker.setMap(null);
-
-    // WARNING: 
-    // IF THE USER REJECTS THE LAST POINT, WE WANT TO
-    // BLACKLIST IT SOMEHOW.  WE'LL NEED TO MAINTAIN
-    // SUCH A LIST
-    var last_location = current_chain_locations.pop();
-    rejected_points.push(last_location);
-
-    current_chain_latlon.pop();
-    updatePath();
-
-    $("#venue_list").find('.row:last').remove();
-
-    var rowCount = $('#venue_list').find(".row").length;
-    if(rowCount==0) {
-	clearChain();
-    }
 
 }
 
@@ -558,7 +391,6 @@ $(document).ready(function() {
     $("#venue_list").hide();
     
     // Create the map
-    // map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
     map = create_map();
 
     // Define clicking on the map

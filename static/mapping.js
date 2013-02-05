@@ -52,8 +52,10 @@ venue.prototype.clear = function() {
     this.marker.setMap(null);
 
     // Remove the entry from the table    
-    this.table_row.remove();
-    // $("#venue_list").find('.row:last').remove();
+    if( this.table_row != null ) {
+	console.log("Removing table entry");
+	this.table_row.remove();
+    }
 
 }
 
@@ -83,7 +85,7 @@ venue.prototype.add_to_table = function() {
     var columns = ["name", "address", "review"];
     var tail_row = createTableRow(this.data, columns, rowCount );
     table.append(tail_row);
-    self.table_row = tail_row;
+    this.table_row = tail_row;
 
 }
 
@@ -238,6 +240,14 @@ function beginChain(event) {
 	clearChain();
     }
 
+    // Create a new path
+    current_path = new google.maps.Polyline({
+	strokeColor: "#0000FF",
+	strokeOpacity: 0.8,
+	strokeWeight: 4
+    });
+    current_path.setMap(map);
+
     // To be done by clicking
     latlon = event.latLng;
     var data = {};
@@ -289,6 +299,7 @@ function updatePath() {
 
     // Create the path, including directions
     // if necessary
+    /*
     if( current_path == null ) {
 	current_path = new google.maps.Polyline({
 	    strokeColor: "#0000FF",
@@ -297,6 +308,7 @@ function updatePath() {
 	});
         current_path.setMap(map);
     }
+    */
 
     console.log("Appending to path");
 
@@ -414,6 +426,10 @@ function clearChain() {
 	venue_list[i].clear();
     }
     venue_list.length = 0;
+
+    current_path.setMap(null);
+    current_path = null;
+
     active_chain = false;
     return;
 
@@ -553,6 +569,14 @@ function submitToServer(api, data) {
 // Remove the last restaurant from
 // the current chain
 function rejectLastPoint() {
+
+    // Add the last marker to the list of 
+    var last_venue = venue_list.pop();
+    last_venue.clear();
+    rejected_points.push(last_venue.data);
+    return;
+
+    //////////////////////////////////////////
 
     // Delete the last set of points in the array
     var last_marker = current_chain_markers.pop();

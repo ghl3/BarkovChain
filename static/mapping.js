@@ -21,6 +21,8 @@ var marker = null;
 var current_user_vector = null;
 var venue_list = new Array();
 var rejected_points = new Array();
+var current_path = null;
+var active_chain = false;
 
 function venue(data) {
 
@@ -94,13 +96,13 @@ venue.prototype.add_to_table = function() {
 // two arrays.  The first is a dictionary
 // of locations, the second is the list
 // of google maps markers
-var active_chain = false;
-var current_path = null;
+
+/*
 var current_chain_locations = new Array();
 var current_chain_markers = new Array();
 var current_chain_latlon = new Array();
 var rejected_points = new Array();
-
+*/
 
 // Create a twitter bootstrap collapsable
 // Object on-th-fly
@@ -127,32 +129,15 @@ function createCollapsable(id, title, content) {
 
 }
 
-
+/*
 function addDataToTable(data, columns) {
-
-    /*    
-    var table = $("#venue_table");
-
-    var rowCount = $('#venue_table tr').length;
-    // Create the header, if necessary
-    if( rowCount==0 ) {
-	var row = document.createElement("tr");
-	for( var column_idx = 0; column_idx < columns.length; ++column_idx ) {
-	    var cell = row.insertCell(column_idx);
-	    cell.innerHTML = columns[column_idx];
-	    cell.setAttribute("class", "table_header");
-	}
-	table.append(row);
-    }
-    var rowCount = $('#venue_table tr').length;
-    */
 
     var table = $("#venue_list");
     var rowCount = $('#venue_list').find(".row").length;
     var tail_row = createTableRow(data, columns, rowCount );
     table.append(tail_row);
 }
-
+*/
 
 function createTableRow(data, columns, row_index) {
 
@@ -182,22 +167,11 @@ function createTableRow(data, columns, row_index) {
 </div> \
 <hr> \
 </div>';
-
-/*
-
-<div class="span1"><a href="http://critterapp.pagodabox.com/others/admin" class="thumbnail"> \
-<img src="http://critterapp.pagodabox.com/img/user.jpg" alt=""></a>\
-</div> \
-
-
-<span class="badge badge-info review" ></span> \
-
-*/
-
+    
     console.log("Row String:");
     console.log(row_html_string);
     
-// Create the object
+    // Create the object
     var row = $(row_html_string);
 
     // Add the collapsable review
@@ -208,27 +182,6 @@ function createTableRow(data, columns, row_index) {
     console.log(row);
 
     return row;
-
-    /*
-    // Recall that the header row is row=0
-    var row = document.createElement("tr");
-
-    for( var column_idx = 0; column_idx < columns.length; ++column_idx ) {
-	var cell = row.insertCell(column_idx);
-	var var_name = columns[column_idx];
-	if(var_name != 'review') {
-	    cell.innerHTML = data[var_name];
-	}
-	else {
-	    var collapsable = createCollapsable("row_" + row_index, 
-						"review", data[var_name]); 
-	    cell.innerHTML = collapsable;
-	}
-	cell.className += "table_column_" + column_idx;
-    }
-    
-    return row;
-*/
 }
 
 
@@ -265,7 +218,7 @@ function beginChain(event) {
     /////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////
 
-
+    /*
     current_chain_latlon.push(new Array(latlon));
     
     // Create the 'begin' marker
@@ -287,7 +240,7 @@ function beginChain(event) {
     console.log(location);
 
     active_chain = true;
-
+    */
 }
 
 
@@ -295,35 +248,13 @@ function beginChain(event) {
 // List of LatLon points
 function updatePath() {
     
-    console.log("updating Path");
-
-    // Create the path, including directions
-    // if necessary
-    /*
-    if( current_path == null ) {
-	current_path = new google.maps.Polyline({
-	    strokeColor: "#0000FF",
-	    strokeOpacity: 0.8,
-	    strokeWeight: 4
-	});
-        current_path.setMap(map);
-    }
-    */
-
-    console.log("Appending to path");
+    console.log("Updating Path");
 
     var total_chain = new Array();
     for(var i=0; i < venue_list.length; ++i) {
-	console.log("venue list: " + i);
-	console.log(venue_list[i]);
 	var path = venue_list[i].path;
-	if( path == null ) continue;
-	console.log("Appending path");
-	console.log(path);
 	total_chain = total_chain.concat(path);
     }
-    console.log("Setting current path");
-    console.log(total_chain);
     current_path.setPath(total_chain);
 }
 
@@ -368,7 +299,7 @@ function addToChain(location_dict) {
     /////////////////////////////////////////////////
     /////////////////////////////////////////////////
 
-
+    /*
     current_chain_locations.push(location_dict);
 
     var lat = location_dict['latitude'];
@@ -415,7 +346,7 @@ function addToChain(location_dict) {
 
     // Append to the table
     addDataToTable(location_dict, ["name", "address", "review"]);
-
+    */
 }
 
 
@@ -430,6 +361,7 @@ function clearChain() {
     current_path.setMap(null);
     current_path = null;
 
+    $("#venue_list").hide();
     active_chain = false;
     return;
 
@@ -437,7 +369,7 @@ function clearChain() {
     //////////////////////////////////////////////////
     //////////////////////////////////////////////////
 
-
+    /*
     // Clear the arrays
     for(var i=0; i<current_chain_markers.length; ++i) {
 	current_chain_markers[i].setMap(null);
@@ -456,6 +388,7 @@ function clearChain() {
 
     active_chain = false;
     $("#venue_list").hide();
+    */
 }
 
 

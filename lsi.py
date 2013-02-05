@@ -90,10 +90,83 @@ def load_lsi():
     """
     lsi = models.LsiModel.load('model.lsi')
     corpus = corpora.MmCorpus('lsi.corpus.mm')
+    corpus_tfidf = corpora.MmCorpus('lsi.corpus_tfidf.mm')
     dictionary = corpora.Dictionary.load('lsi.dict')
 
-    return (lsi, corpus, dictionary)
+    return (lsi, corpus, corpus_tfidf, dictionary)
     
+
+def create_lsi(db):
+    """
+    Create and save a lsi object
+    using data in the database.
+    Save this object, along with the
+    dictionary and the corpus, to disk
+    """
+
+    bars = db['bars']
+    num_bars = 200
+    locations = bars.find({ 'nymag.review' : {'$ne':None}, 
+                            'foursquare.tips' : {'$exists':True}, 
+                            'foursquare.tips' : {'$ne':None} 
+                            }).limit(num_bars)
+
+    ignorechars = '''!"#$%&()*+,-./:;<=>?@[\]^_`{|}~'''
+    stopwords = get_stopwords()
+
+    texts = []
+    
+    print "Fetching texts from database and tokenizing"
+    for location in locations:
+        text = create_string_from_database(location)
+        tokens = tokenize_document(text, stopwords, ignorechars)
+        texts.append(tokens)
+
+    # Do some cleaning
+    print "Cleaning texts"
+    texts = remove_words_appearing_once(texts)
+
+    # Create and save the dictionary
+    print "Creating dictionary"
+    dictionary = corpora.Dictionary(texts)
+    dictionary.save('lsi.dict')
+
+    # Create and save the corpus
+    print "Creating Corpus matrix"
+    corpus = [dictionary.doc2bow(text) for text in texts]
+    corpora.MmCorpus.serialize('lsi.corpus.mm', corpus) 
+
+    # Term Frequency, Inverse Document Frequency
+    print "Applying TFIDF"
+    tfidf = models.TfidfModel(corpus) 
+    corpus_tfidf = tfidf[corpus]
+    corpora.MmCorpus.serialize('lsi.corpus_tfidf.mm', corpus_tfidf) 
+
+    # Create the model
+    print "Creating LSI"
+    lsi = models.LsiModel(corpus_tfidf, id2word=dictionary, num_topics=10) 
+    lsi.save('model.lsi')
+    
+
+def test_lsi():
+
+    lsi, corpus, corpus_tfidf, dictionary = load_lsi()
+
+    # Now that everything is generated and saved,
+    # we can begin using the lsi
+    corpus_lsi = lsi[corpus_tfidf]
+    lsi.print_topics(10)
+    
+    # Create the similarity index
+    index = similarities.MatrixSimilarity(lsi[corpus])
+
+    # Test the similarities
+    test_vector = lsi[corpus[0]]
+    sims = index[test_vector]
+    sims = sorted(enumerate(sims), key=lambda item: -item[1])
+    print sims
+    return
+
 
 def main():
 
@@ -101,6 +174,12 @@ def main():
     
     # Add documents
     db, connection = connect_to_database(table_name="barkov_chain")
+
+    create_lsi(db)
+
+    test_lsi()
+
+    """
     bars = db['bars']
     num_bars = 200
     locations = bars.find({ 'nymag.review' : {'$ne':None}, 
@@ -117,61 +196,45 @@ def main():
         text = create_string_from_database(location)
         tokens = tokenize_document(text, stopwords, ignorechars)
         texts.append(tokens)
-        #nymag = location['nymag']
-        #name = nymag['name']
-        #description = nymag['review']
-        #fsq_tips = location['foursquare']['tips']
-        #description.join([tip['text'] for tip in fsq_tips])
-        #tokens = tokenize_document(description, stopwords, ignorechars)
-        #texts.append(tokens)
 
     # Do some cleaning
     texts = remove_words_appearing_once(texts)
 
-    # Create the dictionary
+    # Create and save the dictionary
     dictionary = corpora.Dictionary(texts)
     dictionary.save('lsi.dict')
 
+    # Create and save the corpus
     corpus = [dictionary.doc2bow(text) for text in texts]
     corpora.MmCorpus.serialize('lsi.corpus.mm', corpus) 
 
     # Term Frequency, Inverse Document Frequency
     tfidf = models.TfidfModel(corpus) 
     corpus_tfidf = tfidf[corpus]
+    corpora.MmCorpus.serialize('lsi.corpus_tfidf.mm', corpus_tfidf) 
 
     # Create the model
     lsi = models.LsiModel(corpus_tfidf, id2word=dictionary, num_topics=10) 
-    corpus_lsi = lsi[corpus_tfidf]
-    print '\n'
-    lsi.print_topics(10)
-    return
-    #lsi.print_topics(2)
-
     lsi.save('model.lsi')
+    """
 
+    """
+    # Now that everything is generated and saved,
+    # we can begin using the lsi
+    corpus_lsi = lsi[corpus_tfidf]
+    lsi.print_topics(10)
     
+    # Create the similarity index
     index = similarities.MatrixSimilarity(lsi[corpus])
 
+    # Test the similarities
     test_vector = lsi[corpus[0]]
-
     sims = index[test_vector]
     sims = sorted(enumerate(sims), key=lambda item: -item[1])
     print sims
-    return
-
-    sims = sorted(enumerate(sims), key=lambda item: -item[1])
-    print sims
-    
-    #model = ldamodel.LdaModel(bow_corpus, id2word=dictionary, num_topics=100)
+    """
 
     return
-
-    tfidf = models.TfidfModel(corpus)
-
-    index = similarities.SparseMatrixSimilarity(tfidf[corpus], num_features=12)
-
-    sims = index[tfidf[vec]]
-
 
 
 if __name__ == "__main__":

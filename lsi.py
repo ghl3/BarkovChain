@@ -2,6 +2,7 @@
 
 import logging
 import argparse
+import itertools
 
 import nltk
 from nltk.corpus import wordnet
@@ -150,7 +151,7 @@ def create_lsi(db, num_topics=10, num_bars=None):
     corpora.MmCorpus.serialize('lsi.corpus_tfidf.mm', corpus_tfidf) 
 
     # Create the model
-    print "Creating LSI"
+    print "Creating LSI with %s topics" % num_topics
     lsi = models.LsiModel(corpus_tfidf, id2word=dictionary, num_topics=num_topics) 
     lsi.save('model.lsi')
     
@@ -171,23 +172,36 @@ def test_lsi():
 
     # Test the similarities
     test_vector = lsi[corpus[0]]
+    test_words = [dictionary[word[0]] for word in test_vector]
     sims = index[test_vector]
     sims = sorted(enumerate(sims), key=lambda item: -item[1])
-    print sims
+
+    print test_vector
+    print "Comparing to: "
+    print test_words
+    print ''
+
+    for doc_idx, cosine in itertools.chain(sims[0:10], sims[-10:-1]):
+        words = [dictionary[pair[0]] for pair in corpus[doc_idx]]
+        print cosine, 
+        print '{', [word for word in words if word in test_words], '}',
+        print words
+        print ''
+
     return
 
 
 def main():
-
 
     parser = argparse.ArgumentParser(description='Scrape data from NYMag.')
     parser.add_argument('--create', '-c', dest='create', action="store_true", default=False, 
                         help='Create and save the lsa object')
     parser.add_argument('--test', '-t', dest='test', action="store_true", default=False, 
                         help='Test the lsa')
+
     parser.add_argument('--limit', '-l', dest='limit', type=int, default=None, 
                         help='Maximum number of venues to use in sva matrix (default is all)')
-    parser.add_argument('--size', '-s', dest='size', type=int, default=None, 
+    parser.add_argument('--size', '-s', dest='size', type=int, default=10, 
                         help='Number of Support Vector dimensions to use')
 
     args = parser.parse_args()
@@ -197,64 +211,11 @@ def main():
     # Add documents
     db, connection = connect_to_database(table_name="barkov_chain")
 
-    create_lsi(db, args.size, args.limit)
+    if args.create:
+        create_lsi(db, args.size, args.limit)
 
-    test_lsi()
-
-    """
-    bars = db['bars']
-    num_bars = 200
-    locations = bars.find({ 'nymag.review' : {'$ne':None}, 
-                            'foursquare.tips' : {'$exists':True}, 
-                            'foursquare.tips' : {'$ne':None} 
-                            }).limit(num_bars)
-
-    ignorechars = '''!"#$%&()*+,-./:;<=>?@[\]^_`{|}~'''
-    stopwords = get_stopwords()
-
-    texts = []
-    
-    for location in locations:
-        text = create_string_from_database(location)
-        tokens = tokenize_document(text, stopwords, ignorechars)
-        texts.append(tokens)
-
-    # Do some cleaning
-    texts = remove_words_appearing_once(texts)
-
-    # Create and save the dictionary
-    dictionary = corpora.Dictionary(texts)
-    dictionary.save('lsi.dict')
-
-    # Create and save the corpus
-    corpus = [dictionary.doc2bow(text) for text in texts]
-    corpora.MmCorpus.serialize('lsi.corpus.mm', corpus) 
-
-    # Term Frequency, Inverse Document Frequency
-    tfidf = models.TfidfModel(corpus) 
-    corpus_tfidf = tfidf[corpus]
-    corpora.MmCorpus.serialize('lsi.corpus_tfidf.mm', corpus_tfidf) 
-
-    # Create the model
-    lsi = models.LsiModel(corpus_tfidf, id2word=dictionary, num_topics=10) 
-    lsi.save('model.lsi')
-    """
-
-    """
-    # Now that everything is generated and saved,
-    # we can begin using the lsi
-    corpus_lsi = lsi[corpus_tfidf]
-    lsi.print_topics(10)
-    
-    # Create the similarity index
-    index = similarities.MatrixSimilarity(lsi[corpus])
-
-    # Test the similarities
-    test_vector = lsi[corpus[0]]
-    sims = index[test_vector]
-    sims = sorted(enumerate(sims), key=lambda item: -item[1])
-    print sims
-    """
+    if args.test:
+        test_lsi()
 
     return
 

@@ -7,6 +7,7 @@ var venue_list = new Array();
 var rejected_locations = new Array();
 var current_path = null;
 var active_chain = false;
+var _lastIndex = 0;
 
 // Venue class
 function venue(data) {
@@ -67,8 +68,8 @@ venue.prototype.add_path = function(last_point) {
 venue.prototype.add_to_table = function() {
     var table = $("#venue_list");
     var rowCount = $('#venue_list').find(".row").length;
-    var columns = ["name", "address", "review"];
-    var tail_row = createTableRow(this.data, columns, rowCount );
+    
+    var tail_row = createTableRow(this.data, rowCount );
     table.append(tail_row);
     this.table_row = tail_row;
 }
@@ -115,8 +116,8 @@ function createCollapsable(id, title, content) {
 	      ' + title + ' \
 	    </a> \
 	  </div> \
-	  <div id="collapse_' + id + '" class="accordion-body collapse"> \
-	    <div class="accordion-inner"> \
+	  <div id="collapse_' + id + '" class="accordion-body collapse" > \
+	    <div class="accordion-inner" style="height: 200px; overflow: scroll;"> \
 	      ' + content + ' \
 	    </div> \
 	  </div> \
@@ -128,7 +129,7 @@ function createCollapsable(id, title, content) {
 }
 
 
-function createTableRow(data, columns, row_index) {
+function createTableRow(data, row_index) {
 
     console.log("Creating row Object " + row_index);
 
@@ -138,7 +139,7 @@ function createTableRow(data, columns, row_index) {
     var address = data['nymag']['address'];
     var review = data['nymag']['review'];
     var category_list = data['nymag']['categories'];
-    var tips_list = data[
+    var tips_list = data['foursquare']['tips'];
 
     var category_string = '';
     for(var i=0; i < category_list.length; ++i) {
@@ -148,20 +149,25 @@ function createTableRow(data, columns, row_index) {
 	}
     }
 
+    var tips_string = '<ul>';
+    for(var i=0; i < tips_list.length && i < 5; ++i) {
+	tips_string += "<li>" + tips_list[i]['text'] + "</li>";
+    }
+    tips_string += '</ul>';
+
     var row_html_string = ' \
 <div class="row" id="row_' + row_index + '"> \
-<div class="span3"> \
-<p><strong>' + name + '</strong></p> \
-<p>' + address + '</p> \
-</div> \
-<div class="span3">' + category_string + '</div> \
-<div class="span2"> \
-<div class="review"> </div> \
-</div> \
-<div class="span2"> \
-<div class="tips"> </div> \
-</div> \
+\
+<div class="span3"> <p><strong>' + name + '</strong></p> </div> \
+<div class="span2" style="text-align: right;"> \
+<a id="button_remove_' + row_index + '" class="btn btn-small btn-danger">Remove</a> </div> \
+<div class="span3"> <p>' + address + '</p> </div> \
+<div class="span2"></div> \
+<div class="span5">' + category_string + '</div> \
+<div class="span3"> <div class="review"> </div> </div> \
+<div class="span2"> <div class="tips"> </div> </div> \
 <hr> \
+\
 </div>';
     
     // Create the object
@@ -172,7 +178,7 @@ function createTableRow(data, columns, row_index) {
     row.find(".review").html(collapsable);
 
     // Add the collapsable tips
-    var collapsable = createCollapsable("row_" + row_index + "_tips", "tips", review);
+    var collapsable = createCollapsable("row_" + row_index + "_tips", "tips", tips_string);
     row.find(".tips").html(collapsable);
 
     return row;

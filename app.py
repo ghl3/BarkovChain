@@ -71,7 +71,6 @@ def api_initial_location():
     next_location = get_next_location(current_chain, rejected_locations=[])
 
     # Update the user vector
-    #user_vector = lsa.get_svd_document_vector(next_location['nymag']['name'])
     bar_index = bar_idx_map[next_location['nymag']['name']]
     initial_user_vector = [var for idx, var in corpus_lsi_tfidf[bar_index]]
     print "Created Initial User Vector: ", 
@@ -80,24 +79,6 @@ def api_initial_location():
     # Return the data
     data_for_app = format_location(next_location, initial_user_vector)
     resp = Response(data_for_app, status=200, mimetype='application/json')
-
-    # data_for_app = {}
-    # data_for_app['location'] = {}
-    # data_for_app['location']['name'] = next_location['nymag']['name']
-    # data_for_app['location']['longitude'] = next_location['nymag']['longitude']
-    # data_for_app['location']['latitude'] = next_location['nymag']['latitude']
-    # data_for_app['location']['_id'] = str(next_location['_id'])
-    # data_for_app['location']['nymag'] = next_location['nymag']
-    # data_for_app['location']['foursquare'] = next_location['foursquare']
-    # data_for_app['user_vector'] = initial_user_vector
-
-    # #for key, val in next_location['foursquare'].iteritems():
-    # #    data_for_app['location']["fsq_" + key] = val
-
-
-    # js = json.dumps(data_for_app, default=json_util.default)
-    # resp = Response(js, status=200, mimetype='application/json')
-
     return resp
 
 
@@ -145,20 +126,8 @@ def api_next_location():
     # Get the next location, package it up
     # and send it to the client
     next_location = get_next_location(current_chain, rejected_locations, user_vector)
-
     data_for_app = format_location(next_location, user_vector)
     resp = Response(data_for_app, status=200, mimetype='application/json')
-
-
-    # data_for_app = {}
-    # data_for_app['location'] = next_location['nymag']
-    # data_for_app['location']['_id'] = str(next_location['_id'])
-    # data_for_app['user_vector'] = user_vector
-
-    # js = json.dumps(data_for_app, default=json_util.default)
-    # resp = Response(js, status=200, mimetype='application/json')
-
-
     return resp
 
 

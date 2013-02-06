@@ -184,6 +184,7 @@ class weight(object):
         self.distance = None
         self.critics_pic = None
         self.cosine = None
+        self.words = None
 
     def __repr__(self):
         repr_str = ''
@@ -302,6 +303,7 @@ def next_location_from_mc(proposed_locations, current_location, user_vector):
         if weight_result.probability > mc_throw:
             print "Monte Carlo Converged after %s throws: " % mc_steps,
             print weight_result
+            print "Words in Selected: ", weight_result.words
             print "User Vector: ", user_vector
             return proposed
     return
@@ -312,6 +314,7 @@ def mc_weight(proposed, current, user_vector):
     Calculate the probability of jumping from current to proposed
     """
 
+    result = weight()
     probability = 1.0
 
     name = proposed['nymag']['name']
@@ -336,15 +339,10 @@ def mc_weight(proposed, current, user_vector):
         try:
             # User vector lives in the lsa[tfidf] space
             user_array = numpy.array(user_vector)
-            print user_array
             sims = lsi_index[user_array]
             proposed_bar_idx = bar_idx_map[name]
             cosine = sims[proposed_bar_idx]
-            words = [dictionary[pair[0]] for pair in corpus[proposed_bar_idx]]
-            print cosine,
-            #print '{', [word for word in words if word in test_words], '}',
-            print words
-            print ''
+            result.words = [dictionary[pair[0]] for pair in corpus[proposed_bar_idx]]
         except:
             print "Cosine Error"
             raise
@@ -359,7 +357,7 @@ def mc_weight(proposed, current, user_vector):
         probability *= similarity_pdf
 
     # Return a weight object
-    result = weight()
+
     result.probability = probability
     result.distance = distance
     result.cosine = cosine

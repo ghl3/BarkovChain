@@ -1,4 +1,6 @@
 
+from __future__ import division
+
 import logging
 import argparse
 import itertools
@@ -14,7 +16,7 @@ from nymag_scrape import connect_to_database
 
 from gensim.models.lsimodel import LsiModel
 from gensim import corpora, models, similarities
-
+from math import sqrt
 
 def get_stopwords():
     """
@@ -288,6 +290,52 @@ def test_lsi(db):
         print ''
 
     return
+
+
+def cosine(A, B):
+    """
+    Return the cosine between two lsi rows.
+    The inputs are vectors in the form:
+
+    [ (idx, val), (idx, val), ... ]
+    """
+    magA = sqrt(sum([x[1]*y[1] for (x, y) in zip(A, A)]))
+    magB = sqrt(sum([x[1]*y[1] for (x, y) in zip(B, B)]))
+    dotP = sum([x[1]*y[1] for (x, y) in zip(A, B)])
+    return dotP / (magA*magB)
+
+
+def important_words(lsi, docA, docB):
+    """
+    Return an ordered list of 
+    important words for a document
+    comaprison.
+    """
+
+    # Get the word mapping
+    # [ [(0.10818501434348921, 'room'), (0.1065805102429373, 'space'), ... ],
+    #    ...
+    #   [ ...,  (-0.089040641678911847, 'sports'), (-0.088569259768822226, 'ginger')] ]
+    topic_list = lsi.show_topics(formatted=False)
+    
+    # Calculate the element-by-element overlap
+    overlap = [valA[1]*valB[1] for (valA, valB) in zip(docA, docB)]
+
+    # Reverse sort it
+    # overlap = sort(enumerate(overlap), key=lambda x: x[1], reverse=True)
+
+    # Create a dictionary to hold the word values
+    word_val_dict = {}
+    for topic, topic_weight in zip(topic_list, overlap):
+        # Topic = [(0.10818501434348921, 'room'), (0.1065805102429373, 'space'), ... ]
+        for word_weight, word in topic:
+            if word not in word_val_dict:
+                word_val_dict[word] = word_weight * topic_weight
+            else:
+                word_val_dict[word] += word_weight * topic_weight
+
+    # Turn the dict into a (reverse) sorted list of word, strenght pairs
+    return sorted(list(word_val_dict.iteritems()), key=lambda x: x[1], reverse=True)
 
 
 def main():

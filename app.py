@@ -33,7 +33,7 @@ from lsi import load_lsi
 
 # Create a corpus from this
 dictionary, lsi, tfidf, corpus, corpus_lsi_tfidf, \
-    lsi_index, bar_idx_map, idx_bar_map = load_lsi()
+    lsi_index, bar_idx_map, idx_bar_map = load_lsi('data')
 
 app = Flask(__name__)
 
@@ -141,7 +141,6 @@ def api_next_location():
 
     js = json.dumps(data_for_app, default=json_util.default)
     resp = Response(js, status=200, mimetype='application/json')
-    #resp.headers['Link'] = 'http://luisrei.com'
     return resp
 
 

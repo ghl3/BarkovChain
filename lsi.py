@@ -116,6 +116,8 @@ def create_lsi(db, num_topics=10, num_bars=None):
     bar_idx_map = {}
     idx_bar_map = {}
 
+    save_directory = "data/"
+
     print "Fetching texts from database and tokenizing"
     for idx, location in enumerate(locations):
         bar_name = location['nymag']['name']
@@ -132,45 +134,45 @@ def create_lsi(db, num_topics=10, num_bars=None):
     # Create and save the dictionary
     print "Creating dictionary"
     dictionary = corpora.Dictionary(texts)
-    dictionary.save('lsi.dict')
+    dictionary.save(save_directory + 'lsi.dict')
 
     # Create and save the corpus
     print "Creating Corpus matrix"
     corpus = [dictionary.doc2bow(text) for text in texts]
-    corpora.MmCorpus.serialize('corpus.mm', corpus) 
+    corpora.MmCorpus.serialize(save_directory + 'corpus.mm', corpus) 
 
     # Term Frequency, Inverse Document Frequency
     print "Applying TFIDF"
     tfidf = models.TfidfModel(corpus) 
-    tfidf.save("tfidf.model")
+    tfidf.save(save_directory + "tfidf.model")
 
     # Map TFIDF on the corpus
     print "Mapping TFIDF on corpus"
     corpus_tfidf = tfidf[corpus]
-    corpora.MmCorpus.serialize('corpus_tfidf.mm', corpus_tfidf) 
+    corpora.MmCorpus.serialize(save_directory + 'corpus_tfidf.mm', corpus_tfidf) 
 
     # Create the LSI
     print "Creating LSI with %s topics" % num_topics
     lsi = models.LsiModel(corpus_tfidf, id2word=dictionary, num_topics=num_topics) 
-    lsi.save('lsi.model')
+    lsi.save(save_directory + 'lsi.model')
 
     # Map LSI on the corpus
     corpus_lsi_tfidf = lsi[corpus_tfidf]
-    corpora.MmCorpus.serialize('corpus_lsi_tfidf.mm', corpus_lsi_tfidf)
+    corpora.MmCorpus.serialize(save_directory + 'corpus_lsi_tfidf.mm', corpus_lsi_tfidf)
 
     # Create the index
     #index = similarities.MatrixSimilarity(lsi[corpus_tfidf])
     index = similarities.MatrixSimilarity(corpus_lsi_tfidf)
-    index.save('lsi_tfidf.index')
+    index.save(save_directory + 'lsi_tfidf.index')
     
     # Save some additional info
-    with open('lsi_bar_idx_map.json', 'wb') as fp:
+    with open(save_directory + 'lsi_bar_idx_map.json', 'wb') as fp:
         json.dump(bar_idx_map, fp)
 
-    with open('lsi_idx_bar_map.json', 'wb') as fp:
+    with open(save_directory + 'lsi_idx_bar_map.json', 'wb') as fp:
         json.dump(idx_bar_map, fp)
 
-    with open('lsi_info.txt', 'wb') as fp:
+    with open(save_directory + 'lsi_info.txt', 'wb') as fp:
         ts = time.time()
         st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
         fp.write("LSI Model %s\n" % st)
@@ -186,26 +188,29 @@ def create_lsi(db, num_topics=10, num_bars=None):
             fp.write("%s " % word)
 
 
-def load_lsi():
+def load_lsi(directory=''):
     """
     Load the saved-on-disk lsi
     object and return it.
     """
 
-    dictionary = corpora.Dictionary.load('lsi.dict')
-    corpus = corpora.MmCorpus('corpus.mm')
-    tfidf = models.TfidfModel.load('tfidf.model')
-    lsi = models.LsiModel.load('lsi.model')
-    corpus_lsi_tfidf = corpora.MmCorpus('corpus_lsi_tfidf.mm')
-    index = similarities.MatrixSimilarity.load('lsi_tfidf.index')
+    if directory != '' and directory[-1] != '/':
+        directory = directory + '/'
+    
+    dictionary = corpora.Dictionary.load(directory + 'lsi.dict')
+    corpus = corpora.MmCorpus(directory + 'corpus.mm')
+    tfidf = models.TfidfModel.load(directory + 'tfidf.model')
+    lsi = models.LsiModel.load(directory + 'lsi.model')
+    corpus_lsi_tfidf = corpora.MmCorpus(directory + 'corpus_lsi_tfidf.mm')
+    index = similarities.MatrixSimilarity.load(directory + 'lsi_tfidf.index')
 
     #corpus = corpora.MmCorpus('lsi.corpus.mm')
     #corpus_tfidf = 
 
-    with open('lsi_bar_idx_map.json', 'rb') as fp:
+    with open(directory + 'lsi_bar_idx_map.json', 'rb') as fp:
         bar_idx_map = json.load(fp)
 
-    with open('lsi_idx_bar_map.json', 'rb') as fp:
+    with open(directory + 'lsi_idx_bar_map.json', 'rb') as fp:
         idx_bar_map = json.load(fp)
 
     return (dictionary, lsi, tfidf, corpus, corpus_lsi_tfidf, 

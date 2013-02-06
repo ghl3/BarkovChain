@@ -191,22 +191,25 @@ def format_location(db_entry, user_vector):
 
     return data_json
 
+
 class weight(object):
     
     def __init__(self):
         self.probability = None
         self.distance = None
-        self.critics_pic = None
+        self.pdf_distance = None
         self.cosine = None
+        self.pdf_cosine = None
+        self.critics_pic = None
         self.words = None
 
     def __repr__(self):
         repr_str = ''
         repr_str += "Probability = %.5s " % self.probability
         repr_str += "("
-        repr_str += "Distance = %.5s, " % self.distance
-        repr_str += "Critics Pic = %s, " % self.critics_pic
-        repr_str += "Cosine = %.7s" % self.cosine
+        repr_str += "Distance: pdf[%.5s m] = %.7s, " % (self.distance, self.pdf_distance)
+        repr_str += "Cosine: pdf[%.7s] = %.7s, " % (self.cosine, self.pdf_cosine)
+        repr_str += "Critics Pic: %s" % self.critics_pic
         repr_str += ")"
         return repr_str
 
@@ -276,15 +279,11 @@ def get_next_location(current_chain, rejected_locations, user_vector=None):
     bars = mongo_db['bars2']
 
     print "Gathering Locations: ", db_query
-    #num_to_return = bars.find(db_query).count()
-    #print "Expecting %s locations" % num_to_return
-    db_return = bars.find(db_query).batch_size(100)
+    db_return = bars.find(db_query)
 
-    print db_return
     print "Creating Location List"
     proposed_locations = list(db_return)
-    #proposed_locations = [location for location in db_return if location['_id'] not in used_ids] #list(db_return)
-    #print [location['nymag']['name'] for location in proposed_locations]
+    print [location['nymag']['name'] for location in proposed_locations]
 
     # If we didn't grab enough locations,
     # try a larger search block
@@ -335,7 +334,7 @@ def mc_weight(proposed, current, user_vector):
     """
 
     result = weight()
-    probability = 1.0
+    result.probability = 1.0
 
     name = proposed['nymag']['name']
     initial = current.get('initial', False)
@@ -343,27 +342,27 @@ def mc_weight(proposed, current, user_vector):
     #
     # To Do: favor linear paths
     #
-    distance = distance_dr(proposed['nymag'], current)
-    distance_pdf = scipy.stats.expon.pdf(distance, scale=300) # size is 100 meters
-    probability *= distance_pdf
+    result.distance = distance_dr(proposed['nymag'], current)
+    result.pdf_distance = scipy.stats.expon.pdf(result.distance, scale=300) # size is 100 meters
+    result.probability *= result.pdf_distance
 
     # Disfavor non critics-picks
-    critics_pic = False
+    result.critics_pic = False
     if proposed['nymag'].get(u'critics_pic', False):
-        critics_pic = True
+        result.critics_pic = True
     else:
-        probability *= .5
+        result.probability *= .5
         
     # Get the lsa cosine, but only if this isn't
     # the initial marker
-    cosine = None
+    result.cosine = None
     if not initial:
         try:
             # User vector lives in the lsa[tfidf] space
             user_array = numpy.array(user_vector)
             sims = lsi_index[user_array]
             proposed_bar_idx = bar_idx_map[name]
-            cosine = sims[proposed_bar_idx]
+            result.cosine = sims[proposed_bar_idx]
             result.words = [dictionary[pair[0]] for pair in corpus[proposed_bar_idx]]
         except:
             print "Cosine Error"
@@ -372,17 +371,18 @@ def mc_weight(proposed, current, user_vector):
         # We here directly use the cosine as the pdf, but one
         # could be smarter about this
         # similarity_pdf = scipy.stats.expon.pdf(cosine+1.0, scale=0.001)
-        if cosine <= 0.5:
-            similarity_pdf = 0.0
-        else:
-            similarity_pdf = cosine
-        probability *= similarity_pdf
+        result.pdf_cosine = (result.cosine+1.0)/(2.0)*(result.cosine+1.0)/(2.0)
+        #if cosine <= 0.5:
+        #    similarity_pdf = 0.0
+        #else:
+        #    similarity_pdf = cosine
+        result.probability *= result.pdf_cosine
 
     # Return a weight object
-    result.probability = probability
-    result.distance = distance
-    result.cosine = cosine
-    result.critics_pic = critics_pic
+    #result.probability = probability
+    #result.distance = distance
+    #result.cosine = cosine
+    #result.critics_pic = critics_pic
 
     return result
 

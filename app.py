@@ -294,48 +294,6 @@ def get_next_location(current_chain, rejected_locations, user_vector=None):
     return None
 
 
-
-#     # Select the next location in the chain
-#     next_location = next_location_from_mc(proposed_locations, total_probability,
-#                                           current_location, user_vector)
-
-#     return next_location
-
-
-# def next_location_from_mc(proposed_locations, total_probability,
-#                           current_location, user_vector):
-#     """
-#     Here, we implement the markov chain and pick the next location.
-
-#     We simply get the probability of transition and throw
-#     a random number betwen 0 and 1 to determine if we
-#     accept it or not.
-#     """
-
-#     # Calculate the total probability for normalization
-#     total_probability = 0
-#     for location in proposed_locations:
-#         weight_result = mc_weight(location, current_location, user_vector)
-#         total_probability += weight_result.probability
-
-#     # Calculate the weight function
-#     mc_steps = 0
-#     while True:
-#         mc_steps += 1
-#         proposed = random.choice(proposed_locations)
-#         weight_result = mc_weight(proposed, current_location, user_vector)
-#         weight_result.probability /= total_probability
-#         mc_throw = random.uniform(0.0, 1.0)
-#         if weight_result.probability > mc_throw:
-#             print "Monte Carlo Converged after %s throws: " % mc_steps,
-#             print weight_result
-#             print "Words in Selected: ", weight_result.words
-#             if user_vector:
-#                 print "User Vector: ", ["%.5f" % val for val in user_vector]
-#             return proposed
-#     return
-
-
 def mc_weight(proposed, current, user_vector):
     """ 
     Calculate the probability of jumping from current to proposed
@@ -361,7 +319,6 @@ def mc_weight(proposed, current, user_vector):
     # Get the lsa cosine, but only if this isn't
     # the initial marker
     cosine = None
-    #similarity_pdf = 1.0
     if not initial:
         try:
             # User vector lives in the lsa[tfidf] space
@@ -377,7 +334,6 @@ def mc_weight(proposed, current, user_vector):
         # We here directly use the cosine as the pdf, but one
         # could be smarter about this
         # similarity_pdf = scipy.stats.expon.pdf(cosine+1.0, scale=0.001)
-        
         if cosine <= 0.5:
             similarity_pdf = 0.0
         else:
@@ -385,7 +341,6 @@ def mc_weight(proposed, current, user_vector):
         probability *= similarity_pdf
 
     # Return a weight object
-
     result.probability = probability
     result.distance = distance
     result.cosine = cosine
@@ -447,10 +402,3 @@ if __name__ == '__main__':
     app.debug = True
     #app.run(host='192.168.1.5', port=8001)
     app.run(host='0.0.0.0', port=port)
-
-
-
-"""
-{'foursquare': {'distance_to_nymag': 0, u'location': {u'city': u'', u'distance': 44, u'country': u'United States', u'lat': 40.748041, u'state': u'NY', u'crossStreet': u'', u'address': u'', u'postalCode': u'', u'lng': -73.987197}, u'id': u'4e7d3b8bb8f724f0c24f3f7d', u'categories': [{u'shortName': u'Karaoke', u'pluralName': u'Karaoke Bars', u'id': u'4bf58dd8d48988d120941735', u'icon': {u'prefix': u'https://foursquare.com/img/categories/nightlife/karaoke_', u'name': u'.png', u'sizes': [32, 44, 64, 88, 256]}, u'name': u'Karaoke Bar'}], u'name': u'32 Karaoke'}, u'_id': ObjectId('51043ce2d08ce64b3c2f64a6'), u'nymag': {u'average_score': None, u'user_review_url': u'?map_view=1&N=0&No=1&listing_id=75735', u'locality': u'New York', u'url': u'http://nymag.com/listings/bar/32-karaoke/index.html', u'region': u'NY', u'categories': [u'After Hours', u' Karaoke Nights'], u'longitude': -73.987249, u'map_url': u'javascript:void(null)', u'postal_code': u'10001', u'best': None, u'address': u'2 W. 32nd St.', u'latitude': 40.747639, u'critics_pic': False, u'desc_short': u'See the profile of this NYC bar at 2 W. 32nd St. in Manhattan.', u'review': u'Have a BYOB sing-along (till 5 a.m.) without the weekend throngs of students.', u'street_address': u'2 W. 32nd St.', u'name': u'32 Karaoke'}}
-"""
-

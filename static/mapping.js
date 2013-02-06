@@ -215,13 +215,13 @@ function addToChain(location_dict) {
     var next_venue = new venue(location_dict);
     venue_list.push(next_venue);
 
+    // Add to the table
+    next_venue.add_to_table();
+
     // Get the updated path between the last point
     // and the new point
     var last_lat_long = venue_list[venue_list.length - 1].latlon;
     next_venue.create_path(last_lat_long, updatePath);
-
-    // Need to add the table
-    next_venue.add_to_table();
 
     return;
 }

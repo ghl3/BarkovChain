@@ -97,7 +97,13 @@ venue.prototype.create_path = function(last_lat_long, callback) {
 
 
 // Create a twitter bootstrap collapsable
-// Object on-th-fly
+// It consists of two parts:
+//   - The button that toggles the collapse
+//   - The data section
+// The 'id' input is the idea of the entire block
+// The 'title' is the name on the toggle button
+// The 'content' is the data that gets shown and hidden
+// This function returns an html string
 function createCollapsable(id, title, content) {
 
     var html_string = ' \
@@ -126,6 +132,8 @@ function createTableRow(data, columns, row_index) {
 
     console.log("Creating row Object " + row_index);
 
+    console.log(data);
+
     var name = data['name'];
     var address = data['address'];
 
@@ -145,8 +153,11 @@ function createTableRow(data, columns, row_index) {
 <p>' + address + '</p> \
 </div> \
 <div class="span3">' + category_string + '</div> \
-<div class="span4"> \
+<div class="span2"> \
 <div class="review"> </div> \
+</div> \
+<div class="span2"> \
+<div class="tips"> </div> \
 </div> \
 <hr> \
 </div>';
@@ -155,8 +166,12 @@ function createTableRow(data, columns, row_index) {
     var row = $(row_html_string);
 
     // Add the collapsable review
-    var collapsable = createCollapsable("row_" + row_index, "review", data['review']);
+    var collapsable = createCollapsable("row_" + row_index + "_review", "review", data['review']);
     row.find(".review").html(collapsable);
+
+    // Add the collapsable tips
+    var collapsable = createCollapsable("row_" + row_index + "_tips", "tips", data['review']);
+    row.find(".tips").html(collapsable);
 
     return row;
 }

@@ -81,6 +81,8 @@ def api_initial_location():
     data_for_app = {}
     data_for_app['location'] = next_location['nymag']
     data_for_app['location']['_id'] = str(next_location['_id'])
+    for key, val in next_location['foursquare'].iteritems():
+        data_for_app['location']["fsq_" + key] = val
     data_for_app['user_vector'] = initial_user_vector
 
     js = json.dumps(data_for_app, default=json_util.default)

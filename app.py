@@ -309,6 +309,9 @@ def mc_weight(proposed, current, user_vector):
     name = proposed['nymag']['name']
     initial = current.get('initial', False)
 
+    #
+    # To Do: favor linear paths
+    #
     distance = distance_dr(proposed['nymag'], current)
     distance_pdf = scipy.stats.expon.pdf(distance, scale=300) # size is 100 meters
     probability *= distance_pdf

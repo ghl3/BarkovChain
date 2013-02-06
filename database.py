@@ -49,7 +49,8 @@ def valid_entry_dict():
         'nymag.review' : {'$exists':True}, 
         'nymag.review' : {'$ne':None}, 
         'foursquare.tips' : {'$exists':True}, 
-        'foursquare.tips' : {'$ne':None} 
+        'foursquare.tips' : {'$ne':None}, 
+        'foursquare.distance_to_nymag' : {'$lte':6} 
         }
     return criteria
     #return { 'nymag.review' : {'$ne':None} }

@@ -8,6 +8,7 @@ var rejected_locations = new Array();
 var current_path = null;
 var active_chain = false;
 var _lastIndex = 0;
+var clickable = false;
 
 // Venue class
 function venue(data) {
@@ -34,6 +35,7 @@ function venue(data) {
 
 }
 
+
 venue.prototype.clear = function() {
 
     // Remove the marker from the map
@@ -45,6 +47,7 @@ venue.prototype.clear = function() {
 	this.table_row.remove();
     }
 }
+
 
 venue.prototype.add_path = function(last_point) {
     var self = this;
@@ -65,11 +68,11 @@ venue.prototype.add_path = function(last_point) {
     });
 }
 
+
 venue.prototype.add_to_table = function() {
     var table = $("#venue_list");
-    var rowCount = $('#venue_list').find(".row").length;
-    
-    var tail_row = createTableRow(this.data, rowCount );
+    // var rowCount = $('#venue_list').find(".row").length;
+    var tail_row = createTableRow(this.data);
     table.append(tail_row);
     this.table_row = tail_row;
 }
@@ -129,7 +132,10 @@ function createCollapsable(id, title, content) {
 }
 
 
-function createTableRow(data, row_index) {
+function createTableRow(data) {
+
+    _lastIndex += 1;
+    var row_index = _lastIndex;
 
     console.log("Creating row Object " + row_index);
 
@@ -212,6 +218,7 @@ function beginChain(event) {
     var initial_location = new venue(data);
     venue_list.push(initial_location);
     active_chain = true;
+    clickable = true;
     return;
 
 }
@@ -271,6 +278,11 @@ function clearChain() {
 // Get the next 'location' based on the current
 // chain of locations
 function getNextLocation(accepted) {
+
+    if(clickable == false) {
+	console.log("Cannot Click Yet");
+	return;
+    }
 
     if(active_chain == false) {
 	console.log("Cannot submit to server, chain isn't yet active");
@@ -337,6 +349,8 @@ function submitToServer(api, data) {
 	console.log(data);
     }
 
+    clickable = false;
+
     $.ajax({
 	url: api,
 	type: "POST",
@@ -349,6 +363,7 @@ function submitToServer(api, data) {
 	.fail(errorCallback)
 	.always(function() { 
 	    console.log("Server transaction complete");
+	    clickable = true;
 	});
     
     console.log("Sent 'next_location' request to server. Waiting...");    
@@ -360,7 +375,14 @@ function submitToServer(api, data) {
 // the current chain
 // Add the last marker to the list of 
 function rejectLastPoint() {
+    if(clickable == false) {
+	console.log("Cannot Click Yet");
+	return;
+    }
+
     var last_venue = venue_list.pop();
+    console.log("Rejecting last point (length = " + venue_list.length);
+    console.log(last_venue);
     last_venue.clear();
     rejected_locations.push(last_venue.data);
 }

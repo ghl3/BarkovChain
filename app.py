@@ -37,6 +37,9 @@ dictionary, lsi, tfidf, corpus, corpus_lsi_tfidf, \
 
 app = Flask(__name__)
 
+# Connect to the db
+mongo_db, mongo_connection = connect_to_database(table_name="barkov_chain")
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -120,14 +123,22 @@ def api_next_location():
 
     # Update the user's semantic vector based on
     # whether he accepted or rejected the last location
+    print "Updating User Vector"
     user_vector = update_user_vector(user_vector, last_venue, 
                                      accepted, len(current_chain))
-    
+
     # Get the next location, package it up
     # and send it to the client
+    print "Getting Next Location"
     next_location = get_next_location(current_chain, rejected_locations, user_vector)
+
+    print "Formatting Location Dict"
     data_for_app = format_location(next_location, user_vector)
+
+    print "Creating Response"
     resp = Response(data_for_app, status=200, mimetype='application/json')
+
+    print "Done fetching next location"
     return resp
 
 
@@ -214,12 +225,13 @@ def get_lat_lon_square_query(current_location, blocks):
 
     lat_min = lat - blocks*block_lat
     lat_max = lat + blocks*block_lat
+
     lon_min = lon - blocks*block_lon
     lon_max = lon + blocks*block_lon
 
     query = {
-        "nymag.latitude": {"$gt": lat_min, "$lt": lat_max},
-        "nymag.longitude": {"$gt": lon_min, "$lt": lon_max}
+        "nymag.latitude": {'$exists':True, "$gt": lat_min, "$lt": lat_max},
+        "nymag.longitude": {'$exists':True, "$gt": lon_min, "$lt": lon_max}
         }
 
     return query
@@ -260,14 +272,30 @@ def get_next_location(current_chain, rejected_locations, user_vector=None):
     db_query.update( {'_id' : {'$nin' : used_ids}})
 
     # Get the nearby locations
-    db, connection = connect_to_database(table_name="barkov_chain")
-    bars = db['bars']
-    proposed_locations = list(bars.find(db_query))
+    print "Getting bars table"
+    bars = mongo_db['bars2']
+
+    print "Gathering Locations: ", db_query
+    #num_to_return = bars.find(db_query).count()
+    #print "Expecting %s locations" % num_to_return
+    db_return = bars.find(db_query).batch_size(100)
+
+    print db_return
+    print "Creating Location List"
+    proposed_locations = list(db_return)
+    #proposed_locations = [location for location in db_return if location['_id'] not in used_ids] #list(db_return)
+    #print [location['nymag']['name'] for location in proposed_locations]
 
     # If we didn't grab enough locations,
     # try a larger search block
+    print "Getting Total Probability"
     total_probability = 0.0
-    while len(proposed_locations) < 5 and total_probability <= 0:
+    for location in proposed_locations:
+        weight_result = mc_weight(location, current_location, user_vector)
+        total_probability += weight_result.probability
+    print "Total Probability: ", total_probability
+
+    while (len(proposed_locations) < 5 or total_probability <= 0.000001):
         print "Too few nearby locations found within %s blocks (%s).",
         print "Extending query: %s %s" % (blocks, len(proposed_locations))
         blocks += 10
@@ -280,9 +308,12 @@ def get_next_location(current_chain, rejected_locations, user_vector=None):
             total_probability += weight_result.probability
 
     # Calculate the weight function
+    print "Running MC"
     mc_steps = 0
     while True:
         mc_steps += 1
+        if mc_steps % 1000 == 0:
+            print "MC Step: ", mc_steps
         proposed = random.choice(proposed_locations)
         weight_result = mc_weight(proposed, current_location, user_vector)
         weight_result.probability /= total_probability
@@ -365,6 +396,10 @@ def update_user_vector(user_vector, last_location,
     entries in the chain that we've had so far
     """
 
+    print "Updating User Vector"
+    print "Current Vector: ", user_vector
+    print "Accepted last location: %s:" % accepted, last_location
+
     # Get the vector of the last location
     last_loc_name = last_location['name']
     bar_index = bar_idx_map[last_loc_name]
@@ -381,6 +416,8 @@ def update_user_vector(user_vector, last_location,
         user_array = user_array + beta*(last_loc_array - user_array)
     else:
         user_array = user_array - beta*(last_loc_array - user_array)
+
+    print "Updated Vector: ", user_array
 
     return list(user_array)
 
@@ -405,7 +442,7 @@ def distance_dr(loc0, loc1):
 
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 8000))
     app.debug = True
     #app.run(host='192.168.1.5', port=8001)
     app.run(host='0.0.0.0', port=port)

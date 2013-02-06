@@ -448,6 +448,7 @@ $(document).ready(function() {
 		console.log("Splicing!!!");
 		venue_list[i].clear();
 		venue_list.splice(i, 1);
+		updatePath();
 		break;
 	    }
 	}

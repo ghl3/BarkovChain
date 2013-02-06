@@ -135,10 +135,11 @@ function createTableRow(data, columns, row_index) {
     console.log(data);
 
     var name = data['name'];
-    var address = data['address'];
+    var address = data['nymag']['address'];
+    var review = data['nymag']['review'];
+    var category_list = data['nymag']['categories'];
 
     var category_string = '';
-    var category_list = data['categories'];
     for(var i=0; i < category_list.length; ++i) {
 	category_string += category_list[i];
 	if(i != category_list.length-1) {
@@ -166,11 +167,11 @@ function createTableRow(data, columns, row_index) {
     var row = $(row_html_string);
 
     // Add the collapsable review
-    var collapsable = createCollapsable("row_" + row_index + "_review", "review", data['review']);
+    var collapsable = createCollapsable("row_" + row_index + "_review", "review", review);
     row.find(".review").html(collapsable);
 
     // Add the collapsable tips
-    var collapsable = createCollapsable("row_" + row_index + "_tips", "tips", data['review']);
+    var collapsable = createCollapsable("row_" + row_index + "_tips", "tips", review);
     row.find(".tips").html(collapsable);
 
     return row;

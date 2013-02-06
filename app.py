@@ -78,15 +78,25 @@ def api_initial_location():
     print initial_user_vector
 
     # Return the data
-    data_for_app = {}
-    data_for_app['location'] = next_location['nymag']
-    data_for_app['location']['_id'] = str(next_location['_id'])
-    for key, val in next_location['foursquare'].iteritems():
-        data_for_app['location']["fsq_" + key] = val
-    data_for_app['user_vector'] = initial_user_vector
+    data_for_app = format_location(next_location, initial_user_vector)
+    resp = Response(data_for_app, status=200, mimetype='application/json')
 
-    js = json.dumps(data_for_app, default=json_util.default)
-    resp = Response(js, status=200, mimetype='application/json')
+    # data_for_app = {}
+    # data_for_app['location'] = {}
+    # data_for_app['location']['name'] = next_location['nymag']['name']
+    # data_for_app['location']['longitude'] = next_location['nymag']['longitude']
+    # data_for_app['location']['latitude'] = next_location['nymag']['latitude']
+    # data_for_app['location']['_id'] = str(next_location['_id'])
+    # data_for_app['location']['nymag'] = next_location['nymag']
+    # data_for_app['location']['foursquare'] = next_location['foursquare']
+    # data_for_app['user_vector'] = initial_user_vector
+
+    # #for key, val in next_location['foursquare'].iteritems():
+    # #    data_for_app['location']["fsq_" + key] = val
+
+
+    # js = json.dumps(data_for_app, default=json_util.default)
+    # resp = Response(js, status=200, mimetype='application/json')
 
     return resp
 
@@ -136,13 +146,19 @@ def api_next_location():
     # and send it to the client
     next_location = get_next_location(current_chain, rejected_locations, user_vector)
 
-    data_for_app = {}
-    data_for_app['location'] = next_location['nymag']
-    data_for_app['location']['_id'] = str(next_location['_id'])
-    data_for_app['user_vector'] = user_vector
+    data_for_app = format_location(next_location, user_vector)
+    resp = Response(data_for_app, status=200, mimetype='application/json')
 
-    js = json.dumps(data_for_app, default=json_util.default)
-    resp = Response(js, status=200, mimetype='application/json')
+
+    # data_for_app = {}
+    # data_for_app['location'] = next_location['nymag']
+    # data_for_app['location']['_id'] = str(next_location['_id'])
+    # data_for_app['user_vector'] = user_vector
+
+    # js = json.dumps(data_for_app, default=json_util.default)
+    # resp = Response(js, status=200, mimetype='application/json')
+
+
     return resp
 
 
@@ -176,6 +192,24 @@ def not_found(error=None):
     resp.status_code = 404
     return resp
 
+def format_location(db_entry, user_vector):
+    """
+    Convert a db entry and a user vector
+    into the JSON to be sent to the app.
+    """
+    data_for_app = {}
+    data_for_app['location'] = {}
+    data_for_app['location']['name'] = db_entry['nymag']['name']
+    data_for_app['location']['longitude'] = db_entry['nymag']['longitude']
+    data_for_app['location']['latitude'] = db_entry['nymag']['latitude']
+    data_for_app['location']['_id'] = str(db_entry['_id'])
+    data_for_app['location']['nymag'] = db_entry['nymag']
+    data_for_app['location']['foursquare'] = db_entry['foursquare']
+    data_for_app['user_vector'] = user_vector
+
+    data_json = json.dumps(data_for_app, default=json_util.default)
+
+    return data_json
 
 class weight(object):
     

@@ -99,6 +99,16 @@ venue.prototype.create_path = function(last_lat_long, callback) {
     });
 }
 
+venue.prototype.table_id = function() {
+    if(this.table_row != null) {
+	var button = $(this.table_row).find(".button_remove")[0];
+	return button.id; //attr('id'); //.table_row.id()
+    }
+    else {
+	return null;
+    }
+}
+
 
 // Create a twitter bootstrap collapsable
 // It consists of two parts:
@@ -166,7 +176,7 @@ function createTableRow(data) {
 \
 <div class="span3"> <p><strong>' + name + '</strong></p> </div> \
 <div class="span2" style="text-align: right;"> \
-<a id="button_remove_' + row_index + '" class="btn btn-small btn-danger">Remove</a> </div> \
+<button id="button_remove_' + row_index + '" class="button_remove btn btn-small btn-danger">Remove</button> </div> \
 <div class="span3"> <p>' + address + '</p> </div> \
 <div class="span2"></div> \
 <div class="span5">' + category_string + '</div> \
@@ -423,6 +433,24 @@ $(document).ready(function() {
     $("#button_try_another").click(function() {
 	rejectLastPoint();
 	getNextLocation(false);
+    });
+
+    $(document).on("click", ".button_remove", function(evt) {
+	console.log("Button Click");
+	console.log(evt.target);
+	var button_id = $(evt.target).attr('id'); //id();
+	console.log("Removing using button id: " + button_id);
+
+	for(var i=0; i < venue_list.length; ++i) {
+	    var this_id = venue_list[i].table_id();
+	    console.log("Row Id: " + this_id);
+	    if(venue_list[i].table_id() == button_id) {
+		console.log("Splicing!!!");
+		venue_list[i].clear();
+		venue_list.splice(i, 1);
+		break;
+	    }
+	}
     });
 
 });

@@ -266,8 +266,6 @@ def test_lsi(db):
 
     # Create the similarity index
     index = similarities.MatrixSimilarity(lsi[corpus])
-    
-    #index = similarities.Similarity(lsi[corpus])
 
     # Test the similarities
     test_vector = lsi[corpus[0]]

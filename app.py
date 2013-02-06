@@ -31,13 +31,10 @@ from math import tan
 
 from lsi import load_lsi
 
-# Create the lsa object and load
-# its parameters from disk
-lsi, corpus, corpus_tfidf, dictionary, \
-    index, bar_idx_map, idx_bar_map = load_lsi()
-corpus_lsi = lsi[corpus_tfidf]
 
-# lsi, corpus, corpus_tfidf, dictionary, bar_idx_map, idx_bar_map = load_lsi()
+# Create a corpus from this
+dictionary, lsi, tfidf, corpus, corpus_lsi_tfidf, \
+    lsi_index, bar_idx_map, idx_bar_map = load_lsi()
 
 app = Flask(__name__)
 
@@ -77,14 +74,15 @@ def api_initial_location():
     # Update the user vector
     #user_vector = lsa.get_svd_document_vector(next_location['nymag']['name'])
     bar_index = bar_idx_map[next_location['nymag']['name']]
-    user_vector = list(corpus_lsi[bar_index] )
-    #user_vector = [val for val in user_vector]
-    
+    initial_user_vector = [var for idx, var in corpus_lsi_tfidf[bar_index]]
+    print "Created Initial User Vector: ", 
+    print initial_user_vector
+
     # Return the data
     data_for_app = {}
     data_for_app['location'] = next_location['nymag']
     data_for_app['location']['_id'] = str(next_location['_id'])
-    data_for_app['user_vector'] = user_vector
+    data_for_app['user_vector'] = initial_user_vector
 
     js = json.dumps(data_for_app, default=json_util.default)
     resp = Response(js, status=200, mimetype='application/json')
@@ -337,24 +335,25 @@ def mc_weight(proposed, current, user_vector):
     if not initial:
         try:
             # User vector lives in the lsa[tfidf] space
-            sims = index[user_vector]
+            user_array = numpy.array(user_vector)
+            print user_array
+            sims = lsi_index[user_array]
             proposed_bar_idx = bar_idx_map[name]
             cosine = sims[proposed_bar_idx]
-            words = [dictionary[pair[0]] for pair in corpus_tfidf[proposed_bar_idx]]
-            print cosine, 
-            print '{', [word for word in words if word in test_words], '}',
+            words = [dictionary[pair[0]] for pair in corpus[proposed_bar_idx]]
+            print cosine,
+            #print '{', [word for word in words if word in test_words], '}',
             print words
             print ''
         except:
-            print "Cosine Error - proposed bar: %s %s" % (name, proposed_bar_idx)
-            print "User Vector: ", user_vector
+            print "Cosine Error"
             raise
 
         # We here directly use the cosine as the pdf, but one
         # could be smarter about this
         # similarity_pdf = scipy.stats.expon.pdf(cosine+1.0, scale=0.001)
         if cosine > 0:
-            similarity_pdf = tan(cosine*pi/2.0)
+            similarity_pdf = cosine #tan(cosine*pi/2.0)
         else:
             similarity_pdf = 0.00000001
         probability *= similarity_pdf
@@ -380,7 +379,10 @@ def update_user_vector(user_vector, last_location,
 
     # Get the vector of the last location
     last_loc_name = last_location['name']
-    last_loc_array = lsa.get_svd_document_vector(last_loc_name)
+    bar_index = bar_idx_map[last_loc_name]
+    last_loc_array = [var for idx, var in corpus_lsi_tfidf[bar_index]]
+
+    #last_loc_array = lsa.get_svd_document_vector(last_loc_name)
     user_array = numpy.array(user_vector)
 
     #return list(last_loc_array)

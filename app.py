@@ -33,8 +33,11 @@ from lsi import load_lsi
 
 # Create the lsa object and load
 # its parameters from disk
-lsi, corpus, corpus_tfidf, dictionary, bar_idx_map, idx_bar_map = load_lsi()
+lsi, corpus, corpus_tfidf, dictionary, \
+    index, bar_idx_map, idx_bar_map = load_lsi()
+corpus_lsi = lsi[corpus_tfidf]
 
+# lsi, corpus, corpus_tfidf, dictionary, bar_idx_map, idx_bar_map = load_lsi()
 
 app = Flask(__name__)
 
@@ -72,8 +75,10 @@ def api_initial_location():
     next_location = get_next_location(current_chain, rejected_locations=[])
 
     # Update the user vector
-    user_vector = lsa.get_svd_document_vector(next_location['nymag']['name'])
-    user_vector = [val for val in user_vector]
+    #user_vector = lsa.get_svd_document_vector(next_location['nymag']['name'])
+    bar_index = bar_idx_map[next_location['nymag']['name']]
+    user_vector = list(corpus_lsi[bar_index] )
+    #user_vector = [val for val in user_vector]
     
     # Return the data
     data_for_app = {}
@@ -331,10 +336,18 @@ def mc_weight(proposed, current, user_vector):
     #similarity_pdf = 1.0
     if not initial:
         try:
+            # User vector lives in the lsa[tfidf] space
+            sims = index[user_vector]
             proposed_bar_idx = bar_idx_map[name]
-            cosine = lsa.user_cosine(user_vector, name)
-        except KeyError:
-            print "Error: Couldn't find venue %s in corpus" % name
+            cosine = sims[proposed_bar_idx]
+            words = [dictionary[pair[0]] for pair in corpus_tfidf[proposed_bar_idx]]
+            print cosine, 
+            print '{', [word for word in words if word in test_words], '}',
+            print words
+            print ''
+        except:
+            print "Cosine Error - proposed bar: %s %s" % (name, proposed_bar_idx)
+            print "User Vector: ", user_vector
             raise
 
         # We here directly use the cosine as the pdf, but one

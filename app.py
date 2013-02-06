@@ -31,7 +31,6 @@ from math import tan
 
 from lsi import load_lsi
 
-
 # Create a corpus from this
 dictionary, lsi, tfidf, corpus, corpus_lsi_tfidf, \
     lsi_index, bar_idx_map, idx_bar_map = load_lsi()
@@ -263,7 +262,8 @@ def get_next_location(current_chain, rejected_locations, user_vector=None):
 
     # If we didn't grab enough locations,
     # try a larger search block
-    while len(proposed_locations) < 5:
+    total_probability = 0.0
+    while len(proposed_locations) < 5 and total_probability <= 0:
         print "Too few nearby locations found within %s blocks (%s).",
         print "Extending query: %s %s" % (blocks, len(proposed_locations))
         blocks += 10
@@ -271,26 +271,9 @@ def get_next_location(current_chain, rejected_locations, user_vector=None):
         db_query.update(updated_distance)
         proposed_locations = list(bars.find(db_query))
 
-    # Select the next location in the chain
-    next_location = next_location_from_mc(proposed_locations, current_location, user_vector)
-
-    return next_location
-
-
-def next_location_from_mc(proposed_locations, current_location, user_vector):
-    """
-    Here, we implement the markov chain and pick the next location.
-
-    We simply get the probability of transition and throw
-    a random number betwen 0 and 1 to determine if we
-    accept it or not.
-    """
-
-    # Calculate the total probability for normalization
-    total_probability = 0
-    for location in proposed_locations:
-        weight_result = mc_weight(location, current_location, user_vector)
-        total_probability += weight_result.probability
+        for location in proposed_locations:
+            weight_result = mc_weight(location, current_location, user_vector)
+            total_probability += weight_result.probability
 
     # Calculate the weight function
     mc_steps = 0
@@ -304,9 +287,53 @@ def next_location_from_mc(proposed_locations, current_location, user_vector):
             print "Monte Carlo Converged after %s throws: " % mc_steps,
             print weight_result
             print "Words in Selected: ", weight_result.words
-            print "User Vector: ", user_vector
+            if user_vector:
+                print "User Vector: ", ["%.5f" % val for val in user_vector]
             return proposed
-    return
+
+    return None
+
+
+
+#     # Select the next location in the chain
+#     next_location = next_location_from_mc(proposed_locations, total_probability,
+#                                           current_location, user_vector)
+
+#     return next_location
+
+
+# def next_location_from_mc(proposed_locations, total_probability,
+#                           current_location, user_vector):
+#     """
+#     Here, we implement the markov chain and pick the next location.
+
+#     We simply get the probability of transition and throw
+#     a random number betwen 0 and 1 to determine if we
+#     accept it or not.
+#     """
+
+#     # Calculate the total probability for normalization
+#     total_probability = 0
+#     for location in proposed_locations:
+#         weight_result = mc_weight(location, current_location, user_vector)
+#         total_probability += weight_result.probability
+
+#     # Calculate the weight function
+#     mc_steps = 0
+#     while True:
+#         mc_steps += 1
+#         proposed = random.choice(proposed_locations)
+#         weight_result = mc_weight(proposed, current_location, user_vector)
+#         weight_result.probability /= total_probability
+#         mc_throw = random.uniform(0.0, 1.0)
+#         if weight_result.probability > mc_throw:
+#             print "Monte Carlo Converged after %s throws: " % mc_steps,
+#             print weight_result
+#             print "Words in Selected: ", weight_result.words
+#             if user_vector:
+#                 print "User Vector: ", ["%.5f" % val for val in user_vector]
+#             return proposed
+#     return
 
 
 def mc_weight(proposed, current, user_vector):
@@ -321,7 +348,7 @@ def mc_weight(proposed, current, user_vector):
     initial = current.get('initial', False)
 
     distance = distance_dr(proposed['nymag'], current)
-    distance_pdf = scipy.stats.expon.pdf(distance, scale=200) # size is 100 meters
+    distance_pdf = scipy.stats.expon.pdf(distance, scale=300) # size is 100 meters
     probability *= distance_pdf
 
     # Disfavor non critics-picks
@@ -329,7 +356,7 @@ def mc_weight(proposed, current, user_vector):
     if proposed['nymag'].get(u'critics_pic', False):
         critics_pic = True
     else:
-        probability *= .1
+        probability *= .5
         
     # Get the lsa cosine, but only if this isn't
     # the initial marker
@@ -350,10 +377,11 @@ def mc_weight(proposed, current, user_vector):
         # We here directly use the cosine as the pdf, but one
         # could be smarter about this
         # similarity_pdf = scipy.stats.expon.pdf(cosine+1.0, scale=0.001)
-        if cosine > 0:
-            similarity_pdf = cosine #tan(cosine*pi/2.0)
+        
+        if cosine <= 0.5:
+            similarity_pdf = 0.0
         else:
-            similarity_pdf = 0.00000001
+            similarity_pdf = cosine
         probability *= similarity_pdf
 
     # Return a weight object

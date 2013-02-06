@@ -26,8 +26,15 @@ def get_stopwords():
     stop_words = set()
     with open('stop-words.txt', 'r') as f:
         for word in f:
-            word = word.strip()
+            word = word.strip().lower()
             stop_words.add(word)
+
+    with open('first_names.csv', 'r') as f:
+        for line in f:
+            for word in line.splitlines():
+                word = word.strip().lower()
+                stop_words.add(word)
+
     return stop_words
 
 

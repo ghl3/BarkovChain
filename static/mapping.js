@@ -138,6 +138,7 @@ function createTableRow(data, columns, row_index) {
     var address = data['nymag']['address'];
     var review = data['nymag']['review'];
     var category_list = data['nymag']['categories'];
+    var tips_list = data[
 
     var category_string = '';
     for(var i=0; i < category_list.length; ++i) {

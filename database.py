@@ -20,6 +20,20 @@ def connect_to_database(table_name="barkov_chain"):
     Get a handle on the db object
     """
 
+    """
+    MONGO_URL = os.environ.get('MONGOHQ_URL')
+
+    if MONGO_URL:
+        # Get a connection
+        connection = Connection(MONGO_URL)
+        # Get the database
+        db = connection[urlparse(MONGO_URL).path[1:]]
+    else:
+        # Not on an app with the MongoHQ add-on, do some localhost action
+        connection = Connection('localhost', 27017)
+        db = connection['MyDB']
+    """
+
     try:
         #connection = pymongo.Connection()
         connection = pymongo.MongoClient()

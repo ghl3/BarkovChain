@@ -29,7 +29,7 @@ import scipy.stats
 from math import pi
 from math import tan                
 
-from lsi import load_lsi
+from lsi import load_lsi, important_words
 
 # Create a corpus from this
 dictionary, lsi, tfidf, corpus, corpus_lsi_tfidf, \
@@ -43,6 +43,10 @@ mongo_db, mongo_connection = connect_to_database(table_name="barkov_chain")
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/bubble')
+def bubble():
+    return render_template('bubble.html')
 
 @app.route('/api/initial_location', methods=['POST'] )
 def api_initial_location():
@@ -127,6 +131,8 @@ def api_next_location():
     user_vector = update_user_vector(user_vector, last_venue, 
                                      accepted, len(current_chain))
 
+
+
     # Get the next location, package it up
     # and send it to the client
     print "Getting Next Location"
@@ -179,6 +185,7 @@ def format_location(db_entry, user_vector):
     into the JSON to be sent to the app.
     """
     data_for_app = {}
+
     data_for_app['location'] = {}
     data_for_app['location']['name'] = db_entry['nymag']['name']
     data_for_app['location']['longitude'] = db_entry['nymag']['longitude']
@@ -186,7 +193,9 @@ def format_location(db_entry, user_vector):
     data_for_app['location']['_id'] = str(db_entry['_id'])
     data_for_app['location']['nymag'] = db_entry['nymag']
     data_for_app['location']['foursquare'] = db_entry['foursquare']
+
     data_for_app['user_vector'] = user_vector
+    data_for_app['user_words'] = important_words(lsi, user_vector)
 
     data_json = json.dumps(data_for_app, default=json_util.default)
 

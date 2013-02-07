@@ -16,7 +16,7 @@ from nymag_scrape import connect_to_database
 
 from gensim.models.lsimodel import LsiModel
 from gensim import corpora, models, similarities
-from math import sqrt
+from math import sqrt, fabs
 
 def get_stopwords():
     """
@@ -317,7 +317,32 @@ def cosine(A, B):
     return dotP / (magA*magB)
 
 
-def important_words(lsi, docA, docB):
+def important_words(lsi, state):
+    """
+    Given the lsi and the state, find the most
+    important words
+    """
+
+    # Get the word mapping
+    # [ [(0.10818501434348921, 'room'), (0.1065805102429373, 'space'), ... ],
+    #    ...
+    #   [ ...,  (-0.089040641678911847, 'sports'), (-0.088569259768822226, 'ginger')] ]
+    topic_list = lsi.show_topics(formatted=False)
+
+    word_val_dict = {}
+    for topic, topic_weight in zip(topic_list, state):
+        # Topic = [(0.10818501434348921, 'room'), (0.1065805102429373, 'space'), ... ]
+        for word_weight, word in topic:
+            if word not in word_val_dict:
+                word_val_dict[word] = fabs(word_weight * topic_weight)
+            else:
+                word_val_dict[word] += fabs(word_weight * topic_weight)
+
+    # Turn the dict into a (reverse) sorted list of word, strenght pairs
+    return sorted(list(word_val_dict.iteritems()), key=lambda x: x[1], reverse=True)
+
+
+def important_words_relative(lsi, docA, docB):
     """
     Return an ordered list of 
     important words for a document

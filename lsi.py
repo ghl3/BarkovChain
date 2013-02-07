@@ -15,6 +15,8 @@ import unicodedata
 from nymag_scrape import connect_to_database
 
 from gensim.models.lsimodel import LsiModel
+from gensim.models.ldamodel import LdaModel
+
 from gensim import corpora, models, similarities
 from math import sqrt, fabs
 
@@ -171,7 +173,16 @@ def create_lsi(db, num_topics=10, num_bars=None):
     #index = similarities.MatrixSimilarity(lsi[corpus_tfidf])
     index = similarities.MatrixSimilarity(corpus_lsi_tfidf)
     index.save(save_directory + 'lsi_tfidf.index')
-    
+
+    # Create the LDA (on the raw corpus)
+    lda = LdaModel(corpus, num_topics=num_topics, id2word=dictionary, passes=10)
+    #lda.show_topics(10, 20, formatted=False)
+    lda.save(save_directory + 'lda.model')
+
+    # Create the lda corpus
+    corpus_lda = lda[corpus]
+    corpora.MmCorpus.serialize(save_directory + 'corpus_lda.mm', corpus_lda)
+
     # Save some additional info
     with open(save_directory + 'lsi_bar_idx_map.json', 'wb') as fp:
         json.dump(bar_idx_map, fp)
@@ -239,7 +250,7 @@ def test_lsi(db):
 
     # Create a corpus from this
     dictionary, lsi, tfidf, corpus, corpus_lsi_tfidf, \
-        index, bar_idx_map, idx_bar_map = load_lsi()
+        index, bar_idx_map, idx_bar_map = load_lsi("data")
 
     #lsi, corpus, corpus_tfidf, dictionary, \
     #    index, bar_idx_map, idx_bar_map = load_lsi()

@@ -139,6 +139,7 @@ def api_next_location():
     resp = Response(data_for_app, status=200, mimetype='application/json')
 
     print "Done fetching next location"
+    print "\n"
     return resp
 
 
@@ -275,13 +276,11 @@ def get_next_location(current_chain, rejected_locations, user_vector=None):
     db_query.update( {'_id' : {'$nin' : used_ids}})
 
     # Get the nearby locations
-    print "Getting bars table"
+    print "Fetching Locations"
     bars = mongo_db['bars2']
-
-    print "Gathering Locations: ", db_query
     db_return = bars.find(db_query)
 
-    print "Creating Location List"
+    print "Found Nearby Locations: ", 
     proposed_locations = list(db_return)
     print [location['nymag']['name'] for location in proposed_locations]
 
@@ -292,7 +291,6 @@ def get_next_location(current_chain, rejected_locations, user_vector=None):
     for location in proposed_locations:
         weight_result = mc_weight(location, current_location, user_vector)
         total_probability += weight_result.probability
-    print "Total Probability: ", total_probability
 
     while (len(proposed_locations) < 5 or total_probability <= 0.000001):
         print "Too few nearby locations found within %s blocks (%s).",

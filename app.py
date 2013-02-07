@@ -35,11 +35,10 @@ from lsi import load_lsi, important_words
 dictionary, lsi, tfidf, corpus, corpus_lsi_tfidf, \
     lsi_index, bar_idx_map, idx_bar_map = load_lsi('data')
 
-
-app = Flask(__name__)
-
 # Connect to the db
 mongo_db, mongo_connection = connect_to_database(table_name="barkov_chain")
+
+app = Flask(__name__)
 
 @app.route('/')
 def index():

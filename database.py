@@ -4,6 +4,9 @@ import argparse
 import pymongo
 import bson.objectid
 
+import os
+from urlparse import urlparse
+
 from pymongo.errors import ConnectionFailure
 from pymongo.errors import InvalidName
 
@@ -34,22 +37,51 @@ def connect_to_database(table_name="barkov_chain"):
         db = connection['MyDB']
     """
 
-    try:
-        #connection = pymongo.Connection()
-        connection = pymongo.MongoClient()
-    except ConnectionFailure:
-        message = "connect_to_database() - Failed to open connect to MongoDB \n"
-        message += "Make sure that the MongoDB daemon is running."
-        sys.stderr.write(message)
-        raise
+    print "Connecting to database"
 
-    try:
-        db = connection[table_name]
-    except InvalidName:
-        message = "connect_to_database() - Failed to connect to %s" % table_name
-        sys.stderr.write(message)
-        raise
+    MONGO_URL = os.environ.get('MONGOHQ_URL')
 
+    if MONGO_URL:
+
+        print "Using REMOTE MongoDB Server"
+
+        # Get a connection
+        try:
+            connection = pymongo.Connection(MONGO_URL)
+        except ConnectionFailure:
+            message = "connect_to_database() - Failed to open connect to REMOTE MongoHQ \n"
+            sys.stderr.write(message)
+            raise
+        
+        # Get the database
+        try:
+            db_name = urlparse(MONGO_URL).path[1:]
+            db = connection[db_name]
+        except InvalidName:
+            message = "connect_to_database() - Failed to connect to %s" % table_name
+            raise
+
+    else: 
+
+        print "Using LOCAL MongoDB Server"
+
+        try:
+            connection = pymongo.MongoClient()
+        except ConnectionFailure:
+            message = "connect_to_database() - Failed to open connect to MongoDB \n"
+            message += "Make sure that the MongoDB daemon is running."
+            sys.stderr.write(message)
+            raise
+
+        try:
+            db = connection[table_name]
+        except InvalidName:
+            message = "connect_to_database() - Failed to connect to %s" % table_name
+            sys.stderr.write(message)
+            raise
+    
+    print "Successfully connected to database"
+        
     return db, connection
 
 

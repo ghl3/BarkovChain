@@ -9,7 +9,7 @@ var current_path = null;
 var active_chain = false;
 var _lastIndex = 0;
 var clickable = false;
-var word_bubbles = bubbles("#vis", word_list, 500, 300);
+var word_bubbles = new bubble_plot("#vis", 500, 300);
 
 
 // Venue class
@@ -441,6 +441,18 @@ $(document).ready(function() {
 
     // Define clicking on the map
     google.maps.event.addListener(map, 'click', beginChain); 
+
+    // Initialize Bubbles
+    var fish = test();
+    console.log(fish);
+
+    console.log(word_bubbles);
+    var test_data = new Array();
+    test_data.push({"name" : "holmes", "word" : "holmes", "count" : 300});
+    test_data.push({"name" : "fish", "word" : "fish", "count" : 250});
+    test_data.push({"name" : "dog", "word" : "dog", "count" : 200});
+    test_data.push({"name" : "house", "word" : "house", "count" : 150});
+    word_bubbles.draw(test_data);
 
     // Define clicking on the 'submit' button
     // Send an ajax request to the flask server

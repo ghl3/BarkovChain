@@ -28,7 +28,6 @@ import scipy.stats
 
 from math import pi
 from math import tan                
-#from math import exp                
 
 from lsi import load_lsi, important_words
 

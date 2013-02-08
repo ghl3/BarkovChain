@@ -305,10 +305,10 @@ def get_next_location(current_chain, rejected_locations, user_vector=None):
         total_probability += weight_result.probability
 
     while (len(proposed_locations) < 5 or total_probability <= 0.000001):
-        print "Too few nearby locations found within %s blocks (%s).",
-        print "Extending query: %s %s" % (blocks, len(proposed_locations))
+        print "Too few nearby locations found within %s blocks (%s)." % (blocks, len(proposed_locations))
         blocks += 10
         updated_distance = get_lat_lon_square_query(current_location, blocks=blocks)
+        print "Updated Distance: ", updated_distance
         db_query.update(updated_distance)
         proposed_locations = list(bars.find(db_query))
 

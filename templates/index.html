@@ -19,6 +19,10 @@
 	    src="https://maps.googleapis.com/maps/api/js?sensor=false"> </script>
     <script type="text/javascript" src="{{url_for('static', filename='mapping.js') }}" ></script>
 
+    <script src="http://d3js.org/d3.v3.min.js"></script>  
+    <script src="/static/bubble.js"></script>
+    <link rel="stylesheet" href="/static/bubble.css">
+
   </head>
 
 
@@ -50,7 +54,22 @@
 
     <!--<hr>-->
     
-    <div class="span12"></div>
+    <!--<div class="span12"></div>-->
+
+    <div id="vis"></div>
+    
+    <script type="text/javascript">
+      
+      var test_data = new Array();
+      test_data.push({"name" : "holmes", "word" : "holmes", "count" : 300});
+      test_data.push({"name" : "fish", "word" : "fish", "count" : 250});
+      test_data.push({"name" : "dog", "word" : "dog", "count" : 200});
+      test_data.push({"name" : "house", "word" : "house", "count" : 150});
+      
+      render_bubbles("#vis", test_data, 500, 300);
+    </script>
+    
+
     
     <div class="footer">
       <p>&copy; George H. Lewis, 2013</p>

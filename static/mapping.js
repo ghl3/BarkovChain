@@ -9,6 +9,8 @@ var current_path = null;
 var active_chain = false;
 var _lastIndex = 0;
 var clickable = false;
+var word_bubbles = bubbles("#vis", word_list, 500, 300);
+
 
 // Venue class
 function venue(data) {
@@ -350,6 +352,24 @@ function submitToServer(api, data) {
 	console.log("Updated user vector:");
 	console.log(current_user_vector);
 	
+	// Create the word bubbles
+	var user_words = data['user_words'];
+	console.log(user_words);
+	var word_list = new Array();
+	for(var i=0; i < user_words.length; ++i) {
+	    var word_dict = {};
+	    word_dict['name'] = user_words[i][0];
+	    word_dict['word'] = user_words[i][0];
+	    word_dict['count'] = 200*user_words[i][0];
+	    word_list.push(word_dict);
+	}
+
+	console.log("Rendering Bubbles:");
+	console.log(word_list);
+	//d3.select("svg")
+	//    .remove();
+
+
 	$("#venue_list").show();
     }
     

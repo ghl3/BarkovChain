@@ -25,7 +25,9 @@ bubble_plot.prototype.make_chart = function() {
 
     //	width = 980;
     //	height = 510;
-    data = [];
+    this.data = [];
+    var data = this.data;
+
     node = null;
     label = null;
     this.margin = {
@@ -58,7 +60,7 @@ bubble_plot.prototype.make_chart = function() {
     minCollisionRadius = 12;
     jitter = 0.5;
 
-    transformData = function(rawData) {
+    this.transformData = function(rawData) {
 	rawData.forEach(function(d) {
 	    d.count = parseInt(d.count);
 	    return rawData.sort(function() {
@@ -67,6 +69,7 @@ bubble_plot.prototype.make_chart = function() {
 	});
 	return rawData;
     };
+    var transformData = this.transformData;
 
     tick = function(e) {
 
@@ -90,6 +93,7 @@ bubble_plot.prototype.make_chart = function() {
 	.on("tick", tick);
 
     var force = this.force;
+
 
     add_data = function(rawData) {
 
@@ -127,7 +131,7 @@ bubble_plot.prototype.make_chart = function() {
 	return selection.each(add_data);
     };
 
-    update = function() {
+    this.update = function() {
 	data.forEach(function(d, i) {
 	    return d.forceR = Math.max(minCollisionRadius, rScale(rValue(d)));
 	});
@@ -135,6 +139,7 @@ bubble_plot.prototype.make_chart = function() {
 	updateNodes();
 	return updateLabels();
     };
+    var update = this.update;
 
     updateNodes = function() {
 	node = node.selectAll(".bubble-node").data(data, function(d) {
@@ -361,25 +366,29 @@ bubble_plot.prototype.update = function(word_data) {
     console.log("updating bubbles");
     console.log(word_data);
 
-    var dampenedAlpha = 1.0;
+    //var dampenedAlpha = 1.0;
     var     jitter = 0.5;
 
     d3.select(this.id).select("svg").select("#bubble-nodes")
 	.selectAll(".bubble_node").data(word_data).enter()
 	.append("a").attr("class", "bubble-node")
-	.each(self.gravity(dampenedAlpha)).each(self.collide(jitter))
-	    .attr("transform", function(d) {
-	    return "translate(" + d.x + "," + d.y + ")";
-	})
 	.call(this.force.drag).call(this.connectEvents).append("circle").attr("r", function(d) {
 	    return self.rScale(self.rValue(d));
 	});
-
+    
     d3.select(this.id).select("svg").select("#bubble-labels")
 	.selectAll(".bubble-label").data(word_data).enter()
 	.append("div").attr("id", "bubble-labels");
     
+    this.data = this.data + this.transformData(word_data);
+    this.update();
     
+/*
+	.each(self.gravity(dampenedAlpha)).each(self.collide(jitter))
+	    .attr("transform", function(d) {
+	    return "translate(" + d.x + "," + d.y + ")";
+	})
+*/
     
     // svgEnter = svg.enter();
     

@@ -22,8 +22,6 @@
     <script src="/static/bubble.js"></script>
     <script type="text/javascript" src="{{url_for('static', filename='mapping.js') }}" ></script>
 
-
-
   </head>
 
 
@@ -39,37 +37,24 @@
 
     <!-- Map Section -->
     <div id="middle_container" class="row">
-      <div id="map_container" class="span6 offset2">
+
+      <div id="map_container" class="span6 offset1">
 	<div id="map_canvas" style="width:500px; height:500px; border: 2px solid black;"></div>
 	<div class="centered" style="margin-top: 10px;">
 	  <a id="button_accept" class="btn btn-large btn-success">Get Next</a>
 	  <a id="button_try_another" class="btn btn-large btn-danger">Try Another</a>
 	</div>
       </div>
-      <div id="venue_title" class="well span5 centered lead" >
-	Venues
-      </div>
-      <div id="venue_list" class="well span5" >
-      </div>
+
+      <div id="venue_title" class="well span5 centered lead" >Venues</div>
+      <div id="venue_list"  class="well span5 offset1" ></div>
+      <div id="vis" class="span5"></div>
     </div>
 
     <!--<hr>-->
     
     <!--<div class="span12"></div>-->
 
-    <div id="vis"></div>
-<!--    
-    <script type="text/javascript">
-      
-      var test_data = new Array();
-      test_data.push({"name" : "holmes", "word" : "holmes", "count" : 300});
-      test_data.push({"name" : "fish", "word" : "fish", "count" : 250});
-      test_data.push({"name" : "dog", "word" : "dog", "count" : 200});
-      test_data.push({"name" : "house", "word" : "house", "count" : 150});
-      
-      render_bubbles("#vis", test_data, 500, 300);
-    </script>
-    -->
 
     
     <div class="footer">

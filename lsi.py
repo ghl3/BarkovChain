@@ -5,6 +5,7 @@ import logging
 import argparse
 import itertools
 
+import re
 import time
 import datetime
 import json
@@ -26,16 +27,23 @@ def get_stopwords():
     into memory
     """
     stop_words = set()
-    with open('stop-words.txt', 'r') as f:
+
+    with open('data/stop-words.txt', 'r') as f:
         for word in f:
             word = word.strip().lower()
             stop_words.add(word)
 
-    with open('first_names.csv', 'r') as f:
+    with open('data/first_names.csv', 'r') as f:
         for line in f:
             for word in line.splitlines():
                 word = word.strip().lower()
                 stop_words.add(word)
+
+    with open('data/custom-stop-words.txt', 'r') as f:
+        for word in f:
+            word = word.strip().lower()
+            stop_words.add(word)
+
 
     return stop_words
 
@@ -49,8 +57,13 @@ def tokenize_document(doc, stopwords, ignorechars):
     
     tokens = []
 
+    # Remove any html tags that may
+    # have suck in
+    doc = re.sub('<[^>]*>', '', doc)
+
     words = nltk.word_tokenize(doc)
     for w in words:
+        
         w = unicodedata.normalize('NFC', w).encode('ascii', 'ignore')
         w = w.lower().translate(None, ignorechars)
 

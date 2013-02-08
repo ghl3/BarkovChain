@@ -9,7 +9,7 @@ var current_path = null;
 var active_chain = false;
 var _lastIndex = 0;
 var clickable = false;
-var word_bubbles = new bubble_plot("#vis", 500, 300);
+var word_bubbles = new bubble_plot("#vis", 700, 300);
 
 
 // Venue class
@@ -358,6 +358,7 @@ function submitToServer(api, data) {
 	var word_list = new Array();
 	for(var i=0; i < user_words.length; ++i) {
 	    var word_dict = {};
+	    if( user_words[i][1]*200 < 2) continue;
 	    word_dict['name'] = user_words[i][0];
 	    word_dict['word'] = user_words[i][0];
 	    word_dict['count'] = 200*user_words[i][1];
@@ -365,8 +366,15 @@ function submitToServer(api, data) {
 	}
 	console.log("Rendering Bubbles:");
 	console.log(word_list);
-	word_bubbles.update(word_list);
+	//word_bubbles.update(word_list);
+	d3.select("#vis").select("svg")
+	    .remove();
+	d3.select("#vis").select("#bubble-labels")
+	    .remove();
 
+	word_bubbles = new bubble_plot("#vis", 700, 300);
+	word_bubbles.draw(word_list);
+	
 	$("#venue_list").show();
     }
     
@@ -440,17 +448,6 @@ $(document).ready(function() {
     google.maps.event.addListener(map, 'click', beginChain); 
 
     // Initialize Bubbles
-    var fish = test();
-    console.log(fish);
-
-    console.log(word_bubbles);
-    var test_data = new Array();
-    test_data.push({"name" : "holmes", "word" : "holmes", "count" : 300});
-    test_data.push({"name" : "fish", "word" : "fish", "count" : 250});
-    test_data.push({"name" : "dog", "word" : "dog", "count" : 200});
-    test_data.push({"name" : "house", "word" : "house", "count" : 150});
-    word_bubbles.draw(test_data);
-
     // Define clicking on the 'submit' button
     // Send an ajax request to the flask server
     // and get some info

@@ -28,6 +28,7 @@ import scipy.stats
 
 from math import pi
 from math import tan                
+#from math import exp                
 
 from lsi import load_lsi, important_words
 
@@ -335,6 +336,12 @@ def get_next_location(current_chain, rejected_locations, user_vector=None):
     return None
 
 
+def exponential_distribution(x, lam):
+    if x < 0: return 0
+    else:
+        return lam*exp(-1*lam*x)
+    return 
+
 def mc_weight(proposed, current, user_vector):
     """ 
     Calculate the probability of jumping from current to proposed
@@ -350,6 +357,7 @@ def mc_weight(proposed, current, user_vector):
     # To Do: favor linear paths
     #
     result.distance = distance_dr(proposed['nymag'], current)
+    #result.pdf_distance = exponential_distribution(result.distance, 300) # size is 100 meters
     result.pdf_distance = scipy.stats.expon.pdf(result.distance, scale=300) # size is 100 meters
     result.probability *= result.pdf_distance
 

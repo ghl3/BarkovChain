@@ -71,19 +71,22 @@ def api_initial_location():
         print "Bad Content-Type : Expected JSON"
         return not_found()
 
-    # Get the next location
+    # Get initial location
+    print "Getting Initial Location"
     marker_location = request.json['location']
     marker_location['initial'] = True
     current_chain = [marker_location]
     next_location = get_next_location(current_chain, rejected_locations=[])
 
     # Update the user vector
+    print "Updating the User Vector"
     bar_index = bar_idx_map[next_location['nymag']['name']]
     initial_user_vector = [var for idx, var in corpus_lsi_tfidf[bar_index]]
     print "Created Initial User Vector: ", 
     print initial_user_vector
 
     # Return the data
+    print "Returning Data"
     data_for_app = format_location(next_location, initial_user_vector)
     resp = Response(data_for_app, status=200, mimetype='application/json')
     return resp

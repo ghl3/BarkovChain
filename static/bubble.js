@@ -168,9 +168,11 @@ bubble_plot.prototype.make_chart = function() {
 	    return textValue(d);
 	});
 
+	/*
 	labelEnter.append("div").attr("class", "bubble-label-value").text(function(d) {
 	    return rValue(d);
 	});
+	*/
 
 	label.style("font-size", function(d) {
 	    return Math.max(8, rScale(rValue(d) / 2)) + "px";

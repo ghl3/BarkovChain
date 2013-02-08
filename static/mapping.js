@@ -363,7 +363,7 @@ function submitToServer(api, data) {
 	var word_list = new Array();
 	for(var i=0; i < user_words.length; ++i) {
 	    var word_dict = {};
-	    if( user_words[i][1]*100 < 1) continue;
+	    if( user_words[i][1]*100 < 2) continue;
 	    word_dict['name'] = user_words[i][0];
 	    word_dict['word'] = user_words[i][0];
 	    word_dict['count'] = 100*user_words[i][1];

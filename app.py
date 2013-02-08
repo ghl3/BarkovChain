@@ -48,6 +48,10 @@ def index():
 def bubble():
     return render_template('bubble.html')
 
+@app.route('/cloud')
+def cloud():
+    return render_template('cloud.html')
+
 @app.route('/api/initial_location', methods=['POST'] )
 def api_initial_location():
     """

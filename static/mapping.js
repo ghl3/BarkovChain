@@ -360,15 +360,12 @@ function submitToServer(api, data) {
 	    var word_dict = {};
 	    word_dict['name'] = user_words[i][0];
 	    word_dict['word'] = user_words[i][0];
-	    word_dict['count'] = 200*user_words[i][0];
+	    word_dict['count'] = 200*user_words[i][1];
 	    word_list.push(word_dict);
 	}
-
 	console.log("Rendering Bubbles:");
 	console.log(word_list);
-	//d3.select("svg")
-	//    .remove();
-
+	word_bubbles.update(word_list);
 
 	$("#venue_list").show();
     }

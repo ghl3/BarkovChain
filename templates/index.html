@@ -7,7 +7,7 @@
     <meta name="keywords" content="Restaurants Bars Coffee Markov Chain" >
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
-   
+    
     <!-- Style / css -->
     <link rel="stylesheet" href="/static/bubble.css">
     <link rel="stylesheet" type="text/css" href="/static/style.css" />
@@ -24,7 +24,6 @@
 
   </head>
 
-
   <body>
 
     <!-- Header -->
@@ -36,19 +35,38 @@
     </div>
 
     <!-- Map Section -->
-    <div id="middle_container" class="row">
+    <div id="middle_container" class="row-fluid">
 
-      <div id="map_container" class="span6 offset1">
+      <div id="map_container" class="span6 offset1 row-fluid">
 	<div id="map_canvas" style="width:500px; height:500px; border: 2px solid black;"></div>
+
 	<div class="centered" style="margin-top: 10px;">
 	  <a id="button_accept" class="btn btn-large btn-success">Get Next</a>
 	  <a id="button_try_another" class="btn btn-large btn-danger">Try Another</a>
 	</div>
+
+	<div class="accordion" id="accordion2">
+	  <div class="accordion-group">
+	    <div class="accordion-heading">
+	      <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseOne">
+		Theme
+	      </a>
+	    </div>
+	    <div id="collapseOne" class="accordion-body collapse">
+	      <div class="accordion-inner">
+		<div id="vis" style="margin-top: 20px" class="span12"></div>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+
+
       </div>
 
-      <div id="venue_title" class="well span5 centered lead" >Venues</div>
-      <div id="venue_list"  class="well span5 offset1" ></div>
-      <div id="vis" class="span5"></div>
+      <div id="right_column" class="row-fluid span5">
+	<div id="venue_title" class="well span10 centered lead" >Venues</div>
+	<div id="venue_list"  class="well span10 centered" ></div>
+      </div>
     </div>
 
     <!--<hr>-->

@@ -31,6 +31,10 @@ from math import tan
 
 from lsi import load_lsi, important_words
 
+from assets import gather_assets
+
+gather_assets()
+
 # Create a corpus from this
 dictionary, lsi, tfidf, corpus, corpus_lsi_tfidf, \
     lsi_index, bar_idx_map, idx_bar_map = load_lsi('data')

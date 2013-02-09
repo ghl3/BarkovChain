@@ -14,8 +14,12 @@ def deploy_assets():
     Send all assets in the 'assets' directory
     to the s3 bucket 'barkov_chain'
     """
-
-    s3 = boto.connect_s3()
+    try:
+        s3 = boto.connect_s3()
+    except boto.exception.NoAuthHandlerFound:
+        print "Cannot deploy.  Ensure that authentication environment variables exist"
+        return
+        
     bucket = s3.get_bucket('barkov_chain')
 
     if not isdir('assets'):
@@ -38,7 +42,13 @@ def gather_assets():
     those that don't exist locally.
     """
 
-    s3 = boto.connect_s3()
+    try:
+        s3 = boto.connect_s3()
+    except boto.exception.NoAuthHandlerFound:
+        print "Using local assets"
+        return
+
+
     bucket = s3.get_bucket('barkov_chain')
 
     if not isdir('assets'):

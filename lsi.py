@@ -28,18 +28,18 @@ def get_stopwords():
     """
     stop_words = set()
 
-    with open('data/stop-words.txt', 'r') as f:
+    with open('assets/stop-words.txt', 'r') as f:
         for word in f:
             word = word.strip().lower()
             stop_words.add(word)
 
-    with open('data/first_names.csv', 'r') as f:
+    with open('assets/first_names.csv', 'r') as f:
         for line in f:
             for word in line.splitlines():
                 word = word.strip().lower()
                 stop_words.add(word)
 
-    with open('data/custom-stop-words.txt', 'r') as f:
+    with open('assets/custom-stop-words.txt', 'r') as f:
         for word in f:
             word = word.strip().lower()
             stop_words.add(word)
@@ -138,7 +138,7 @@ def create_lsi(db, num_topics=10, num_bars=None):
     bar_idx_map = {}
     idx_bar_map = {}
 
-    save_directory = "data/"
+    save_directory = "assets/"
 
     print "Fetching texts from database and tokenizing"
     for idx, location in enumerate(locations):

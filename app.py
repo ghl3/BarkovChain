@@ -37,7 +37,7 @@ gather_assets()
 
 # Create a corpus from this
 dictionary, lsi, tfidf, corpus, corpus_lsi_tfidf, \
-    lsi_index, bar_idx_map, idx_bar_map = load_lsi('data')
+    lsi_index, bar_idx_map, idx_bar_map = load_lsi('assets')
 
 # Connect to the db
 mongo_db, mongo_connection = connect_to_database(table_name="barkov_chain")

@@ -31,9 +31,13 @@ from math import tan
 
 from lsi import load_lsi, important_words
 
+from assets import gather_assets
+
+gather_assets()
+
 # Create a corpus from this
 dictionary, lsi, tfidf, corpus, corpus_lsi_tfidf, \
-    lsi_index, bar_idx_map, idx_bar_map = load_lsi('data')
+    lsi_index, bar_idx_map, idx_bar_map = load_lsi('assets')
 
 # Connect to the db
 mongo_db, mongo_connection = connect_to_database(table_name="barkov_chain")
@@ -47,6 +51,10 @@ def index():
 @app.route('/bubble')
 def bubble():
     return render_template('bubble.html')
+
+@app.route('/cloud')
+def cloud():
+    return render_template('cloud.html')
 
 @app.route('/api/initial_location', methods=['POST'] )
 def api_initial_location():
@@ -305,10 +313,10 @@ def get_next_location(current_chain, rejected_locations, user_vector=None):
         total_probability += weight_result.probability
 
     while (len(proposed_locations) < 5 or total_probability <= 0.000001):
-        print "Too few nearby locations found within %s blocks (%s).",
-        print "Extending query: %s %s" % (blocks, len(proposed_locations))
+        print "Too few nearby locations found within %s blocks (%s)." % (blocks, len(proposed_locations))
         blocks += 10
         updated_distance = get_lat_lon_square_query(current_location, blocks=blocks)
+        print "Updated Distance: ", updated_distance
         db_query.update(updated_distance)
         proposed_locations = list(bars.find(db_query))
 

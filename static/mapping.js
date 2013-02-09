@@ -9,6 +9,8 @@ var current_path = null;
 var active_chain = false;
 var _lastIndex = 0;
 var clickable = false;
+var word_bubbles = new bubble_plot("#vis", 700, 300);
+
 
 // Venue class
 function venue(data) {
@@ -172,15 +174,14 @@ function createTableRow(data) {
     Description += '</ul>';
 
     var row_html_string = ' \
-<div class="row" id="row_' + row_index + '"> \
+<div class="row-fluid" id="row_' + row_index + '"> \
 \
-<div class="span3"> <p><strong>' + name + '</strong></p> </div> \
-<div class="span2" style="text-align: right;"> \
+<div class="span6"> <p><strong>' + name + '</strong></p> </div> \
+<div class="span5" style="text-align: right;"> \
 <button id="button_remove_' + row_index + '" class="button_remove btn btn-small btn-danger">Remove</button> </div> \
-<div class="span3"> <p>' + address + '</p> </div> \
-<div class="span2"></div> \
-<div class="span5">' + category_string + '</div> \
-<div class="span5"> <div class="Description"> </div> </div> \
+<div class="span6"> <p>' + address + '</p> </div> \
+<div class="span12">' + category_string + '</div> \
+<div class="span12"> <div class="Description"> </div> </div> \
 <hr> \
 \
 </div>';
@@ -278,6 +279,12 @@ function clearChain() {
     current_path = null;
 
     $("#venue_list").hide();
+
+    d3.select("#vis").select("svg")
+	.remove();
+    d3.select("#vis").select("#bubble-labels")
+	.remove();
+
     active_chain = false;
     return;
 
@@ -349,6 +356,29 @@ function submitToServer(api, data) {
 	current_user_vector = data['user_vector'];
 	console.log("Updated user vector:");
 	console.log(current_user_vector);
+	
+	// Create the word bubbles
+	var user_words = data['user_words'];
+	console.log(user_words);
+	var word_list = new Array();
+	for(var i=0; i < user_words.length; ++i) {
+	    var word_dict = {};
+	    if( user_words[i][1]*100 < 2) continue;
+	    word_dict['name'] = user_words[i][0];
+	    word_dict['word'] = user_words[i][0];
+	    word_dict['count'] = 100*user_words[i][1];
+	    word_list.push(word_dict);
+	}
+	console.log("Rendering Bubbles:");
+	console.log(word_list);
+	//word_bubbles.update(word_list);
+	d3.select("#vis").select("svg")
+	    .remove();
+	d3.select("#vis").select("#bubble-labels")
+	    .remove();
+
+	word_bubbles = new bubble_plot("#vis", 700, 300);
+	word_bubbles.draw(word_list);
 	
 	$("#venue_list").show();
     }
@@ -422,6 +452,7 @@ $(document).ready(function() {
     // Define clicking on the map
     google.maps.event.addListener(map, 'click', beginChain); 
 
+    // Initialize Bubbles
     // Define clicking on the 'submit' button
     // Send an ajax request to the flask server
     // and get some info

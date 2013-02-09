@@ -2,13 +2,15 @@
 
 <html>
   <head>
-    <title>Barkov Chain</title>    
+    <title>NYC Bar Hop</title>    
 
     <meta name="keywords" content="Restaurants Bars Coffee Markov Chain" >
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
-   
+    <title>Bar Hop </title>
+    
     <!-- Style / css -->
+    <link rel="stylesheet" href="/static/bubble.css">
     <link rel="stylesheet" type="text/css" href="/static/style.css" />
     <link href="/static/bootstrap/css/bootstrap.css" rel="stylesheet">
     <link href="/static/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
@@ -17,40 +19,62 @@
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
     <script type="text/javascript" 
 	    src="https://maps.googleapis.com/maps/api/js?sensor=false"> </script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>  
+    <script src="/static/bubble.js"></script>
     <script type="text/javascript" src="{{url_for('static', filename='mapping.js') }}" ></script>
 
   </head>
-
 
   <body>
 
     <!-- Header -->
     <div class="container-narrow" >
       <div class="page-header">
-	<h1>Barkov Chain <small>Planning your night made easy</small></h1>
+	<h1>NYC Bar Hop <small>Planning your night made easy</small></h1>
       </div>
       <p class="lead centered">Select a location on the map to begin</p>
     </div>
 
     <!-- Map Section -->
-    <div id="middle_container" class="row">
-      <div id="map_container" class="span6 offset2">
+    <div id="middle_container" class="row-fluid">
+
+      <div id="map_container" class="span6 offset1 row-fluid">
 	<div id="map_canvas" style="width:500px; height:500px; border: 2px solid black;"></div>
+
 	<div class="centered" style="margin-top: 10px;">
 	  <a id="button_accept" class="btn btn-large btn-success">Get Next</a>
 	  <a id="button_try_another" class="btn btn-large btn-danger">Try Another</a>
 	</div>
+	
+	<div class="accordion" id="accordion2" style="margin-top: 20px">
+	  <div class="accordion-group">
+	    <div class="accordion-heading">
+	      <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseOne">
+		Theme
+	      </a>
+	    </div>
+	    <div id="collapseOne" class="accordion-body collapse">
+	      <div class="accordion-inner">
+		<div id="vis" class="span12"></div>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+
+
       </div>
-      <div id="venue_title" class="well span5 centered lead" >
-	Venues
-      </div>
-      <div id="venue_list" class="well span5" >
+
+      <div id="right_column" class="row-fluid span5">
+	<div id="venue_title" class="well span10 centered lead" >Venues</div>
+	<div id="venue_list"  class="well span10 centered" ></div>
       </div>
     </div>
 
     <!--<hr>-->
     
-    <div class="span12"></div>
+    <!--<div class="span12"></div>-->
+
+
     
     <div class="footer">
       <p>&copy; George H. Lewis, 2013</p>

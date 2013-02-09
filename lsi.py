@@ -5,6 +5,7 @@ import logging
 import argparse
 import itertools
 
+import re
 import time
 import datetime
 import json
@@ -26,16 +27,23 @@ def get_stopwords():
     into memory
     """
     stop_words = set()
-    with open('stop-words.txt', 'r') as f:
+
+    with open('assets/stop-words.txt', 'r') as f:
         for word in f:
             word = word.strip().lower()
             stop_words.add(word)
 
-    with open('first_names.csv', 'r') as f:
+    with open('assets/first_names.csv', 'r') as f:
         for line in f:
             for word in line.splitlines():
                 word = word.strip().lower()
                 stop_words.add(word)
+
+    with open('assets/custom-stop-words.txt', 'r') as f:
+        for word in f:
+            word = word.strip().lower()
+            stop_words.add(word)
+
 
     return stop_words
 
@@ -49,8 +57,13 @@ def tokenize_document(doc, stopwords, ignorechars):
     
     tokens = []
 
+    # Remove any html tags that may
+    # have suck in
+    doc = re.sub('<[^>]*>', '', doc)
+
     words = nltk.word_tokenize(doc)
     for w in words:
+        
         w = unicodedata.normalize('NFC', w).encode('ascii', 'ignore')
         w = w.lower().translate(None, ignorechars)
 
@@ -125,7 +138,7 @@ def create_lsi(db, num_topics=10, num_bars=None):
     bar_idx_map = {}
     idx_bar_map = {}
 
-    save_directory = "data/"
+    save_directory = "assets/"
 
     print "Fetching texts from database and tokenizing"
     for idx, location in enumerate(locations):

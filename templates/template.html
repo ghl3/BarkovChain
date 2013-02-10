@@ -11,7 +11,10 @@
     <meta property="og:url" content="http://www.barkovchain.com" />
     <meta name="keywords" content="Restaurants Bars Coffee Markov Chain" >
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    
+
+    {% block head %}
+    {% endblock %}
+
     <!-- Style / css -->
     <link rel="stylesheet" href="/static/style.css" type="text/css"  />
     <link rel="stylesheet" href="/static/bootstrap/css/bootstrap.css" >
@@ -20,8 +23,7 @@
     <script src="/static/deck/jquery-1.7.2.min.js"></script>
     <script src="/static/bootstrap/js/bootstrap.min.js"></script>
 
-    {% block head %}
-    {% endblock %}
+
 
 
     <!-- Core and extension CSS files -->
@@ -44,7 +46,6 @@
   </head>
 
   <body>
-
 
     <div class="navbar navbar-inverse navbar-fixed-top">
       <div class="navbar-inner">
@@ -74,8 +75,6 @@
     <div class="footer">
       <p>&copy; George H. Lewis, 2013</p>
     </div>
-
-
 
   </body>
 

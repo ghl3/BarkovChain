@@ -1,6 +1,15 @@
 
 {% extends "template.html" %}
 
+{% block head %}
+<script type="text/javascript" 
+	src="https://maps.googleapis.com/maps/api/js?sensor=false"> </script>
+<script src="http://d3js.org/d3.v3.min.js"></script>  
+<script src="/static/bubble.js"></script>
+
+<script type="text/javascript" src="{{url_for('static', filename='mapping.js') }}" ></script>
+{% endblock %}
+
 
 {% block main %}
 

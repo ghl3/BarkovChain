@@ -19,6 +19,13 @@
     <link href="/static/bootstrap/css/bootstrap.css" rel="stylesheet">
     <link href="/static/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
 
+
+    <script src="/static/deck/jquery-1.7.2.min.js"></script>
+
+    {% block head %}
+    {% endblock %}
+
+
     <!-- Core and extension CSS files -->
     <!--
 	<link rel="stylesheet" href="/static/deck/core/deck.core.css">
@@ -29,11 +36,6 @@
 
     <!-- Javascript -->
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
-    <script type="text/javascript" 
-	    src="https://maps.googleapis.com/maps/api/js?sensor=false"> </script>
-    <script src="http://d3js.org/d3.v3.min.js"></script>  
-    <script src="/static/bubble.js"></script>
-    <script type="text/javascript" src="{{url_for('static', filename='mapping.js') }}" ></script>
 
     <!-- Theme CSS files -->
     <!--

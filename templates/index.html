@@ -1,46 +1,54 @@
-<!DOCTYPE html>
 
-<html>
-  <head>
-    <title>NYC Bar Hop</title>    
+{% extends "template.html" %}
 
-    <title>Bar Hop </title>
-    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
-    <meta property="og:title" content="Barkov Chain" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="http://www.barkovchain.com" />
-    <meta property="og:url" content="http://www.barkovchain.com" />
-    <meta name="keywords" content="Restaurants Bars Coffee Markov Chain" >
-    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    
-    <!-- Style / css -->
-    <link rel="stylesheet" href="/static/bubble.css">
-    <link rel="stylesheet" type="text/css" href="/static/style.css" />
-    <link href="/static/bootstrap/css/bootstrap.css" rel="stylesheet">
-    <link href="/static/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
 
-    <!-- Javascript -->
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
-    <script type="text/javascript" 
-	    src="https://maps.googleapis.com/maps/api/js?sensor=false"> </script>
-    <script src="http://d3js.org/d3.v3.min.js"></script>  
-    <script src="/static/bubble.js"></script>
-    <script type="text/javascript" src="{{url_for('static', filename='mapping.js') }}" ></script>
+{% block main %}
 
-  </head>
-
-  <body>
+<!--
+    <header class="navbar navbar-fixed-top">
+      <nav class="navbar-inner">
+        <div class="container">
+	<ul>
+	  <li><a href="/">Main</a></li>
+	  <li><a href="/about">About</a></li>
+	  <li><a href="/author">Author</a></li>
+	</ul>
+	</div>
+      </nav>
+    </header>
+-->    
+          
+<!--
+    <header>
+      <nav>
+	<h1><a href=".">Barkov Chain</a></h1>
+	<ul>
+	  <li><a href="/">Main</a></li>
+	  <li><a href="/about">About</a></li>
+	  <li><a href="/author">Author</a></li>
+	</ul>
+      </nav>
+    </header>
+-->
 
     <!-- Header -->
+<!--
     <div class="container-narrow" >
       <div class="page-header">
 	<h1>NYC Bar Hop <small>Planning your night made easy</small></h1>
       </div>
       <p class="lead centered">Select a location on the map to begin</p>
     </div>
+-->
+
+<!--
+    <div class="container-narrow" style="margin-top: 20px;" >
+      <p class="lead centered">Select a location on the map to begin</p>
+    </div>
+-->
 
     <!-- Map Section -->
-    <div id="middle_container" class="row-fluid">
+    <div id="middle_container" class="row-fluid" style="margin-top: 40px;">
 
       <div id="map_container" class="span6 offset1 row-fluid">
 	<div id="map_canvas" style="width:500px; height:500px; border: 2px solid black;"></div>
@@ -79,13 +87,4 @@
     <!--<div class="span12"></div>-->
 
 
-    
-    <div class="footer">
-      <p>&copy; George H. Lewis, 2013</p>
-    </div>
-
-    <script src="/static/bootstrap/js/bootstrap.min.js"></script>
-
-  </body>
-
-</html>
+{% endblock %}

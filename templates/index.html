@@ -9,6 +9,7 @@
 <script src="/static/bubble.js"></script>
 
 <script type="text/javascript" src="{{url_for('static', filename='mapping.js') }}" ></script>
+
 {% endblock %}
 
 
@@ -59,10 +60,10 @@
 
     <!-- Map Section -->
     <div id="middle_container" class="row-fluid page" style="margin-top: 40px;">
-
+      
       <div id="map_container" class="span6 offset1 row-fluid">
-	<div id="map_canvas" style="width:500px; height:500px; border: 2px solid black;"></div>
-
+	<div id="map_canvas" style="width:500px; height:500px; border: 3px solid black;"></div>
+	
 	<div class="centered" style="margin-top: 10px;">
 	  <a id="button_accept" class="btn btn-large btn-success">Get Next</a>
 	  <a id="button_try_another" class="btn btn-large btn-danger">Try Another</a>

@@ -12,6 +12,7 @@ import json
 import nltk
 from nltk.corpus import wordnet
 import unicodedata
+from collections import Counter
 
 from nymag_scrape import connect_to_database
 
@@ -20,6 +21,7 @@ from gensim.models.ldamodel import LdaModel
 
 from gensim import corpora, models, similarities
 from math import sqrt, fabs
+
 
 def get_stopwords():
     """
@@ -43,7 +45,6 @@ def get_stopwords():
         for word in f:
             word = word.strip().lower()
             stop_words.add(word)
-
 
     return stop_words
 
@@ -106,11 +107,19 @@ def create_string_from_database(db_entry):
     name = nymag['name']
     text = nymag['review']
     fsq_tips = db_entry['foursquare']['tips']
-    text.join([tip['text'] for tip in fsq_tips])
+    tip_str = ' '.join([tip['text'] for tip in fsq_tips])
 
+    text = text + " " + tip_str
+
+    categories = nymag['categories']
+    if categories != None:
+        category_str = ' '.join(categories)
+        text = text + " " + category_str
+        
     return text
 
-def create_lsi(db, num_topics=10, num_bars=None):
+
+def create_models(db, lsi_num_topics=10, lda_num_topics=10, num_bars=None):
     """
     Create and save a lsi object
     using data in the database.
@@ -147,16 +156,25 @@ def create_lsi(db, num_topics=10, num_bars=None):
         idx_bar_map[idx] = bar_name
         text = create_string_from_database(location)
         tokens = tokenize_document(text, stopwords, ignorechars)
+        print "Tokenizing %s (%s):" % (location, idx),
+        print text
+        print tokens
         texts.append(tokens)
 
     # Do some cleaning
     print "Cleaning texts"
     texts = remove_words_appearing_once(texts)
 
+    # Create the counter
+    word_counts = Counter()
+    for text in texts: 
+        word_counts.update(text)       
+
     # Create and save the dictionary
     print "Creating dictionary"
     dictionary = corpora.Dictionary(texts)
     dictionary.save(save_directory + 'lsi.dict')
+    print dictionary.token2id
 
     # Create and save the corpus
     print "Creating Corpus matrix"
@@ -174,8 +192,8 @@ def create_lsi(db, num_topics=10, num_bars=None):
     corpora.MmCorpus.serialize(save_directory + 'corpus_tfidf.mm', corpus_tfidf) 
 
     # Create the LSI
-    print "Creating LSI with %s topics" % num_topics
-    lsi = models.LsiModel(corpus_tfidf, id2word=dictionary, num_topics=num_topics) 
+    print "Creating LSI with %s topics" % lsi_num_topics
+    lsi = models.LsiModel(corpus_tfidf, id2word=dictionary, num_topics=lsi_num_topics) 
     lsi.save(save_directory + 'lsi.model')
 
     # Map LSI on the corpus
@@ -188,7 +206,8 @@ def create_lsi(db, num_topics=10, num_bars=None):
     index.save(save_directory + 'lsi_tfidf.index')
 
     # Create the LDA (on the raw corpus)
-    lda = LdaModel(corpus, num_topics=num_topics, id2word=dictionary, passes=10)
+    print "Creating LDA with %s topics" % lda_num_topics
+    lda = LdaModel(corpus, num_topics=lda_num_topics, id2word=dictionary, passes=10)
     #lda.show_topics(10, 20, formatted=False)
     lda.save(save_directory + 'lda.model')
 
@@ -197,17 +216,20 @@ def create_lsi(db, num_topics=10, num_bars=None):
     corpora.MmCorpus.serialize(save_directory + 'corpus_lda.mm', corpus_lda)
 
     # Save some additional info
-    with open(save_directory + 'lsi_bar_idx_map.json', 'wb') as fp:
+    with open(save_directory + 'bar_idx_map.json', 'wb') as fp:
         json.dump(bar_idx_map, fp)
 
-    with open(save_directory + 'lsi_idx_bar_map.json', 'wb') as fp:
+    with open(save_directory + 'idx_bar_map.json', 'wb') as fp:
         json.dump(idx_bar_map, fp)
 
-    with open(save_directory + 'lsi_info.txt', 'wb') as fp:
+    with open(save_directory + 'model_info.txt', 'wb') as fp:
         ts = time.time()
         st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
         fp.write("LSI Model %s\n" % st)
-        info = "Number of Docs: %s Number of Topics: %s\n" % (len(corpus), num_topics)
+        info = "Number of Docs: %s\n" % len(corpus)
+        info += "Number of key words: %s\n" % len(dictionary)
+        info += "Number of LSI Topics: %s\n" % lsi_num_topics
+        info += "Number of LDA Topics: %s\n" % lda_num_topics
         fp.write(info)
 
         # Print Stop Words
@@ -218,37 +240,65 @@ def create_lsi(db, num_topics=10, num_bars=None):
                 fp.write('\n')
             fp.write("%s " % word)
 
+        # Print Corpus
+        fp.write("\n\nWords Encountered:\n")
+        for word, count in word_counts.most_common():
+            idx = dictionary.token2id[word]
+            line = "%s (index=%s) freq: %s \n" % (word, idx, count)
+            fp.write(line)
 
-def load_lsi(directory=''):
+
+def load_corpus(directory='assets/'):
+
+    if directory != '' and directory[-1] != '/':
+        directory = directory + '/'
+
+    dictionary = corpora.Dictionary.load(directory + 'keywords.dict')
+    corpus = corpora.MmCorpus(directory + 'corpus.mm')
+    tfidf = models.TfidfModel.load(directory + 'tfidf.model')
+
+    with open(directory + 'bar_idx_map.json', 'rb') as fp:
+        bar_idx_map = json.load(fp)
+
+    with open(directory + 'idx_bar_map.json', 'rb') as fp:
+        idx_bar_map = json.load(fp)
+
+    return (dictionary, corpus, tfidf)
+
+
+def load_lsi(directory='assets/'):
     """
-    Load the saved-on-disk lsi
-    object and return it.
+    Load the lsi model, corpus matrix, and index
     """
 
     if directory != '' and directory[-1] != '/':
         directory = directory + '/'
     
-    dictionary = corpora.Dictionary.load(directory + 'lsi.dict')
-    corpus = corpora.MmCorpus(directory + 'corpus.mm')
-    tfidf = models.TfidfModel.load(directory + 'tfidf.model')
     lsi = models.LsiModel.load(directory + 'lsi.model')
     corpus_lsi_tfidf = corpora.MmCorpus(directory + 'corpus_lsi_tfidf.mm')
     index = similarities.MatrixSimilarity.load(directory + 'lsi_tfidf.index')
 
-    #corpus = corpora.MmCorpus('lsi.corpus.mm')
-    #corpus_tfidf = 
-
-    with open(directory + 'lsi_bar_idx_map.json', 'rb') as fp:
-        bar_idx_map = json.load(fp)
-
-    with open(directory + 'lsi_idx_bar_map.json', 'rb') as fp:
-        idx_bar_map = json.load(fp)
-
-    return (dictionary, lsi, tfidf, corpus, corpus_lsi_tfidf, 
-            index, bar_idx_map, idx_bar_map)
+    return (lsi, corpus_lsi_tfidf, index)
     
 
+def load_lda(directory='assets/'):
+    """
+    Load the lda model and corpus matrix
+    """
+
+    if directory != '' and directory[-1] != '/':
+        directory = directory + '/'
+    
+    lda = models.LsiModel.load(directory + 'lda.model')
+    corpus_lda = corpora.MmCorpus(directory + 'corpus_lda.mm')
+
+    return (lda, corpus_lda)
+
+
 def test_lsi(db):
+    """
+    Run a test of lsi
+    """
 
     # Grab random locations
     bars = db['bars']
@@ -262,27 +312,12 @@ def test_lsi(db):
         bar_names.append(location['nymag']['name'])
 
     # Create a corpus from this
-    dictionary, lsi, tfidf, corpus, corpus_lsi_tfidf, \
-        index, bar_idx_map, idx_bar_map = load_lsi("data")
+    dictionary, corpus, tfidf = load_corpus()
+    lsi, corpus_lsi_tfidf, index = load_lsi()
 
-    #lsi, corpus, corpus_tfidf, dictionary, \
-    #    index, bar_idx_map, idx_bar_map = load_lsi()
-
-    #lsi, corpus, corpus_tfidf, dictionary, bar_idx_map, idx_bar_map = load_lsi()
     lsi.print_topics(10)
 
-    # Get the tfidf vectors
-    #corpus_tfidf = [corpus_tfidf[bar_idx_map[name]] for name in bar_names ]
-    #print corpus_tfidf
-
-    # And transform to the lsi space
-    #corpus_lsi = lsi[corpus_tfidf]
-    #print corpus_lsi
-
-    # Create a matching function
-    #index = similarities.MatrixSimilarity(corpus_lsi)
-
-    #test_vector = lsi[corpus_tfidf[0]]
+    # Run the tests
     test_vector = corpus_lsi_tfidf[0]
     test_words = [dictionary[word[0]] for word in test_vector]    
     sims = index[test_vector]
@@ -302,28 +337,67 @@ def test_lsi(db):
 
     return
 
-    # Create the similarity index
-    index = similarities.MatrixSimilarity(lsi[corpus])
 
-    # Test the similarities
-    test_vector = lsi[corpus[0]]
-    test_words = [dictionary[word[0]] for word in test_vector]
+def test_lda(db):
+    """
+    Test the LDA functionality
+    """
+
+    # Grab random locations
+    bars = db['bars']
+    bar_names = []
+    locations = bars.find({ 'nymag.review' : {'$ne':None}, 
+                            'foursquare.tips' : {'$exists':True}, 
+                            'foursquare.tips' : {'$ne':None} 
+                            }).limit(10)
+
+    for location in locations:
+        bar_names.append(location['nymag']['name'])
+
+    dictionary, corpus, tfidf = load_corpus()
+    lda, corpus_lda = load_lda()
+
+    print lda.num_topics
+    #lda.print_topics()
+    lda.show_topics(-1, 10, True)
+
+    # Print some vector
+    idx = 0
+    for venue in corpus_lda:
+        print venue
+        idx += 1
+        if idx > 100: break
+    return
+
+    # Create a test venue
+    test_vector = corpus_lda[0]
+    test_words = [dictionary[word[0]] for word in test_vector]    
+
+    index = similarities.MatrixSimilarity(corpus_lda)
     sims = index[test_vector]
     sims = sorted(enumerate(sims), key=lambda item: -item[1])
 
-    print test_vector
     print "Comparing to: "
     print test_words
+    print test_vector
     print ''
 
     for doc_idx, cosine in itertools.chain(sims[0:10], sims[-10:-1]):
         words = [dictionary[pair[0]] for pair in corpus[doc_idx]]
-        
-        my_cosine = numpy.dot(self.index, query.T).T 
         print cosine, 
         print '{', [word for word in words if word in test_words], '}',
         print words
         print ''
+
+    '''
+    for idx, doc in enumerate(corpus_lda):
+        words = [dictionary[pair[0]] for pair in doc]
+        csn = cosine(test_vector, doc) 
+        print csn, 
+        print '{', [word for word in words if word in test_words], '}',
+        print words
+        print ''
+    '''
 
     return
 
@@ -404,13 +478,21 @@ def main():
     parser = argparse.ArgumentParser(description='Scrape data from NYMag.')
     parser.add_argument('--create', '-c', dest='create', action="store_true", default=False, 
                         help='Create and save the lsa object')
-    parser.add_argument('--test', '-t', dest='test', action="store_true", default=False, 
-                        help='Test the lsa')
-
     parser.add_argument('--limit', '-l', dest='limit', type=int, default=None, 
                         help='Maximum number of venues to use in sva matrix (default is all)')
-    parser.add_argument('--size', '-s', dest='size', type=int, default=10, 
-                        help='Number of Support Vector dimensions to use')
+    parser.add_argument('--lsi_size', dest='lsi_size', type=int, default=10, 
+                        help='Number of LSI Support Vector dimensions to use')
+    parser.add_argument('--lda_size', dest='lda_size', type=int, default=10, 
+                        help='Number of LDA topics to use')
+
+    parser.add_argument('--test', '-t', dest='test', action="store_true", default=False, 
+                        help='Run the tests')
+
+    parser.add_argument('--lsi', dest='lsi', action="store_true", default=False, 
+                        help='Test the lsi')
+
+    parser.add_argument('--lda', dest='lda', action="store_true", default=False, 
+                        help='Test the lda')
 
     args = parser.parse_args()
 
@@ -420,10 +502,21 @@ def main():
     db, connection = connect_to_database(table_name="barkov_chain")
 
     if args.create:
-        create_lsi(db, args.size, args.limit)
+        create_models(db, lsi_num_topics=args.lsi_size, 
+                      lda_num_topics=args.lda_size, 
+                      num_bars=args.limit)
 
+    # Run the tests
     if args.test:
         test_lsi(db)
+        test_lda(db)
+        
+    else:
+        if args.lsi:
+            test_lsi(db)
+
+        if args.lda:
+            test_lda(db)
 
     return
 

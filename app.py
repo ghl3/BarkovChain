@@ -301,7 +301,7 @@ def get_next_location(current_chain, rejected_locations, user_vector=None):
 
     # Get the nearby locations
     print "Fetching Locations"
-    bars = mongo_db['bars2']
+    bars = mongo_db['bars']
     db_return = bars.find(db_query)
 
     print "Found Nearby Locations: ", 

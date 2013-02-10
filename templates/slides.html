@@ -19,113 +19,114 @@
 
 
 {% block main %}
-  
 
-  <!-- Slide 1 -->
-  <section class="slide" id="intro" >
-    <div class="row-fluid" id="middle_container">
-      <div class="span12">
-	<h1><b>Bar</b>kov Chain</h1>
+
+<!-- Slide 1 -->
+<section class="slide" id="intro" >
+  <div class="row-fluid" id="middle_container">
+    <div class="span12">
+      <h1><b>Bar</b>kov Chain</h1>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 2 -->
+<section class="slide page" id="problem">
+
+  <h2>The Problem</h2>
+  
+  <div class="sample-content">
+    <p class="slide">Planning a night out in New York is Hard!</p>
+    <div class="span12 row-fluid">
+      <div class="slide span6 row-fluid">
+	<img src="/static/images/BarsGoogleMaps.png" style="height: 500px;">
+      </div>
+      <div class="slide span6 row-fluid">
+	<img src="/static/images/BarsYelp.png">
       </div>
     </div>
-  </section>
+  </div>
 
-  <!-- Slide 2 -->
-  <section class="slide deck-next" id="sample">
+</section>
 
-    <h2>The Problem</h2>
-    
-    <div class="sample-content">
-      <p class="slide" id="slides-html">Planning a night out in New York is Hard!</p>
-      <div class="span12 row-fluid">
-	<div class="slide span6 row-fluid">
-	  <img src="/static/images/BarsGoogleMaps.png" style="height: 500px;">
-	</div>
-	<div class="slide span6 row-fluid">
-	  <img src="/static/images/BarsYelp.png">
-	</div>
-      </div>
-    </div>
-
-  </section>
-
-  <!-- Slide 3 -->
-  <section class="slide deck-next" id="sample">
-    
-    <h2>The Solution</h2>
-    
-    <div class="sample-content">
-      <p class="slide" id="slides-html">Build a simple app</p>
-      <div class="span12 row-fluid slide">
-	<img src="/static/images/BarkovChain.png" style="height: 500px;" >
-      </div>
-    </div>
-
-  </section>
+<!-- Slide 3 -->
+<section class="slide page" id="solution">
   
+  <h2>The Solution</h2>
   
-  <!-- Slide 4 -->
-  <section class="slide deck-next" id="sample">
-    <h2>Run Demo</h2>
-    <div class="slide sample-content">
+  <div class="sample-content">
+    <p class="slide" id="slides-html">Build a simple app</p>
+    <div class="span12 row-fluid slide">
+      <img src="/static/images/BarkovChain.png" style="height: 500px;" >
     </div>
-  </section>
+  </div>
 
-  
-  <!-- Slide 5 -->
-  <section class="slide deck-next" id="sample">
-    <h2>The Algorithm</h2>
-    <div class="slide sample-content">
-      <ul>
-	<li>Search for nearby venues</li>
-	<li>Parse descriptions and reviews using Latent Semantic Analysis to determine similarity</li>
-	<li>Build a weight function that combines distance, similarity, and user reviews</li>
-	<li>Pick the next stop proportionally to this weight function</li>
-      </ul>
-    </div>
-  </section>
-  
-  <!-- Slide 6 -->
-  <section class="slide deck-next" id="sample">
-    <h2>The Stack</h2>
-    <div class="sample-content" >
-      <img src="/static/images/Stack.jpeg" style="height: 500px;">
-    </div>
-  </section>
+</section>
 
 
-  <!-- Slide 7 -->
-  <section class="slide deck-next" id="sample">
-    <h2>About Me</h2>
-    <div class="sample-content">
-      <ul>
-	<li>George Lewis</li>
-	<li>PhD in high energy experimental particle physics from New York University</li>
-	<li>Member of the ATLAS experiment</li>
-      </ul>
-      <img src="/static/images/atlas.gif" style="height: 300px;">
-    </div>
-  </section>
-
-  <section class="slide deck-next" id="sample">
-    <h2>The End</h2>
-  </section>
+<!-- Slide 4 -->
+<section class="slide page" id="Demo">
+  <h2>Run Demo</h2>
+  <div class="slide sample-content">
+  </div>
+</section>
 
 
-	<!-- Deck Core and extensions -->
-	<script src="/static/deck/core/deck.core.js"></script>
-	<script src="/static/deck/extensions/hash/deck.hash.js"></script>
-	<script src="/static/deck/extensions/menu/deck.menu.js"></script>
-	<script src="/static/deck/extensions/goto/deck.goto.js"></script>
-	<script src="/static/deck/extensions/status/deck.status.js"></script>
-	<script src="/static/deck/extensions/navigation/deck.navigation.js"></script>
+<!-- Slide 5 -->
+<section class="slide page" id="Algorithm">
+  <h2>The Algorithm</h2>
+  <div class="slide sample-content">
+    <ul>
+      <li>Search for nearby venues</li>
+      <li>Parse descriptions and reviews using Latent Semantic Analysis to determine similarity</li>
+      <li>Build a weight function that combines distance, similarity, and user reviews</li>
+      <li>Pick the next stop proportionally to this weight function</li>
+    </ul>
+  </div>
+</section>
 
-	<!-- Initialize the deck -->
-	<script>
-	  $(function() {
-	  $.deck('.slide');
-	  });
-	</script>
+<!-- Slide 6 -->
+<section class="slide page" id="Stack">
+  <h2>The Stack</h2>
+  <div class="sample-content" >
+    <img src="/static/images/Stack.jpeg" style="height: 500px;">
+  </div>
+</section>
 
-  {% endblock %}
+
+<!-- Slide 7 -->
+<section class="slide page" id="AboutMe">
+  <h2>About Me</h2>
+  <div class="sample-content">
+    <ul>
+      <li>George Lewis</li>
+      <li>PhD in high energy experimental particle physics from New York University</li>
+      <li>Member of the ATLAS experiment</li>
+    </ul>
+    <img src="/static/images/atlas.gif" style="height: 300px;">
+  </div>
+</section>
+
+
+<section class="slide page" id="end">
+  <h2>The End</h2>
+</section>
+
+
+<!-- Deck Core and extensions -->
+<script src="/static/deck/core/deck.core.js"></script>
+<script src="/static/deck/extensions/hash/deck.hash.js"></script>
+<script src="/static/deck/extensions/menu/deck.menu.js"></script>
+<script src="/static/deck/extensions/goto/deck.goto.js"></script>
+<script src="/static/deck/extensions/status/deck.status.js"></script>
+<script src="/static/deck/extensions/navigation/deck.navigation.js"></script>
+
+<!-- Initialize the deck -->
+<script>
+  $(function() {
+  $.deck('.slide');
+  });
+</script>
+
+{% endblock %}
 

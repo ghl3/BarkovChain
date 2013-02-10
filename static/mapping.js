@@ -173,17 +173,14 @@ function createTableRow(data) {
     }
     Description += '</ul>';
 
-    var row_html_string = ' \
-<div class="row-fluid" id="row_' + row_index + '"> \
+    var row_html_string = '<div class="row-fluid" id="row_' + row_index + '">\
 \
-<div class="span6"> <p><strong>' + name + '</strong></p> </div> \
+<div class="span6"> <p><strong>' + name + '</strong></p> </div>\
 <div class="span5" style="text-align: right;"> \
 <button id="button_remove_' + row_index + '" class="button_remove btn btn-small btn-danger">Remove</button> </div> \
 <div class="span6"> <p>' + address + '</p> </div> \
 <div class="span12">' + category_string + '</div> \
-<div class="span12"> <div class="Description"> </div> </div> \
-<hr> \
-\
+<div class="span12"> <div class="Description"> </div> </div>\
 </div>';
     
     // Create the object

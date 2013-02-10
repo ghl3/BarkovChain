@@ -6,7 +6,7 @@
 
 <link rel="stylesheet" href="/static/deck/core/deck.core.css">
 <!--<link rel="stylesheet" href="/static/deck/css/common.css">-->
-<!--<link rel="stylesheet" href="/static/deck/css/home.css">-->
+<link rel="stylesheet" href="/static/deck/css/home.css">
 
 
 <link rel="stylesheet" href="/static/deck/themes/style/swiss.css">
@@ -20,52 +20,13 @@
 
 {% block main %}
   
-<!-- Blah -->
-<section class="slide">
-    <div id="middle_container" class="row-fluid" style="margin-top: 40px;">
-
-      <div id="map_container" class="span6 offset1 row-fluid">
-	<div id="map_canvas" style="width:500px; height:500px; border: 2px solid black;"></div>
-
-	<div class="centered" style="margin-top: 10px;">
-	  <a id="button_accept" class="btn btn-large btn-success">Get Next</a>
-	  <a id="button_try_another" class="btn btn-large btn-danger">Try Another</a>
-	</div>
-	
-	<div class="accordion" id="accordion2" style="margin-top: 20px">
-	  <div class="accordion-group">
-	    <div class="accordion-heading">
-	      <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseOne">
-		Theme
-	      </a>
-	    </div>
-	    <div id="collapseOne" class="accordion-body collapse">
-	      <div class="accordion-inner">
-		<div id="vis" class="span12"></div>
-	      </div>
-	    </div>
-	  </div>
-	</div>
-
-
-      </div>
-
-      <div id="right_column" class="row-fluid span5">
-	<div id="venue_title" class="well span10 centered lead" >Venues</div>
-	<div id="venue_list"  class="well span10 centered" ></div>
-      </div>
-    </div>
-</section>
-
-
 
   <!-- Slide 1 -->
-  <section id="intro" >
-    <div class="slide row-fluid">
-      <hgroup class="span12">
+  <section class="slide" id="intro" >
+    <div class="row-fluid" id="middle_container">
+      <div class="span12">
 	<h1><b>Bar</b>kov Chain</h1>
-	<h2>Making your night simpler</h2>
-      </hgroup>
+      </div>
     </div>
   </section>
 

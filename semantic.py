@@ -30,18 +30,18 @@ def get_stopwords():
     """
     stop_words = set()
 
-    with open('assets/stop-words.txt', 'r') as f:
+    with open('stop-words.txt', 'r') as f:
         for word in f:
             word = word.strip().lower()
             stop_words.add(word)
 
-    with open('assets/first_names.csv', 'r') as f:
+    with open('first_names.csv', 'r') as f:
         for line in f:
             for word in line.splitlines():
                 word = word.strip().lower()
                 stop_words.add(word)
 
-    with open('assets/custom-stop-words.txt', 'r') as f:
+    with open('custom-stop-words.txt', 'r') as f:
         for word in f:
             word = word.strip().lower()
             stop_words.add(word)
@@ -156,9 +156,9 @@ def create_models(db, lsi_num_topics=10, lda_num_topics=10, num_bars=None):
         idx_bar_map[idx] = bar_name
         text = create_string_from_database(location)
         tokens = tokenize_document(text, stopwords, ignorechars)
-        print "Tokenizing %s (%s):" % (location, idx),
-        print text
-        print tokens
+        #print "Tokenizing %s (%s):" % (location, idx),
+        #print text
+        #print tokens
         texts.append(tokens)
 
     # Do some cleaning
@@ -173,7 +173,7 @@ def create_models(db, lsi_num_topics=10, lda_num_topics=10, num_bars=None):
     # Create and save the dictionary
     print "Creating dictionary"
     dictionary = corpora.Dictionary(texts)
-    dictionary.save(save_directory + 'lsi.dict')
+    dictionary.save(save_directory + 'keywords.dict')
     print dictionary.token2id
 
     # Create and save the corpus
@@ -263,7 +263,8 @@ def load_corpus(directory='assets/'):
     with open(directory + 'idx_bar_map.json', 'rb') as fp:
         idx_bar_map = json.load(fp)
 
-    return (dictionary, corpus, tfidf)
+    return (dictionary, corpus, tfidf,
+            bar_idx_map, idx_bar_map)
 
 
 def load_lsi(directory='assets/'):
@@ -312,7 +313,7 @@ def test_lsi(db):
         bar_names.append(location['nymag']['name'])
 
     # Create a corpus from this
-    dictionary, corpus, tfidf = load_corpus()
+    dictionary, corpus, tfidf, bar_idx_map, idx_bar_map = load_corpus()
     lsi, corpus_lsi_tfidf, index = load_lsi()
 
     lsi.print_topics(10)
@@ -354,7 +355,7 @@ def test_lda(db):
     for location in locations:
         bar_names.append(location['nymag']['name'])
 
-    dictionary, corpus, tfidf = load_corpus()
+    dictionary, corpus, tfidf, bar_idx_map, idx_bar_map = load_corpus()
     lda, corpus_lda = load_lda()
 
     print lda.num_topics

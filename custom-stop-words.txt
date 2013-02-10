@@ -1,0 +1,7 @@
+bar
+false
+locked
+priority
+zoom
+compatibility
+minimum

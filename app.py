@@ -29,15 +29,15 @@ import scipy.stats
 from math import pi
 from math import tan                
 
-from lsi import load_lsi, important_words
+from semantic import load_corpus, load_lsi, important_words
 
 from assets import gather_assets
 
 gather_assets()
 
-# Create a corpus from this
-dictionary, lsi, tfidf, corpus, corpus_lsi_tfidf, \
-    lsi_index, bar_idx_map, idx_bar_map = load_lsi('assets')
+# Gather the semantic model
+dictionary, corpus, tfidf, bar_idx_map, idx_bar_map = load_corpus()
+lsi, corpus_lsi_tfidf, lsi_index = load_lsi()
 
 # Connect to the db
 mongo_db, mongo_connection = connect_to_database(table_name="barkov_chain")

@@ -131,7 +131,7 @@ function createCollapsable(id, title, content) {
 	      ' + title + ' \
 	    </a> \
 	  </div> \
-	  <div id="collapse_' + id + '" class="accordion-body collapse" > \
+	  <div id="collapse_' + id + '" class="accordion-body collapse" style="max-height: 200px" > \
 	    <div class="accordion-inner" style="height: 200px; overflow: scroll;"> \
 	      ' + content + ' \
 	    </div> \
@@ -173,16 +173,18 @@ function createTableRow(data) {
     }
     Description += '</ul>';
 
-    var row_html_string = '<div class="row-fluid" id="row_' + row_index + '">\
+    var row_html_string = '<div class="venue_row_element row-fluid span12 well" id="row_' + row_index + '">\
 \
 <div class="span6"> <p><strong>' + name + '</strong></p> </div>\
 <div class="span5" style="text-align: right;"> \
 <button id="button_remove_' + row_index + '" class="button_remove btn btn-small btn-danger">Remove</button> </div> \
 <div class="span6"> <p>' + address + '</p> </div> \
 <div class="span12">' + category_string + '</div> \
-<div class="span12"> <div class="Description"> </div> </div>\
+<div class="span12 Description_container"> <div class="Description"> </div> </div>\
 </div>';
-    
+
+// <div class="Description"> </div>\    
+    //
     // Create the object
     var row = $(row_html_string);
 

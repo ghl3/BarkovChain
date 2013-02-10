@@ -155,3 +155,20 @@ body {
 .marketing p + h4 {
   margin-top: 28px;
 }
+
+#venue_list > .venue_row_element { 
+  margin: 0px 0px 10px 0px; 
+  min-height: 0px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+/*
+.venue_row_element > .Description_container {  
+  height: 40px;
+}
+*/
+
+.Description { 
+  text-align: left;
+ }

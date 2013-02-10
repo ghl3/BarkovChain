@@ -56,6 +56,10 @@ def bubble():
 def cloud():
     return render_template('cloud.html')
 
+@app.route('/slides')
+def slides():
+    return render_template('slides.html')
+
 @app.route('/api/initial_location', methods=['POST'] )
 def api_initial_location():
     """

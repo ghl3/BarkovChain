@@ -212,6 +212,7 @@ function removeVenueWithButtonId(button_id) {
 	    var venue = venue_list[i];
 	    choice = {'venue' : venue.data, 'accepted' : false};
 	    choices.push(choice);
+	    rejected_locations.push(venue.data);
 	    venue.clear();
 	    venue_list.splice(i, 1);
 	    updatePath();
@@ -503,6 +504,7 @@ $(document).ready(function() {
 	console.log(evt.target);
 	var button_id = $(evt.target).attr('id'); //id();
 	removeVenueWithButtonId(button_id);
+
 	/*
 	console.log("Removing using button id: " + button_id);
 

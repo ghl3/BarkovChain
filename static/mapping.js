@@ -58,10 +58,14 @@ venue.prototype.add_path = function(last_point) {
 	origin: last_point,
 	destination: latlon,
 	travelMode: google.maps.DirectionsTravelMode.WALKING
+//	travelMode: google.maps.DirectionsTravelMode.DRIVING
     }, function(result, status) {
 	if (status == google.maps.DirectionsStatus.OK) {
 	    var new_path = result.routes[0].overview_path;
+	    console.log("Found Path:");
+	    console.log(new_path);
 	    self.path = new_path;
+	    updatePath();
 	    return new_path;
 	}
 	else {
@@ -263,6 +267,8 @@ function updatePath() {
 	var path = venue_list[i].path;
 	total_chain = total_chain.concat(path);
     }
+    console.log("Total Chain:");
+    console.log(total_chain);
     current_path.setPath(total_chain);
 }
 
@@ -271,6 +277,8 @@ function addToChain(location_dict) {
 
     console.log("Adding new location:");
     console.log(location_dict);
+
+    var last_lat_long = venue_list[venue_list.length - 1].latlon;
 
     // Create a new venue
     var next_venue = new venue(location_dict);
@@ -281,6 +289,9 @@ function addToChain(location_dict) {
 
     // Get the updated path between the last point
     // and the new point
+    next_venue.add_path(last_lat_long);
+    return;
+
     var last_lat_long = venue_list[venue_list.length - 1].latlon;
     next_venue.create_path(last_lat_long, updatePath);
 

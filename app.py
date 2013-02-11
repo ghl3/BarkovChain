@@ -44,6 +44,9 @@ lsi, corpus_lsi_tfidf, lsi_index = load_lsi()
 mongo_db, mongo_connection = connect_to_database(table_name="barkov_chain")
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'asd'
+from flask.ext.debugtoolbar import DebugToolbarExtension
+toolbar = DebugToolbarExtension(app)
 
 @app.route('/')
 def index():

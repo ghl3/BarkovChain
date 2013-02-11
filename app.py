@@ -209,7 +209,7 @@ def format_location(db_entry, user_vector):
     data_for_app['location']['foursquare'] = db_entry['foursquare']
 
     data_for_app['user_vector'] = user_vector
-    data_for_app['user_words'] = important_words(lsi, user_vector)
+    data_for_app['user_words'] = important_words(lsi, user_vector, 15)
 
     data_json = json.dumps(data_for_app, default=json_util.default)
 

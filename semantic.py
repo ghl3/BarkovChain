@@ -456,7 +456,7 @@ def kl_divergence(A, B):
     return kl_div
         
 
-def important_words(lsi, state):
+def important_words(lsi, state, num=None):
     """
     Given the lsi and the state, find the most
     important words
@@ -478,7 +478,13 @@ def important_words(lsi, state):
                 word_val_dict[word] += fabs(word_weight * topic_weight)
 
     # Turn the dict into a (reverse) sorted list of word, strenght pairs
-    return sorted(list(word_val_dict.iteritems()), key=lambda x: x[1], reverse=True)
+    sorted_list = sorted(list(word_val_dict.iteritems()), key=lambda x: x[1], reverse=True)
+
+    if num:
+        return sorted_list[:num]
+
+    return sorted_list
+
 
 
 def important_words_relative(lsi, docA, docB):

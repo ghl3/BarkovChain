@@ -5,3 +5,8 @@ priority
 zoom
 compatibility
 minimum
+good
+great
+place
+amazing
+room

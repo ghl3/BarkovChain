@@ -11,6 +11,8 @@ import datetime
 import json
 import nltk
 from nltk.corpus import wordnet
+from nltk.stem.wordnet import WordNetLemmatizer
+
 import unicodedata
 from collections import Counter
 
@@ -22,6 +24,9 @@ from gensim.models.ldamodel import LdaModel
 from gensim import corpora, models, similarities
 from math import sqrt, fabs
 
+# LDA Distance Measures
+# http://www.ces.clemson.edu/~stb/ece847/projects/distance_measures.pdf
+# http://cs.gmu.edu/~carlotta/publications/ECML09_AlSumaitetal.pdf
 
 def get_stopwords():
     """
@@ -62,6 +67,7 @@ def tokenize_document(doc, stopwords, ignorechars):
     # have suck in
     doc = re.sub('<[^>]*>', '', doc)
 
+    lmtzr = WordNetLemmatizer()
     words = nltk.word_tokenize(doc)
     for w in words:
         
@@ -70,8 +76,17 @@ def tokenize_document(doc, stopwords, ignorechars):
 
         # Skip invalid words
         if w == '': continue
+
+        # Check if the original word is a stop words, 
+        # then lemmatize, then check again
         if w in stopwords: continue
+        w = lmtzr.lemmatize(w)
+        if w in stopwords: continue
+
+        # Ensure it's a real word
         if not wordnet.synsets(w): continue
+
+        # Remove numerics
         has_number = False
         for num in [str(num) for num in range(10)]:
             if num in w:
@@ -119,7 +134,7 @@ def create_string_from_database(db_entry):
     return text
 
 
-def create_models(db, lsi_num_topics=10, lda_num_topics=10, num_bars=None):
+def create_models(db, lsi_num_topics=10, lda_num_topics=5, num_bars=None):
     """
     Create and save a lsi object
     using data in the database.
@@ -153,7 +168,7 @@ def create_models(db, lsi_num_topics=10, lda_num_topics=10, num_bars=None):
     for idx, location in enumerate(locations):
         bar_name = location['nymag']['name']
         bar_idx_map[bar_name] = idx
-        idx_bar_map[idx] = bar_name
+        idx_bar_map[int(idx)] = bar_name
         text = create_string_from_database(location)
         tokens = tokenize_document(text, stopwords, ignorechars)
         #print "Tokenizing %s (%s):" % (location, idx),
@@ -174,7 +189,6 @@ def create_models(db, lsi_num_topics=10, lda_num_topics=10, num_bars=None):
     print "Creating dictionary"
     dictionary = corpora.Dictionary(texts)
     dictionary.save(save_directory + 'keywords.dict')
-    print dictionary.token2id
 
     # Create and save the corpus
     print "Creating Corpus matrix"
@@ -207,7 +221,8 @@ def create_models(db, lsi_num_topics=10, lda_num_topics=10, num_bars=None):
 
     # Create the LDA (on the raw corpus)
     print "Creating LDA with %s topics" % lda_num_topics
-    lda = LdaModel(corpus, num_topics=lda_num_topics, id2word=dictionary, passes=10)
+    lda = LdaModel(corpus, num_topics=lda_num_topics, id2word=dictionary, 
+                   update_every=0, passes=30)
     #lda.show_topics(10, 20, formatted=False)
     lda.save(save_directory + 'lda.model')
 
@@ -363,12 +378,11 @@ def test_lda(db):
     lda.show_topics(-1, 10, True)
 
     # Print some vector
-    idx = 0
-    for venue in corpus_lda:
-        print venue
-        idx += 1
-        if idx > 100: break
-    return
+    for bar_idx, venue in enumerate(corpus_lda):
+        bar_name = idx_bar_map[str(bar_idx)]
+        total_prob = sum([x[1] for x in venue])
+        print bar_name, total_prob, venue
+        if bar_idx > 100: break
 
     # Create a test venue
     test_vector = corpus_lda[0]
@@ -376,6 +390,7 @@ def test_lda(db):
 
     index = similarities.MatrixSimilarity(corpus_lda)
     sims = index[test_vector]
+    #sims = [euclidean(test_vector, vec) for vec in corpus_lda]
     sims = sorted(enumerate(sims), key=lambda item: -item[1])
 
     print "Comparing to: "
@@ -389,16 +404,6 @@ def test_lda(db):
         print '{', [word for word in words if word in test_words], '}',
         print words
         print ''
-
-    '''
-    for idx, doc in enumerate(corpus_lda):
-        words = [dictionary[pair[0]] for pair in doc]
-        csn = cosine(test_vector, doc) 
-        print csn, 
-        print '{', [word for word in words if word in test_words], '}',
-        print words
-        print ''
-    '''
 
     return
 
@@ -415,6 +420,41 @@ def cosine(A, B):
     dotP = sum([x[1]*y[1] for (x, y) in zip(A, B)])
     return dotP / (magA*magB)
 
+
+def covariance(A, B):
+    """
+    Get the product covariance
+    """
+    total = 0.0
+    for a, b in zip(A, B):
+        total += a[1]*b[1]
+    return 1.0 - total
+
+
+def euclidean(A, B):
+    """
+    Get the product covariance
+    """
+    total = 0.0
+    for a, b in zip(A, B):
+        total += (a[1]-b[1])*(a[1]-b[1])
+    return sqrt(total)
+
+
+def kl_divergence(A, B):
+    """
+    Return the kl-divergence between
+    two vectors
+    """
+    
+    kl_div = 0.0
+    for (a, b) in zip(A, B):
+        if a < 0.000001: continue
+        if b < 0.000001: continue
+        ratio = a/b
+        kl_div += log(ratio)*a
+    return kl_div
+        
 
 def important_words(lsi, state):
     """
@@ -472,6 +512,26 @@ def important_words_relative(lsi, docA, docB):
 
     # Turn the dict into a (reverse) sorted list of word, strenght pairs
     return sorted(list(word_val_dict.iteritems()), key=lambda x: x[1], reverse=True)
+
+
+def update_vector(original, latest, closer, beta):
+    """
+    Update the 'original' vector based on the
+    'latest' vector.  Either move the original
+    vector closer or further from 'latest' based on
+    whether the bool 'closer' is true or not.
+    'beta' represents how much the vector should shift.
+    """
+
+    delta = beta*(latest - original)
+
+    if closer:
+        new = original + beta
+    else:
+        new = original - beta
+
+    return new
+
 
 
 def main():

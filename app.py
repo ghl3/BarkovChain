@@ -29,7 +29,8 @@ import scipy.stats
 from math import pi
 from math import tan                
 
-from semantic import load_corpus, load_lsi, important_words
+from semantic import load_corpus, load_lsi
+from semantic import update_vector, important_words
 
 from assets import gather_assets
 
@@ -438,18 +439,15 @@ def update_user_vector(user_vector, last_location,
     user_array = numpy.array(user_vector)
 
     #return list(last_loc_array)
-    
     beta = (.5)**chain_length
+    
+    updated_vec = update_vector(user_array, last_loc_array, 
+                                accepted, beta)
 
-    if accepted:
-        user_array = user_array + beta*(last_loc_array - user_array)
-    else:
-        user_array = user_array - beta*(last_loc_array - user_array)
+    print "Updated Vector: ", updated_vec
 
-    print "Updated Vector: ", user_array
-
-    return list(user_array)
-
+    return list(updated_vec)
+    
 
 def distance_dr(loc0, loc1):
     """

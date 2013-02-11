@@ -56,7 +56,7 @@ venue.prototype.add_path = function(last_point) {
     var service = new google.maps.DirectionsService();
     service.route({
 	origin: last_point,
-	destination: latlon,
+	destination: self.latlon,
 	travelMode: google.maps.DirectionsTravelMode.WALKING
 //	travelMode: google.maps.DirectionsTravelMode.DRIVING
     }, function(result, status) {

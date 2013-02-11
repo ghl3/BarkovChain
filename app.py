@@ -138,16 +138,14 @@ def api_next_location():
     current_chain = request.json['chain']
     rejected_locations = request.json['rejected_locations']
     user_vector = request.json['user_vector']
-    last_venue = request.json['last_venue']
-    accepted = request.json['accepted']
+    choices = request.json['choices']
+    #last_venue = request.json['last_venue']
+    #accepted = request.json['accepted']
 
     # Update the user's semantic vector based on
     # whether he accepted or rejected the last location
     print "Updating User Vector"
-    user_vector = update_user_vector(user_vector, last_venue, 
-                                     accepted, len(current_chain))
-
-
+    user_vector = update_user_vector(user_vector, choices, len(current_chain))
 
     # Get the next location, package it up
     # and send it to the client
@@ -417,8 +415,7 @@ def mc_weight(proposed, current, user_vector):
     return result
 
 
-def update_user_vector(user_vector, last_location, 
-                       accepted, chain_length):
+def update_user_vector(user_vector, choices, chain_length):
     """
     Update the user's vector 
     based on whether he accepted the last location
@@ -426,27 +423,32 @@ def update_user_vector(user_vector, last_location,
     entries in the chain that we've had so far
     """
 
-    print "Updating User Vector"
-    print "Current Vector: ", user_vector
-    print "Accepted last location: %s:" % accepted, last_location
-
-    # Get the vector of the last location
-    last_loc_name = last_location['name']
-    bar_index = bar_idx_map[last_loc_name]
-    last_loc_array = [var for idx, var in corpus_lsi_tfidf[bar_index]]
+    print "Updating User Vector", user_vector
+    print "Based on: ", [(choice['venue']['name'], choice['accepted'])
+                         for choice in choices]
 
     #last_loc_array = lsa.get_svd_document_vector(last_loc_name)
     user_array = numpy.array(user_vector)
-
-    #return list(last_loc_array)
     beta = (.5)**chain_length
-    
-    updated_vec = update_vector(user_array, last_loc_array, 
-                                accepted, beta)
 
-    print "Updated Vector: ", updated_vec
+    for choice in choices:
 
-    return list(updated_vec)
+        venue = choice['venue']
+        accepted = choice['accepted']
+
+        print "Accepted last location: %s:" % accepted, venue['name']
+
+        # Get the vector of the last location
+        venue_name = venue['name']
+        bar_index = bar_idx_map[venue_name]
+        venue_array = [var for idx, var in corpus_lsi_tfidf[bar_index]]
+
+        user_array = update_vector(user_array, venue_array, 
+                                   accepted, beta)
+
+    print "Updated Vector: ", user_array
+
+    return list(user_array)
     
 
 def distance_dr(loc0, loc1):

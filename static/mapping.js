@@ -10,7 +10,7 @@ var active_chain = false;
 var _lastIndex = 0;
 var clickable = false;
 var word_bubbles = new bubble_plot("#vis", 700, 300);
-
+var choices = new Array();
 
 // Venue class
 function venue(data) {
@@ -200,6 +200,27 @@ function createTableRow(data) {
 }
 
 
+function removeVenueWithButtonId(button_id) {
+
+    console.log("Removing using button id: " + button_id);
+    
+    for(var i=0; i < venue_list.length; ++i) {
+	var this_id = venue_list[i].table_id();
+	console.log("Row Id: " + this_id);
+	if(venue_list[i].table_id() == button_id) {
+	    console.log("Splicing!!!");
+	    var venue = venue_list[i];
+	    choice = {'venue' : venue.data, 'accepted' : false};
+	    choices.push(choice);
+	    venue.clear();
+	    venue_list.splice(i, 1);
+	    updatePath();
+	    break;
+	}
+    }
+}
+
+
 function beginChain(event) {
 
     // First, check if there is an existing
@@ -323,13 +344,23 @@ function getNextLocation(accepted) {
 	for( var i = 0; i < venue_list.length; ++i) {
 	    chain.push(venue_list[i].data);
 	}
+	
+	if( accepted ) {
+	    choice = {'venue' : chain[chain.length-1],
+		      'accepted' : true}
+	    choices.push(choice);
+	}
+	else {
+	    choice = {'venue' : rejected_locations[rejected_locations.length-1],
+		      'accepted' : true}
+	    choices.push(choice);
+	}
 
 	var data = {'chain' : chain,
 		    'rejected_locations' : rejected_locations,
 		    'user_vector' : current_user_vector,
-		    'accepted' : accepted};
-	if( accepted ) data['last_venue'] = chain[chain.length-1]; 
-	else data['last_venue'] = rejected_locations[rejected_locations.length-1];
+		    'choices' : choices};
+	// Submit
 	submitToServer('/api/next_location', data);
     }
 
@@ -401,9 +432,12 @@ function submitToServer(api, data) {
 	.fail(errorCallback)
 	.always(function() { 
 	    console.log("Server transaction complete");
+
 	    clickable = true;
 	});
     
+    choices.length = 0;
+
     console.log("Sent 'next_location' request to server. Waiting...");    
 
 }
@@ -468,6 +502,8 @@ $(document).ready(function() {
 	console.log("Button Click");
 	console.log(evt.target);
 	var button_id = $(evt.target).attr('id'); //id();
+	removeVenueWithButtonId(button_id);
+	/*
 	console.log("Removing using button id: " + button_id);
 
 	for(var i=0; i < venue_list.length; ++i) {
@@ -481,6 +517,7 @@ $(document).ready(function() {
 		break;
 	    }
 	}
+	*/
     });
 
 });

@@ -61,15 +61,16 @@ function venue(data) {
     this.latlon = new google.maps.LatLng(lat, lon);
 
     // Create the marker
-    this.marker = createMarker(current_path.length);
+    this.marker_image = createMarker(current_path.length);
     var marker = new google.maps.Marker({
 	position: self.latlon,
 	map: map,
-	icon: this.marker, //'/static/markers/brown_markerA.png',
+	icon: this.marker_image, //'/static/markers/brown_markerA.png',
 	//strokeColor: "blue",
 	animation: google.maps.Animation.DROP
     });
-    
+    this.marker = marker;
+
     // To be filled later
     this.path = new Array(self.latlon);
     this.table_row = null;
@@ -180,21 +181,14 @@ function createCollapsable(id, title, content) {
 venue.prototype.add_to_table = function() {
     var table = $("#venue_list");
     // var rowCount = $('#venue_list').find(".row").length;
-    var tail_row = createTableRow(this.data, this.marker);
-    table.append(tail_row);
-    this.table_row = tail_row;
-}
-
-
-
-
-function createTableRow(data) {
-
+    //var tail_row = createTableRow(this.data, this.marker);
+    
     _lastIndex += 1;
     var row_index = _lastIndex;
 
     console.log("Creating row Object " + row_index);
 
+    var data = this.data;
     console.log(data);
 
     var name = data['name'];
@@ -230,19 +224,28 @@ function createTableRow(data) {
 // <div class="Description"> </div>\    
     //
     // Create the object
-    var row = $(row_html_string);
+    var tail_row = $(row_html_string);
 
     // Add the collapsable Description
     var collapsable = createCollapsable("row_" + row_index + "_Description", "Description", Description);
-    row.find(".Description").html(collapsable);
+    tail_row.find(".Description").html(collapsable);
 
     // Add the collapsable tips
     //var collapsable = createCollapsable("row_" + row_index + "_tips", "tips", tips_string);
     //row.find(".tips").html(collapsable);
 
-    return row;
+    table.append(tail_row);
+    this.table_row = tail_row;
 }
 
+
+/*
+
+function createTableRow(data) {
+
+    return row;
+}
+*/
 
 function removeVenueWithButtonId(button_id) {
 

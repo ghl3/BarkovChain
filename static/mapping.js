@@ -12,42 +12,22 @@ var clickable = false;
 var word_bubbles = new bubble_plot("#vis", 700, 300);
 var choices = new Array();
 
-
+var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 var marker_colors = ["blue", "brown", "darkgreen", "orange", "paleblue", "pink",
 		     "purple", "red", "yellow"];
- var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-/*
 
-   for(var i=0; i<str.length; i++)
-          {
-	            var nextChar = str.charAt(i);
-	            alert(nextChar)
-	         }
-}
-*/
 
-function createMarker() {
+function createMarker(idx) {
 
     // Get the length of the path
-    var idx = venue_list.length;
+    //var idx = venue_list.length;
     console.log("Creating Path: " + idx);
     var color = marker_colors[ idx % marker_colors.length];
     var letter = alphabet.charAt(idx % 26);
     
     return "/static/markers/" + color + "_Marker" + letter + ".png"; 
-/*
-    blue_MarkerS.png
-brown_MarkerA.png
-darkgreen_MarkerD.png
-green_MarkerG.png
-orange_MarkerD.png
-paleblue_MarkerF.png
-pink_MarkerE.png
-purple_MarkerM.png
-red_MarkerN.png
-yellow_MarkerP.png
-*/
 }
+
 
 // Venue class
 function venue(data) {
@@ -55,24 +35,28 @@ function venue(data) {
     var self = this;
     this.data = data;
 
+    // Give this venue a unique index
+    this.index = _lastIndex;
+    _lastIndex += 1;
+
     // Create the lat/lon object
     var lat = data['latitude'];
     var lon = data['longitude'];
     this.latlon = new google.maps.LatLng(lat, lon);
 
     // Create the marker
-    this.marker_image = createMarker(current_path.length);
+    this.marker_image = createMarker(this.index);
     var marker = new google.maps.Marker({
 	position: self.latlon,
 	map: map,
-	icon: this.marker_image, //'/static/markers/brown_markerA.png',
-	//strokeColor: "blue",
+	icon: this.marker_image,
 	animation: google.maps.Animation.DROP
     });
     this.marker = marker;
 
     // To be filled later
     this.path = new Array(self.latlon);
+    this.directions = null;
     this.table_row = null;
 
 }
@@ -98,14 +82,24 @@ venue.prototype.add_path = function(last_point) {
 	origin: last_point,
 	destination: self.latlon,
 	travelMode: google.maps.DirectionsTravelMode.WALKING
-//	travelMode: google.maps.DirectionsTravelMode.DRIVING
     }, function(result, status) {
 	if (status == google.maps.DirectionsStatus.OK) {
 	    var new_path = result.routes[0].overview_path;
 	    console.log("Found Path:");
-	    console.log(new_path);
+	    console.log(result);
 	    self.path = new_path;
 	    updatePath();
+
+	    // Get the directions
+	    var steps = result.routes[0].legs[0].steps;
+	    var directions = "";
+	    for(var i=0; i<steps.length; ++i) {
+		if( i != 0) {
+		    directions += ", ";
+		}
+		directions += steps[i].instructions;
+	    }
+	    self.directions = directions;
 	    return new_path;
 	}
 	else {
@@ -113,6 +107,7 @@ venue.prototype.add_path = function(last_point) {
 	}
     });
 }
+
 
 venue.prototype.create_path = function(last_lat_long, callback) {
 
@@ -134,6 +129,7 @@ venue.prototype.create_path = function(last_lat_long, callback) {
 	}
     });
 }
+
 
 venue.prototype.table_id = function() {
     if(this.table_row != null) {
@@ -179,13 +175,10 @@ function createCollapsable(id, title, content) {
 
 
 venue.prototype.add_to_table = function() {
-    var table = $("#venue_list");
-    // var rowCount = $('#venue_list').find(".row").length;
-    //var tail_row = createTableRow(this.data, this.marker);
-    
-    _lastIndex += 1;
-    var row_index = _lastIndex;
 
+    var table = $("#venue_list");
+    
+    var row_index = this.index;
     console.log("Creating row Object " + row_index);
 
     var data = this.data;
@@ -195,7 +188,13 @@ venue.prototype.add_to_table = function() {
     var address = data['nymag']['address'];
     var category_list = data['nymag']['categories'];
     var tips_list = data['foursquare']['tips'];
+
     var Description = data['nymag']['review'];
+    Description += '<br> <br> <ul>';
+    for(var i=0; i < tips_list.length && i < 5; ++i) {
+	Description += "<li>" + tips_list[i]['text'] + "</li>";
+    }
+    Description += '</ul>';
 
     var category_string = '';
     for(var i=0; i < category_list.length; ++i) {
@@ -205,15 +204,9 @@ venue.prototype.add_to_table = function() {
 	}
     }
 
-    Description += '<br> <br> <ul>';
-    for(var i=0; i < tips_list.length && i < 5; ++i) {
-	Description += "<li>" + tips_list[i]['text'] + "</li>";
-    }
-    Description += '</ul>';
-
     var row_html_string = '<div class="venue_row_element row-fluid span12 well" id="row_' + row_index + '">\
 \
-<div class="span6"> <p><strong>' + name + '</strong></p> </div>\
+<div class="span2"><img src="' + this.marker_image +'"> </div><div class="span4"><p><strong>' + name + '</strong></p> </div>\
 <div class="span5" style="text-align: right;"> \
 <button id="button_remove_' + row_index + '" class="button_remove btn btn-small btn-danger">Remove</button> </div> \
 <div class="span6"> <p>' + address + '</p> </div> \
@@ -221,31 +214,17 @@ venue.prototype.add_to_table = function() {
 <div class="span12 Description_container"> <div class="Description"> </div> </div>\
 </div>';
 
-// <div class="Description"> </div>\    
-    //
-    // Create the object
+    // Create the row from the html
     var tail_row = $(row_html_string);
 
     // Add the collapsable Description
     var collapsable = createCollapsable("row_" + row_index + "_Description", "Description", Description);
     tail_row.find(".Description").html(collapsable);
 
-    // Add the collapsable tips
-    //var collapsable = createCollapsable("row_" + row_index + "_tips", "tips", tips_string);
-    //row.find(".tips").html(collapsable);
-
     table.append(tail_row);
     this.table_row = tail_row;
 }
 
-
-/*
-
-function createTableRow(data) {
-
-    return row;
-}
-*/
 
 function removeVenueWithButtonId(button_id) {
 
@@ -267,8 +246,6 @@ function removeVenueWithButtonId(button_id) {
 	}
     }
 }
-
-
 
 
 function beginChain(latlon) {
@@ -420,8 +397,8 @@ function getNextLocation(accepted) {
 	// Submit
 	submitToServer('/api/next_location', data);
     }
-
 }
+
 
 // Wrapper for the server POST request.
 // The returned JSON defines the next location
@@ -458,7 +435,6 @@ function submitToServer(api, data) {
 	}
 	console.log("Rendering Bubbles:");
 	console.log(word_list);
-	//word_bubbles.update(word_list);
 	d3.select("#vis").select("svg")
 	    .remove();
 	d3.select("#vis").select("#bubble-labels")
@@ -496,7 +472,6 @@ function submitToServer(api, data) {
     choices.length = 0;
 
     console.log("Sent 'next_location' request to server. Waiting...");    
-
 }
 
 

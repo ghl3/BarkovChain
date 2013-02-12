@@ -276,6 +276,7 @@ function beginChain(latlon) {
     venue_list.push(initial_location);
     active_chain = true;
     clickable = true;
+    $("#buttons").show();
     return;
 
 }
@@ -340,6 +341,7 @@ function clearChain() {
 	.remove();
 
     active_chain = false;
+    $("#buttons").hide();
     return;
 
 }
@@ -510,6 +512,7 @@ function create_map() {
 $(document).ready(function() {
 
     $("#venue_list").hide();
+    $("#buttons").hide();
     
     // Create the map
     map = create_map();

@@ -103,12 +103,12 @@ venue.prototype.add_path = function(last_point) {
 	    return new_path;
 	}
 	else {
-	    console.log("Travel Directions Error");
+	    console.log("Add Path Error");
 	}
     });
 }
 
-
+/*
 venue.prototype.create_path = function(last_lat_long, callback) {
 
     var self = this;
@@ -125,11 +125,11 @@ venue.prototype.create_path = function(last_lat_long, callback) {
 	    callback();
 	}
 	else {
-	    console.log("Travel Directions Error");
+	    console.log("Create Path Error");
 	}
     });
 }
-
+*/
 
 venue.prototype.table_id = function() {
     if(this.table_row != null) {
@@ -315,8 +315,8 @@ function addToChain(location_dict) {
     next_venue.add_path(last_lat_long);
     return;
 
-    var last_lat_long = venue_list[venue_list.length - 1].latlon;
-    next_venue.create_path(last_lat_long, updatePath);
+    //var last_lat_long = venue_list[venue_list.length - 1].latlon;
+    //next_venue.create_path(last_lat_long, updatePath);
 
     return;
 }
@@ -540,17 +540,19 @@ $(document).ready(function() {
     $(function() {
         $("#address_searchbar_form input").keypress(function (e) {
 	    if ((e.which && e.which == 13) || (e.keyCode && e.keyCode == 13)) {
-		console.log($("#address_searchbar").val());
 		var geocoder = new google.maps.Geocoder();
 		var address = $("#address_searchbar").val();
 		var bounds = new google.maps.LatLngBounds(new google.maps.LatLng(40.69886076226103, -74.02656555175781), 
 							  new google.maps.LatLng(40.8826309751934, -73.90296936035156));
-		geocoder.geocode( { 'address': address, 'region' : 'US',  'bounds': bounds}, function(results, status) {
+		var query = { 'address': address, 'region' : 'US',  'bounds': bounds};
+		geocoder.geocode(query, function(results, status) {
 		    if (status == google.maps.GeocoderStatus.OK) { 
-			console.log(results);
+			console.log("Got location for address: " + address);
 			var latlon = results[0]['geometry']['location'];
-			console.log(latlon);
 			beginChain(latlon);
+		    }
+		    else {
+			console.log("Couldn't get location of: " + address);
 		    }
 		});
 		return false;

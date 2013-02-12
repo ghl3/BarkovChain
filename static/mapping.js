@@ -12,6 +12,43 @@ var clickable = false;
 var word_bubbles = new bubble_plot("#vis", 700, 300);
 var choices = new Array();
 
+
+var marker_colors = ["blue", "brown", "darkgreen", "orange", "paleblue", "pink",
+		     "purple", "red", "yellow"];
+ var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+/*
+
+   for(var i=0; i<str.length; i++)
+          {
+	            var nextChar = str.charAt(i);
+	            alert(nextChar)
+	         }
+}
+*/
+
+function createMarker() {
+
+    // Get the length of the path
+    var idx = venue_list.length;
+    console.log("Creating Path: " + idx);
+    var color = marker_colors[ idx % marker_colors.length];
+    var letter = alphabet.charAt(idx % 26);
+    
+    return "/static/markers/" + color + "_Marker" + letter + ".png"; 
+/*
+    blue_MarkerS.png
+brown_MarkerA.png
+darkgreen_MarkerD.png
+green_MarkerG.png
+orange_MarkerD.png
+paleblue_MarkerF.png
+pink_MarkerE.png
+purple_MarkerM.png
+red_MarkerN.png
+yellow_MarkerP.png
+*/
+}
+
 // Venue class
 function venue(data) {
 
@@ -24,12 +61,14 @@ function venue(data) {
     this.latlon = new google.maps.LatLng(lat, lon);
 
     // Create the marker
+    this.marker = createMarker(current_path.length);
     var marker = new google.maps.Marker({
 	position: self.latlon,
 	map: map,
+	icon: this.marker, //'/static/markers/brown_markerA.png',
+	//strokeColor: "blue",
 	animation: google.maps.Animation.DROP
     });
-    this.marker = marker;
     
     // To be filled later
     this.path = new Array(self.latlon);
@@ -73,16 +112,6 @@ venue.prototype.add_path = function(last_point) {
 	}
     });
 }
-
-
-venue.prototype.add_to_table = function() {
-    var table = $("#venue_list");
-    // var rowCount = $('#venue_list').find(".row").length;
-    var tail_row = createTableRow(this.data);
-    table.append(tail_row);
-    this.table_row = tail_row;
-}
-
 
 venue.prototype.create_path = function(last_lat_long, callback) {
 
@@ -146,6 +175,17 @@ function createCollapsable(id, title, content) {
     return html_string;
 
 }
+
+
+venue.prototype.add_to_table = function() {
+    var table = $("#venue_list");
+    // var rowCount = $('#venue_list').find(".row").length;
+    var tail_row = createTableRow(this.data, this.marker);
+    table.append(tail_row);
+    this.table_row = tail_row;
+}
+
+
 
 
 function createTableRow(data) {

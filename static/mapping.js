@@ -226,7 +226,9 @@ function removeVenueWithButtonId(button_id) {
 }
 
 
-function beginChain(event) {
+
+
+function beginChain(latlon) {
 
     // First, check if there is an existing
     // chain.  If so, we kill it.
@@ -243,7 +245,7 @@ function beginChain(event) {
     current_path.setMap(map);
 
     // To be done by clicking
-    latlon = event.latLng;
+    //latlon = event.latLng;
     var data = {};
     data['latitude'] = latlon.lat();
     data['longitude'] = latlon.lng();
@@ -495,7 +497,10 @@ $(document).ready(function() {
     map = create_map();
 
     // Define clicking on the map
-    google.maps.event.addListener(map, 'click', beginChain); 
+    google.maps.event.addListener(map, 'click', function(event) {
+	var latlon = event.latLng;
+	beginChain(latlon);
+    }); 
 
     // Initialize Bubbles
     // Define clicking on the 'submit' button
@@ -510,27 +515,33 @@ $(document).ready(function() {
 	getNextLocation(false);
     });
 
+
+    $(function() {
+        $("#address_searchbar_form input").keypress(function (e) {
+	    if ((e.which && e.which == 13) || (e.keyCode && e.keyCode == 13)) {
+		console.log($("#address_searchbar").val());
+		var geocoder = new google.maps.Geocoder();
+		var address = $("#address_searchbar").val();
+		var bounds = new google.maps.LatLngBounds(new google.maps.LatLng(40.69886076226103, -74.02656555175781), 
+							  new google.maps.LatLng(40.8826309751934, -73.90296936035156));
+		geocoder.geocode( { 'address': address, 'region' : 'US',  'bounds': bounds}, function(results, status) {
+		    if (status == google.maps.GeocoderStatus.OK) { 
+			console.log(results);
+			var latlon = results[0]['geometry']['location'];
+			console.log(latlon);
+			beginChain(latlon);
+		    }
+		});
+		return false;
+	    }
+	});
+    });
+    
     $(document).on("click", ".button_remove", function(evt) {
 	console.log("Button Click");
 	console.log(evt.target);
-	var button_id = $(evt.target).attr('id'); //id();
+	var button_id = $(evt.target).attr('id');
 	removeVenueWithButtonId(button_id);
-
-	/*
-	console.log("Removing using button id: " + button_id);
-
-	for(var i=0; i < venue_list.length; ++i) {
-	    var this_id = venue_list[i].table_id();
-	    console.log("Row Id: " + this_id);
-	    if(venue_list[i].table_id() == button_id) {
-		console.log("Splicing!!!");
-		venue_list[i].clear();
-		venue_list.splice(i, 1);
-		updatePath();
-		break;
-	    }
-	}
-	*/
     });
 
 });

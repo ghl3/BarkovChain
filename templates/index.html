@@ -15,87 +15,55 @@
 
 {% block main %}
 
-<!--
-    <header class="navbar navbar-fixed-top">
-      <nav class="navbar-inner">
-        <div class="container">
-	<ul>
-	  <li><a href="/">Main</a></li>
-	  <li><a href="/about">About</a></li>
-	  <li><a href="/author">Author</a></li>
-	</ul>
-	</div>
-      </nav>
-    </header>
--->    
-          
-<!--
-    <header>
-      <nav>
-	<h1><a href=".">Barkov Chain</a></h1>
-	<ul>
-	  <li><a href="/">Main</a></li>
-	  <li><a href="/about">About</a></li>
-	  <li><a href="/author">Author</a></li>
-	</ul>
-      </nav>
-    </header>
--->
+<div id="middle_container" class="row-fluid page" style="margin-top: 40px;">
 
-    <!-- Header -->
-<!--
-    <div class="container-narrow" >
-      <div class="page-header">
-	<h1>NYC Bar Hop <small>Planning your night made easy</small></h1>
-      </div>
-      <p class="lead centered">Select a location on the map to begin</p>
+  <div id="instructions" class="span2 offset4 row-fluid page" style="text-align: center;">
+    <form id="address_searchbar_form" class="navbar-search pull-left">
+      Enter an address to begin: 
+      <input id="address_searchbar" type="text" class="search-query" placeholder="Beginning Address">
+    </form>
+  </div>
+</div>
+
+<!-- Map Section -->
+<div id="middle_container" class="row-fluid page" style="margin-top: 40px;">
+
+  <div id="map_container" class="span6 offset1 row-fluid">
+    <div id="map_canvas" style="width:500px; height:500px; border: 3px solid black;"></div>
+    
+    <div class="centered" style="margin-top: 10px;">
+      <a id="button_accept" class="btn btn-large btn-success">Get Next</a>
+      <a id="button_try_another" class="btn btn-large btn-danger">Try Another</a>
     </div>
--->
-
-<!--
-    <div class="container-narrow" style="margin-top: 20px;" >
-      <p class="lead centered">Select a location on the map to begin</p>
-    </div>
--->
-
-    <!-- Map Section -->
-    <div id="middle_container" class="row-fluid page" style="margin-top: 40px;">
-      
-      <div id="map_container" class="span6 offset1 row-fluid">
-	<div id="map_canvas" style="width:500px; height:500px; border: 3px solid black;"></div>
-	
-	<div class="centered" style="margin-top: 10px;">
-	  <a id="button_accept" class="btn btn-large btn-success">Get Next</a>
-	  <a id="button_try_another" class="btn btn-large btn-danger">Try Another</a>
+    
+    <div class="accordion" id="accordion2" style="margin-top: 20px">
+      <div class="accordion-group">
+	<div class="accordion-heading">
+	  <a class="accordion-toggle" style="text-align: center" 
+	     data-toggle="collapse" data-parent="#accordion2" href="#collapseOne">
+	    Theme
+	  </a>
 	</div>
-	
-	<div class="accordion" id="accordion2" style="margin-top: 20px">
-	  <div class="accordion-group">
-	    <div class="accordion-heading">
-	      <a class="accordion-toggle" style="text-align: center" data-toggle="collapse" data-parent="#accordion2" href="#collapseOne">
-		Theme
-	      </a>
-	    </div>
-	    <div id="collapseOne" class="accordion-body collapse">
-	      <div class="accordion-inner">
-		<div id="vis" class="span12"></div>
-	      </div>
-	    </div>
+	<div id="collapseOne" class="accordion-body collapse">
+	  <div class="accordion-inner">
+	    <div id="vis" class="span12"></div>
 	  </div>
 	</div>
-
-
-      </div>
-
-      <div id="right_column" class="row-fluid span5">
-	<div id="venue_title" class="well span10 centered lead" >Venues</div>
-	<div id="venue_list"  class="span10 centered" style="margin: 0px;" ></div>
       </div>
     </div>
 
-    <!--<hr>-->
-    
-    <!--<div class="span12"></div>-->
+
+  </div>
+
+  <div id="right_column" class="row-fluid span5">
+    <div id="venue_title" class="well span10 centered lead" >Venues</div>
+    <div id="venue_list"  class="span10 centered" style="margin: 0px;" ></div>
+  </div>
+</div>
+
+<!--<hr>-->
+
+<!--<div class="span12"></div>-->
 
 
 {% endblock %}

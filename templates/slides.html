@@ -33,21 +33,21 @@
     <h2>The Problem</h2>
     <div class="sample-content">
 
-      <div class="slide span12 row-fluid">
+      <div class="span12 row-fluid">
 	<p>Planning a night out is hard</p>
 	<img src="/static/images/BarsGoogleMaps.png" style="height: 500px;">
       </div>
 
-<!--
-      <div class="span12 row-fluid">
-	<div class="slide span6 row-fluid">
-	  <img src="/static/images/BarsGoogleMaps.png" style="height: 500px;">
-	</div>
-	<div class="slide span6 row-fluid">
-	  <img src="/static/images/BarsYelp.png">
-	</div>
-      </div>
--->    
+      <!--
+	  <div class="span12 row-fluid">
+	    <div class="slide span6 row-fluid">
+	      <img src="/static/images/BarsGoogleMaps.png" style="height: 500px;">
+	    </div>
+	    <div class="slide span6 row-fluid">
+	      <img src="/static/images/BarsYelp.png">
+	    </div>
+	  </div>
+	  -->    
     </div>
   </div>
   
@@ -58,41 +58,53 @@
   <div class="row-fluid page container-narrow" >
     <h2>The Solution</h2>
     <div class="sample-content">
-      <p class="slide">Build an app</p>
-      <div class="span12 row-fluid slide">
+      <p>Barkov chain will help you find bars and plan your night</p>
+      <div class="span12 row-fluid">
 	<img src="/static/images/BarkovChain.png" style="height: 350px; border: 3px solid black;" >
       </div>
+    </div>
+    <div style="text-align: center">
+      <h2>Demo</h2>
     </div>
   </div>
 </section>
 
 <!-- Slide 4 -->
+<!--
 <section class="slide page" id="demo">
   <div class="row-fluid page container-narrow" >
-    <h2>Demo</h2>
     <div class="sample-content">
     </div>
   </div>
 </section>
-
+-->
 
 <!-- Slide 5 -->
+<!--
+<section class="slide page" id="Algorithm">
+  <div class="row-fluid page container-narrow" >
+    <h2>Behind the Scenes</h2>
+    <div class="sample-content">
+      <ul>
+	<li>Scrape and parse restaurant reviews from NYMag.com and combine with user tips and location data from Foursquare API</li>
+	<li>Use Latent Semantic Analysis to create a similarity index between venues</li>
+	<li>Build a weight function to choose the next location</li>
+      </ul>
+    </div>
+</section>
+-->
+
+<!-- Slide 6 -->
 <section class="slide page" id="Algorithm">
   <div class="row-fluid page container-narrow" >
     <h2>The Algorithm</h2>
-    <div class="slide sample-content">
-      <ul>
-	<li>Search for nearby venues</li>
-	<li>Parse descriptions and reviews using Latent Semantic Analysis to determine similarity</li>
-	<li>Build a weight function that combines distance, similarity, and user reviews</li>
-	<li>Pick the next stop proportionally to this weight function</li>
-      </ul>
-    </div>
-    <div class="slide">
-      <img src="/static/images/WeightFunction.png">
+    <div class="sample-content">
+      <img src="/static/images/weight_algorithm.png" style="height: 500px;">
     </div>
   </div>
 </section>
+
+
 
 <!-- Slide 6 -->
 <section class="slide page" id="Stack">
@@ -108,7 +120,7 @@
 <!-- Slide 7 -->
 <section class="slide page" id="AboutMe">
   <div class="row-fluid page container-narrow" >
-    <h2>About Me</h2>
+    <h2>whoami</h2>
     <div class="sample-content">
       <ul>
 	<li>George Lewis</li>
@@ -116,18 +128,22 @@
 	<li>New York University</li>
 	<li>Member of the ATLAS experiment</li>
       </ul>
-      <img src="/static/images/atlas.gif" style="height: 300px;">
+    </div>
+    <div style="text-align: center;">
+      <img src="/static/images/atlas.gif" style="margin: 20px; width: 200px; display: inline;"/>
+      <img src="/static/images/nyu_logo.jpeg" style="margin: 20px; width: 200px; display: inline;"/>
+      
     </div>
   </div>
 </section>
 
 <!--
-<section class="slide page" id="end">
-  <div class="row-fluid page container-narrow" >
-  <h2>The End</h2>
-</div>
-</section>
--->
+    <section class="slide page" id="end">
+      <div class="row-fluid page container-narrow" >
+	<h2>The End</h2>
+      </div>
+    </section>
+    -->
 
 <!-- Deck Core and extensions -->
 <script src="/static/deck/core/deck.core.js"></script>

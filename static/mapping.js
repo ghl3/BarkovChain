@@ -128,7 +128,10 @@ venue.prototype.clear = function() {
 }
 
 
-venue.prototype.add_path = function(last_point) {
+// http://maps.googleapis.com/maps/api/directions/json?origin=Boston,MA&destination=Concord,MA&waypoints=Charlestown,MA|Lexington,MA&sensor=false
+
+
+venue.prototype.add_path = function(last_point, callback) {
     var self = this;
     var service = new google.maps.DirectionsService();
     service.route({
@@ -153,6 +156,8 @@ venue.prototype.add_path = function(last_point) {
 		directions += steps[i].instructions;
 	    }
 	    self.directions = directions;
+	    
+	    if (callback instanceof Function) { callback(); }
 	    return new_path;
 	}
 	else {
@@ -289,12 +294,26 @@ function removeVenueWithButtonId(button_id) {
 	if(venue_list[i].table_id() == button_id) {
 	    console.log("Splicing!!!");
 	    var venue = venue_list[i];
+	    var original_length = venue_list.length;
 	    choice = {'venue' : venue.data, 'accepted' : false};
 	    choices.push(choice);
 	    rejected_locations.push(venue.data);
 	    venue.clear();
 	    venue_list.splice(i, 1);
 	    updatePath();
+
+	    // Now, we redo the path between the 
+	    // deleted points
+	    // Only do if there is a point after
+	    // Note that the slice invalidated the
+	    // original index
+	    console.log("Venue list length: " + venue_list.length + " index: " + i);
+	    if( i + 1 < original_length) {
+		console.log("Rerouting based on delete");
+		venue_list[i].add_path(venue_list[i-1].latlon, 
+				       updatePath)
+	    }
+
 	    break;
 	}
     }

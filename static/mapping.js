@@ -12,20 +12,72 @@ var clickable = false;
 var word_bubbles = new bubble_plot("#vis", 700, 300);
 var choices = new Array();
 
-var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-var marker_colors = ["blue", "brown", "darkgreen", "orange", "paleblue", "pink",
-		     "purple", "red", "yellow"];
+//var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+//var marker_colors = ["blue", "brown", "darkgreen", "orange", "paleblue", "pink",
+//		     "purple", "red", "yellow"];
+//var marker_colors = ["white", "yellow", "red", "purple", "orange", "green", "gray", "brown", "blue", "black"]
+
+
+var marker_colors = [/*'FFFFFF', 'FFFF00', 'FFCC33',*/ 'FF9966', 'FF6699', 'FF33CC', 'FF00FF', 'FF0000', 
+		     'CCFF33', 'CCCC66', 'CC9999', 'CC66CC', 'CC33FF', 'CC3300', 'CC0033', '99FF66', 
+		     '99CC99', '9999CC', '9966FF', '996600', '993333', '990066', '66FF99', '66CCCC', 
+		     '6699FF', '669900', '666633', '663366', '660099', '33FFCC', '33CCFF', '33CC00', 
+		     '339933', '336666', '333399', '3300CC', '00FFFF', '00FF00', '00CC33', '009966', 
+		     '006699', '0033CC', '0000FF', '000000']
+
+var marker_colors = [/*'66FF99', 'FF0000', '33CCFF', '666633',*/ 'CC3300', 'FFCC33', /*'CC0033',*/ 'FF33CC', 
+		     '00FFFF', 'FFFFFF', '990066', '006699', '33FFCC', '99FF66', '336666', 
+		     'CC66CC', 'FF6699', '00CC33', '996600', 'FF00FF', '9999CC', '663366', '6699FF', 
+		     '993333', '99CC99', '0000FF', 'CCFF33', 'FF9966', '66CCCC', '3300CC', '0033CC', 
+		     '33CC00', 'FFFF00', '339933', '00FF00', '669900', 'CC9999', 'CCCC66', '333399', 
+		     '9966FF', 'CC33FF', '660099', '009966']
+
+
+/*
+
+var marker_colors = ['#FFFFFF', '#FFFFCC', '#FFFF99', '#FFFF66', '#FFFF33', '#FFFF00', '#FFCCFF', '#FFCCCC', 
+		     '#FFCC99', '#FFCC66', '#FFCC33', '#FFCC00', '#FF99FF', '#FF99CC', '#FF9999', '#FF9966', 
+		     '#FF9933', '#FF9900', '#FF66FF', '#FF66CC', '#FF6699', '#FF6666', '#FF6633', '#FF6600', 
+		     '#FF33FF', '#FF33CC', '#FF3399', '#FF3366', '#FF3333', '#FF3300', '#FF00FF', '#FF00CC', 
+		     '#FF0099', '#FF0066', '#FF0033', '#FF0000', '#CCFFFF', '#CCFFCC', '#CCFF99', '#CCFF66', 
+		     '#CCFF33', '#CCFF00', '#CCCCFF', '#CCCCCC', '#CCCC99', '#CCCC66', '#CCCC33', '#CCCC00', 
+		     '#CC99FF', '#CC99CC', '#CC9999', '#CC9966', '#CC9933', '#CC9900', '#CC66FF', '#CC66CC', 
+		     '#CC6699', '#CC6666', '#CC6633', '#CC6600', '#CC33FF', '#CC33CC', '#CC3399', '#CC3366', 
+		     '#CC3333', '#CC3300', '#CC00FF', '#CC00CC', '#CC0099', '#CC0066', '#CC0033', '#CC0000', 
+		     '#99FFFF', '#99FFCC', '#99FF99', '#99FF66', '#99FF33', '#99FF00', '#99CCFF', '#99CCCC', 
+		     '#99CC99', '#99CC66', '#99CC33', '#99CC00', '#9999FF', '#9999CC', '#999999', '#999966', 
+		     '#999933', '#999900', '#9966FF', '#9966CC', '#996699', '#996666', '#996633', '#996600', 
+		     '#9933FF', '#9933CC', '#993399', '#993366', '#993333', '#993300', '#9900FF', '#9900CC', 
+		     '#990099', '#990066', '#990033', '#990000', '#66FFFF', '#66FFCC', '#66FF99', '#66FF66', 
+		     '#66FF33', '#66FF00', '#66CCFF', '#66CCCC', '#66CC99', '#66CC66', '#66CC33', '#66CC00', 
+		     '#6699FF', '#6699CC', '#669999', '#669966', '#669933', '#669900', '#6666FF', '#6666CC', 
+		     '#666699', '#666666', '#666633', '#666600', '#6633FF', '#6633CC', '#663399', '#663366', 
+		     '#663333', '#663300', '#6600FF', '#6600CC', '#660099', '#660066', '#660033', '#660000', 
+		     '#33FFFF', '#33FFCC', '#33FF99', '#33FF66', '#33FF33', '#33FF00', '#33CCFF', '#33CCCC', 
+		     '#33CC99', '#33CC66', '#33CC33', '#33CC00', '#3399FF', '#3399CC', '#339999', '#339966', '#339933', '#339900', '#3366FF', '#3366CC', '#336699', '#336666', '#336633', '#336600', '#3333FF', '#3333CC', '#333399', '#333366', '#333333', '#333300', '#3300FF', '#3300CC', '#330099', '#330066', '#330033', '#330000', '#00FFFF', '#00FFCC', '#00FF99', '#00FF66', '#00FF33', '#00FF00', '#00CCFF', '#00CCCC', '#00CC99', '#00CC66', '#00CC33', '#00CC00', '#0099FF', '#0099CC', '#009999', '#009966', '#009933', '#009900', '#0066FF', '#0066CC', '#006699', '#006666', '#006633', '#006600', '#0033FF', '#0033CC', '#003399', '#003366', '#003333', '#003300', '#0000FF', '#0000CC', '#000099', '#000066', '#000033', '#000000']
+*/
 
 
 function createMarker(idx) {
+    // http://stackoverflow.com/questions/7095574/google-maps-api-3-custom-marker-color-for-default-dot-marker
 
-    // Get the length of the path
-    //var idx = venue_list.length;
-    console.log("Creating Path: " + idx);
-    var color = marker_colors[ idx % marker_colors.length];
-    var letter = alphabet.charAt(idx % 26);
+    var pinColor = marker_colors[ idx % marker_colors.length];
+
+    // var pinColor = "FE7569";
+//    var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + pinColor,
+    var pinImage = new google.maps.MarkerImage("/static/markers/marker_" + pinColor + ".png",
+					       new google.maps.Size(21, 34),
+					       new google.maps.Point(0,0),
+					       new google.maps.Point(10, 34));
+
+//    var pinShadow = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_shadow",
+    var pinShadow = new google.maps.MarkerImage("/static/markers/map_pin_shadow.png",
+						new google.maps.Size(40, 37),
+						new google.maps.Point(0, 0),
+						new google.maps.Point(12, 35));
     
-    return "/static/markers/" + color + "_Marker" + letter + ".png"; 
+    return [pinImage, pinShadow] //"/static/markers/" + color + ".png"; 
+    
 }
 
 
@@ -45,7 +97,8 @@ function venue(data) {
     this.latlon = new google.maps.LatLng(lat, lon);
 
     // Create the marker
-    this.marker_image = createMarker(this.index);
+    this.marker_image = createMarker(this.index)[0];
+    this.marker_shadow = createMarker(this.index)[1];
     var marker = new google.maps.Marker({
 	position: self.latlon,
 	map: map,
@@ -206,7 +259,7 @@ venue.prototype.add_to_table = function() {
 
     var row_html_string = '<div class="venue_row_element row-fluid span12 well" id="row_' + row_index + '">\
 \
-<div class="span2"><img src="' + this.marker_image +'"> </div><div class="span4"><p><strong>' + name + '</strong></p> </div>\
+<div class="span2"><img src="' + this.marker_image.url +'"> </div><div class="span4"><p><strong>' + name + '</strong></p> </div>\
 <div class="span5" style="text-align: right;"> \
 <button id="button_remove_' + row_index + '" class="button_remove btn btn-small btn-danger">Remove</button> </div> \
 <div class="span6"> <p>' + address + '</p> </div> \

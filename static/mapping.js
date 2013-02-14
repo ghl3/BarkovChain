@@ -119,7 +119,7 @@ venue.prototype.clear = function() {
 
     // Remove the marker from the map
     this.marker.setMap(null);
-
+    //$("#right_column").hide();
     // Remove the entry from the table    
     if( this.table_row != null ) {
 	console.log("Removing table entry");
@@ -327,9 +327,16 @@ function beginChain(latlon) {
     // Create the new object
     var initial_location = new venue(data);
     venue_list.push(initial_location);
+
+    // Change the state
     active_chain = true;
     clickable = true;
+    //$("#right_column").show();
+    $("#button_accept").html("Find Venue");
     $("#buttons").show();
+    $("#button_try_another").hide();
+    $("#instruction_content").html("Enter another address or click the map to start a new chain");
+    
     return;
 
 }
@@ -386,7 +393,7 @@ function clearChain() {
     current_path.setMap(null);
     current_path = null;
 
-    $("#venue_list").hide();
+    //$("#venue_list").hide();
 
     d3.select("#vis").select("svg")
 	.remove();
@@ -403,6 +410,8 @@ function clearChain() {
 // Get the next 'location' based on the current
 // chain of locations
 function getNextLocation(accepted) {
+
+    $("#right_column").show();
 
     if(clickable == false) {
 	console.log("Cannot Click Yet");
@@ -566,6 +575,7 @@ $(document).ready(function() {
 
     $("#venue_list").hide();
     $("#buttons").hide();
+    $("#right_column").hide();
     
     // Create the map
     map = create_map();
@@ -574,6 +584,8 @@ $(document).ready(function() {
     google.maps.event.addListener(map, 'click', function(event) {
 	var latlon = event.latLng;
 	beginChain(latlon);
+	//$("#address_searchbar_form").css("visibility", "hidden");
+	//$("#address_searchbar_form").hide();
     }); 
 
     // Initialize Bubbles
@@ -581,6 +593,8 @@ $(document).ready(function() {
     // Send an ajax request to the flask server
     // and get some info
     $("#button_accept").click(function() {
+	$("#button_accept").html("Get Next");
+	$("#button_try_another").show();
 	getNextLocation(true);
     });
 
@@ -595,8 +609,10 @@ $(document).ready(function() {
 	    if ((e.which && e.which == 13) || (e.keyCode && e.keyCode == 13)) {
 		var geocoder = new google.maps.Geocoder();
 		var address = $("#address_searchbar").val();
-		var bounds = new google.maps.LatLngBounds(new google.maps.LatLng(40.69886076226103, -74.02656555175781), 
-							  new google.maps.LatLng(40.8826309751934, -73.90296936035156));
+		var bounds = new google.maps.LatLngBounds(new google.maps.LatLng(40.69886076226103,
+										 -74.02656555175781), 
+							  new google.maps.LatLng(40.8826309751934,
+										 -73.90296936035156));
 		var query = { 'address': address, 'region' : 'US',  'bounds': bounds};
 		geocoder.geocode(query, function(results, status) {
 		    if (status == google.maps.GeocoderStatus.OK) { 

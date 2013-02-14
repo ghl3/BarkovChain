@@ -638,6 +638,7 @@ $(document).ready(function() {
 			console.log("Got location for address: " + address);
 			var latlon = results[0]['geometry']['location'];
 			beginChain(latlon);
+			map.setCenter(latlon);
 		    }
 		    else {
 			console.log("Couldn't get location of: " + address);

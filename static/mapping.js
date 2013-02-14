@@ -352,7 +352,8 @@ function beginChain(latlon) {
     clickable = true;
     //$("#right_column").show();
     $("#button_accept").html("Find Venue");
-    $("#buttons").show();
+    //$("#buttons").show();
+    $("#buttons").css("visibility", "visible");
     $("#button_try_another").hide();
     $("#instruction_content").html("Enter another address or click the map to start a new chain");
     
@@ -420,7 +421,8 @@ function clearChain() {
 	.remove();
 
     active_chain = false;
-    $("#buttons").hide();
+    $("#buttons").css("visibility", "hidden");
+    //$("#buttons").hide();
     return;
 
 }
@@ -593,7 +595,8 @@ function create_map() {
 $(document).ready(function() {
 
     $("#venue_list").hide();
-    $("#buttons").hide();
+    //$("#buttons").hide();
+    $("#buttons").css("visibility", "hidden");
     $("#right_column").hide();
     
     // Create the map

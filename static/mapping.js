@@ -224,10 +224,12 @@ venue.prototype.add_to_table = function() {
     Description += '</ul>';
 
     var category_string = '';
-    for(var i=0; i < category_list.length; ++i) {
-	category_string += category_list[i];
-	if(i != category_list.length-1) {
-	    category_string += ", ";   
+    if( category_list != null ) {
+	for(var i=0; i < category_list.length; ++i) {
+	    category_string += category_list[i];
+	    if(i != category_list.length-1) {
+		category_string += ", ";   
+	    }
 	}
     }
 
@@ -352,6 +354,8 @@ function beginChain(latlon, address) {
 	});
     }
 
+    $("#starting_point_container").css("visibility", "visible");
+
     return;
 
 }
@@ -417,6 +421,7 @@ function clearChain() {
 
     active_chain = false;
     $("#buttons").css("visibility", "hidden");
+    $("#starting_point_container").css("visibility", "hidden");
     //$("#buttons").hide();
     return;
 
@@ -592,6 +597,7 @@ $(document).ready(function() {
     $("#venue_list").hide();
     //$("#buttons").hide();
     $("#buttons").css("visibility", "hidden");
+    $("#starting_point_container").css("visibility", "hidden");
     $("#right_column").hide();
     
     // Create the map
@@ -626,6 +632,7 @@ $(document).ready(function() {
 	    if ((e.which && e.which == 13) || (e.keyCode && e.keyCode == 13)) {
 		var geocoder = new google.maps.Geocoder();
 		var address = $("#address_searchbar").val();
+		$("#address_searchbar").val('');
 		var query = { 'address': address, 'region' : 'US',  'bounds': bounds};
 		geocoder.geocode(query, function(results, status) {
 		    if (status == google.maps.GeocoderStatus.OK) { 

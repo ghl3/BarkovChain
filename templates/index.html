@@ -19,22 +19,25 @@
 
 <div id="middle_container" class="row-fluid page" style="margin-top: 25px;">
 
-  <div id="instructions" class="span2 offset4 row-fluid page" style="text-align: center;">
-    <div id="instruction_content">
-      Enter an address or click on the map to begin: 
+  <div id="instructions" class="span6 offset1 row-fluid page" style="text-align: center;">
+    <div id="search_container" class="span4 offset4" style="text-align: center;">
+      <div id="instruction_content">
+	Enter an address or click on the map to begin: 
+      </div>
+      <form id="address_searchbar_form" class="navbar-search pull-left">
+	<input id="address_searchbar" type="text" class="search-query" placeholder="Beginning Address">
+      </form>
     </div>
-    <form id="address_searchbar_form" class="navbar-search pull-left">
-      <input id="address_searchbar" type="text" class="search-query" placeholder="Beginning Address">
-    </form>
+  </div>
     <!--
     <div id="reset_button_container" class="centered" style="margin-top: 10px;">
       <a id="button_reset" class="btn btn-mini">Reset</a>
     </div>
 -->
-  </div>
+
   
-  <div id="starting_point_container" class="row-fluid offset1 span5" 
-       style="height: 50px; margin-top: 10px;">
+  <div id="starting_point_container" class="row-fluid span5" 
+       style="height: 40px; margin-top: 10px; padding-top: 5px; padding-bottom: 5px;">
     <div class="venue_row_element row-fluid span10 well" id="row_initial" >
       <div class="span2"><img id="starting_point_img" src=""></div>
       <div class="span4"><p><strong>Starting Point:</strong></p></div>

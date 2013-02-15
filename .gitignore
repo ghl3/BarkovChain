@@ -5,3 +5,4 @@ NOTES.txt
 venv
 *.npy
 *.json
+*.csv

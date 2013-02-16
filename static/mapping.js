@@ -1,17 +1,35 @@
 
 // Global Variables
 var map = null;
-var marker = null;
-var current_user_vector = null;
+//var marker = null;
+
+// The current venue list
 var venue_list = new Array();
-var rejected_locations = new Array();
+
+// Consider putting these into
+// a 'state' object
 var current_path = null;
+var current_user_vector = null;
 var active_chain = false;
 var _lastIndex = 0;
 var clickable = false;
+
+// Remove this
 var word_bubbles = new bubble_plot("#vis", 700, 300);
+
+// Merge 'rejected locations' and 'choices'
+// into a single 'history' object
+
+// The history object is a list of past location dicts
+// that were either accepted or rejected:
+// history = [ {dict: {}, accepted: true},
+//             {dict: {}, accepted: false},
+//           ... ]
+var history = new Array();
+//var rejected_locations = new Array();
 var choices = new Array();
 
+// Global constants
 var manhattan_bounds = new google.maps.LatLngBounds(
     new google.maps.LatLng(40.69886076226103,
 			   -74.02656555175781), 
@@ -260,7 +278,7 @@ function removeVenueWithButton(button) {
 	    var original_length = venue_list.length;
 	    choice = {'venue' : venue.data, 'accepted' : false};
 	    choices.push(choice);
-	    rejected_locations.push(venue.data);
+	    //rejected_locations.push(venue.data);
 	    venue.clear();
 	    venue_list.splice(i, 1);
 	    updatePath();
@@ -476,6 +494,7 @@ function getNextLocation(accepted) {
 	    chain.push(venue_list[i].data);
 	}
 	
+	/*
 	if( accepted ) {
 	    choice = {'venue' : chain[chain.length-1],
 		      'accepted' : true}
@@ -486,9 +505,10 @@ function getNextLocation(accepted) {
 		      'accepted' : true}
 	    choices.push(choice);
 	}
+	*/
 
 	var data = {'chain' : chain,
-		    'rejected_locations' : rejected_locations,
+		    //'rejected_locations' : rejected_locations,
 		    'user_vector' : current_user_vector,
 		    'choices' : choices};
 	// Submit
@@ -592,7 +612,8 @@ function rejectLastPoint() {
     console.log("Rejecting last point (length = " + venue_list.length);
     console.log(last_venue);
     last_venue.clear();
-    rejected_locations.push(last_venue.data);
+    choices.push({'venue': last_venue.data, 'accepted' : false});
+//    rejected_locations.push(last_venue.data);
 }
 
 /**
@@ -646,14 +667,6 @@ $(document).ready(function() {
 
     clearChain();
 
-    /*
-    $("#venue_list").hide();
-    //$("#buttons").hide();
-    $("#buttons").css("visibility", "hidden");
-    $("#starting_point_container").css("visibility", "hidden");
-    $("#right_column").hide();
-    */
-
     // Create the map
     map = create_map();
 
@@ -672,6 +685,8 @@ $(document).ready(function() {
     $("#button_accept").click(function() {
 	$("#button_accept").html("Get Next");
 	$("#button_try_another").show();
+	choices.push({'venue' : venue_list[venue_list.length-1].data,
+		      'accepted': true});
 	getNextLocation(true);
     });
 

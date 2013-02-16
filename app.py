@@ -131,9 +131,12 @@ def api_next_location():
         return not_found()
 
     current_chain = request.json['chain']
-    rejected_locations = request.json['rejected_locations']
+    # rejected_locations = request.json['rejected_locations']
     user_vector = request.json['user_vector']
     choices = request.json['choices']
+    rejected_locations = [location['venue'] for location in choices
+                          if location['accepted']==False]
+
     #last_venue = request.json['last_venue']
     #accepted = request.json['accepted']
 

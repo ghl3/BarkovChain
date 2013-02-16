@@ -46,10 +46,10 @@ function createMarker(idx) {
 
 
 /**
-* Class venue
-* Stores information about each venue that
-* must be coherent across the pages
-*/
+ * Class venue
+ * Stores information about each venue that
+ * must be coherent across the pages
+ */
 function venue(data) {
 
     var self = this;
@@ -83,9 +83,9 @@ function venue(data) {
 }
 
 /**
-* Remove the marker frm the map and
-* remove the row from the table
-*/
+ * Remove the marker frm the map and
+ * remove the row from the table
+ */
 venue.prototype.clear = function() {
     this.marker.setMap(null);
     if( this.table_row != null ) {
@@ -94,10 +94,13 @@ venue.prototype.clear = function() {
 }
 
 /**
-* Create a path between the supplied last
-* point and this venue's point using the
-* google Direction api
-*/
+ * Create a path between the supplied last
+ * point and this venue's point using the
+ * google Direction api
+ * In addition, get the directions as a 
+ * string and set them for this venue
+ * Call an optional callback
+ */
 venue.prototype.add_path = function(last_point, callback) {
     var self = this;
     var service = new google.maps.DirectionsService();
@@ -126,77 +129,62 @@ venue.prototype.add_path = function(last_point, callback) {
 	    return new_path;
 	}
 	else {
-	    console.log("Add Path Error");
+	    console.log("Error: add_path - Google Directions API returned: " + status);
 	}
     });
 }
 
-/*
-venue.prototype.create_path = function(last_lat_long, callback) {
-
-    var self = this;
-
-    var service = new google.maps.DirectionsService();
-    service.route({
-	origin: last_lat_long,
-	destination: self.latlon,
-	travelMode: google.maps.DirectionsTravelMode.WALKING
-    }, function(result, status) {
-	if (status == google.maps.DirectionsStatus.OK) {
-	    var new_path = result.routes[0].overview_path;
-	    self.path = new_path;
-	    callback();
-	}
-	else {
-	    console.log("Create Path Error");
-	}
-    });
-}
-*/
-
+/**
+ * Return the html id of the table row
+ * corresponding to this venue
+ */
 venue.prototype.table_id = function() {
     if(this.table_row != null) {
 	var button = $(this.table_row).find(".button_remove")[0];
-	return button.id; //attr('id'); //.table_row.id()
+	return button.id;
     }
     else {
 	return null;
     }
 }
 
-
-// Create a twitter bootstrap collapsable
-// It consists of two parts:
-//   - The button that toggles the collapse
-//   - The data section
-// The 'id' input is the idea of the entire block
-// The 'title' is the name on the toggle button
-// The 'content' is the data that gets shown and hidden
-// This function returns an html string
+/** 
+ * Create a twitter bootstrap collapsable
+ * It consists of two parts:
+ *   - The button that toggles the collapse
+ *   - The data section
+ * The 'id' input is the idea of the entire block
+ * The 'title' is the name on the toggle button
+ * The 'content' is the data that gets shown and hidden
+ * This function returns an html string
+*/
 function createCollapsable(id, title, content) {
 
     var html_string = ' \
-	<div class="accordion" id="' + id + '"> \
-	 <div class="accordion-group"> \
-          <div class="accordion-heading"> \
-	    <a class="accordion-toggle" data-toggle="collapse" \
-               data-parent="#' + id + '" href="#collapse_' + id + '"> \
-	      ' + title + ' \
-	    </a> \
-	  </div> \
-	  <div id="collapse_' + id + '" class="accordion-body collapse" style="max-height: 200px" > \
-	    <div class="accordion-inner" style="height: 200px; overflow: scroll;"> \
-	      ' + content + ' \
-	    </div> \
-	  </div> \
-	</div> \
-      </div>';
+<div class="accordion" id="' + id + '"> \
+<div class="accordion-group"> \
+<div class="accordion-heading"> \
+<a class="accordion-toggle" data-toggle="collapse" \
+data-parent="#' + id + '" href="#collapse_' + id + '"> \
+' + title + ' \
+</a> \
+</div> \
+<div id="collapse_' + id + '" class="accordion-body collapse" style="max-height: 200px" > \
+<div class="accordion-inner" style="height: 200px; overflow: scroll;"> \
+' + content + ' \
+</div> \
+</div> \
+</div> \
+</div>';
 
     return html_string;
 
 }
 
-
+/**
+ * Add the current venue to the table
+ *
+ */
 venue.prototype.add_to_table = function() {
 
     var table = $("#venue_list");
@@ -250,8 +238,16 @@ venue.prototype.add_to_table = function() {
     this.table_row = tail_row;
 }
 
+/**
+ * Action to take when clicking on delete button
+ * Finds the row that owns the button and deletes
+ * the venue corresponding to that row, as well
+ * as the row itself.
+ * Adds this deleted venue to the delete history.
+ */
+function removeVenueWithButton(button) {
 
-function removeVenueWithButtonId(button_id) {
+    var button_id = $(button).attr('id');
 
     console.log("Removing using button id: " + button_id);
     
@@ -280,13 +276,19 @@ function removeVenueWithButtonId(button_id) {
 		venue_list[i].add_path(venue_list[i-1].latlon, 
 				       updatePath)
 	    }
-
 	    break;
 	}
     }
 }
 
-
+/**
+ * Reset the state and begin a new chain
+ * This is fired when someone enters a beginning
+ * location in the search box or when they click
+ * on the map.
+ * It clears the current chain, resets the state, 
+ * and adds a new starting location to the map.
+ */
 function beginChain(latlon, address) {
 
     // First, check if there is an existing
@@ -304,7 +306,6 @@ function beginChain(latlon, address) {
     current_path.setMap(map);
 
     // To be done by clicking
-    //latlon = event.latLng;
     var data = {};
     data['latitude'] = latlon.lat();
     data['longitude'] = latlon.lng();
@@ -317,18 +318,13 @@ function beginChain(latlon, address) {
     // Change the state
     active_chain = true;
     clickable = true;
-    //$("#right_column").show();
     $("#button_accept").html("Find Venue");
-    //$("#buttons").show();
     $("#buttons").css("visibility", "visible");
     $("#button_try_another").hide();
     $("#instruction_content").html("Enter another address or click the map to start a new chain");
 
-
     // Add the initial location
-    //var starting_point = $(row_html_string);
     $("#starting_point_img").attr("src", initial_location.marker_image.url);
-    //$("#starting_point").html(row_html_string);
 
     // Reverse Geocode
     if( address != null ) {
@@ -351,14 +347,17 @@ function beginChain(latlon, address) {
     }
 
     $("#starting_point_container").css("visibility", "visible");
-
+    
     return;
 
 }
 
 
-// Update the shown path based on the current
-// List of LatLon points
+/**
+ * Create a new path line on the map
+ * basedUpdate the shown path based on the current
+ * List of LatLon points
+ */
 function updatePath() {
     var total_chain = new Array();
     for(var i=0; i < venue_list.length; ++i) {
@@ -371,6 +370,11 @@ function updatePath() {
 }
 
 
+/**
+ * Add a new location to the venue list
+ * from a dictionary returned by the
+ * server.
+ */
 function addToChain(location_dict) {
 
     console.log("Adding new location:");
@@ -390,13 +394,15 @@ function addToChain(location_dict) {
     next_venue.add_path(last_lat_long);
     return;
 
-    //var last_lat_long = venue_list[venue_list.length - 1].latlon;
-    //next_venue.create_path(last_lat_long, updatePath);
-
-    return;
 }
 
 
+/**
+ * Remove all venues from the chain,
+ * hide the buttons and the starting
+ * point marker, and the venue list;
+ *
+ */
 function clearChain() {
 
     // Clear the array
@@ -405,10 +411,8 @@ function clearChain() {
     }
     venue_list.length = 0;
 
-    current_path.setMap(null);
+    if( current_path != null ) current_path.setMap(null);
     current_path = null;
-
-    //$("#venue_list").hide();
 
     d3.select("#vis").select("svg")
 	.remove();
@@ -418,14 +422,26 @@ function clearChain() {
     active_chain = false;
     $("#buttons").css("visibility", "hidden");
     $("#starting_point_container").css("visibility", "hidden");
-    //$("#buttons").hide();
+    $("#venue_list").hide();
+    $("#right_column").hide();
     return;
 
 }
 
 
-// Get the next 'location' based on the current
-// chain of locations
+/**
+ * Get the next 'location' from the server
+ * based on the current location and the past
+ * history of locations.
+ * Takes whether the last location was accepted
+ * or not.
+ * Show the right column if necessary
+ *
+ * TO DO: Instead of taking whether it was accepted
+ * or not, simply append the lost location to the history,
+ * including whether it was accepted or not,
+ * and then send the entire history to the server.
+*/
 function getNextLocation(accepted) {
 
     $("#right_column").show();
@@ -481,9 +497,14 @@ function getNextLocation(accepted) {
 }
 
 
-// Wrapper for the server POST request.
-// The returned JSON defines the next location
-// and the updated user_vector
+/** 
+ * Get the next location from the server by
+ * creating a jquery ajax POST request that
+ * includes all the necessary information in
+ * its body.
+ * Update the current vector based on the
+ * return value.
+ */
 function submitToServer(api, data) {
 
     console.log('Submitting Location To Server: ' + api);
@@ -556,9 +577,11 @@ function submitToServer(api, data) {
 }
 
 
-// Remove the last restaurant from
-// the current chain
-// Add the last marker to the list of 
+/**
+ * Remove the last restaurant from
+ * the current chain 
+ * Add this chain to the history.
+ */
 function rejectLastPoint() {
     if(clickable == false) {
 	console.log("Cannot Click Yet");
@@ -572,7 +595,12 @@ function rejectLastPoint() {
     rejected_locations.push(last_venue.data);
 }
 
-
+/**
+ * Take the contents of the searchbar
+ * and find the address (within manhattan)
+ * and drop a pin on that address as the
+ * starting point.
+ */
 function searchbarInput(e) {
     if ((e.which && e.which == 13) || (e.keyCode && e.keyCode == 13)) {
 	var geocoder = new google.maps.Geocoder();
@@ -595,7 +623,9 @@ function searchbarInput(e) {
 }
 
 
-// Create the google maps MAP
+/**
+ * Create a new google maps object
+ */
 function create_map() {
     var mapOptions = {
 	center: new google.maps.LatLng(40.77482, -73.96872),
@@ -609,15 +639,21 @@ function create_map() {
 }
 
 
-// Load the page! 
+/**
+ * Start the page
+ */
 $(document).ready(function() {
 
+    clearChain();
+
+    /*
     $("#venue_list").hide();
     //$("#buttons").hide();
     $("#buttons").css("visibility", "hidden");
     $("#starting_point_container").css("visibility", "hidden");
     $("#right_column").hide();
-    
+    */
+
     // Create the map
     map = create_map();
 
@@ -669,8 +705,9 @@ $(document).ready(function() {
     $(document).on("click", ".button_remove", function(evt) {
 	console.log("Button Click");
 	console.log(evt.target);
-	var button_id = $(evt.target).attr('id');
-	removeVenueWithButtonId(button_id);
+	removeVenueWithButton(evt.target);
+	//var button_id = $(evt.target).attr('id');
+	//removeVenueWithButtonId(button_id);
     });
 
 });

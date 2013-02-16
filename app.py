@@ -84,7 +84,7 @@ def api_initial_location():
     marker_location = request.json['location']
     marker_location['initial'] = True
     current_chain = [marker_location]
-    next_location = get_next_location(current_chain, rejected_locations=[])
+    next_location = get_next_location(current_chain, history=[])
 
     # Update the user vector
     print "Updating the User Vector"
@@ -131,14 +131,8 @@ def api_next_location():
         return not_found()
 
     current_chain = request.json['chain']
-    # rejected_locations = request.json['rejected_locations']
     user_vector = request.json['user_vector']
     history = request.json['history']
-    rejected_locations = [location['venue'] for location in history
-                          if location['accepted']==False]
-
-    #last_venue = request.json['last_venue']
-    #accepted = request.json['accepted']
 
     # Update the user's semantic vector based on
     # whether he accepted or rejected the last location
@@ -148,7 +142,7 @@ def api_next_location():
     # Get the next location, package it up
     # and send it to the client
     print "Getting Next Location"
-    next_location = get_next_location(current_chain, rejected_locations, user_vector)
+    next_location = get_next_location(current_chain, user_vector=user_vector, history=history)
 
     print "Formatting Location Dict"
     data_for_app = format_location(next_location, user_vector)
@@ -171,6 +165,7 @@ def invalid_content(error=None):
     resp.status_code = 400
     return resp
 
+
 @app.errorhandler(403)
 def not_found(error=None):
     message = {
@@ -181,6 +176,7 @@ def not_found(error=None):
     resp.status_code = 403
     return resp
 
+
 @app.errorhandler(404)
 def not_found(error=None):
     message = {
@@ -190,6 +186,7 @@ def not_found(error=None):
     resp = jsonify(message)
     resp.status_code = 404
     return resp
+
 
 def format_location(db_entry, user_vector):
     """
@@ -262,7 +259,7 @@ def get_lat_lon_square_query(current_location, blocks):
     return query
 
 
-def get_next_location(current_chain, rejected_locations, user_vector=None):
+def get_next_location(current_chain, history, user_vector=None):
     """
     Return the next location based on the user's current
     preference vector, his current location, and the list
@@ -283,6 +280,9 @@ def get_next_location(current_chain, rejected_locations, user_vector=None):
     """
 
     current_location = current_chain[-1]
+    rejected_locations = [location['venue'] for location in history
+                          if location['accepted']==False]
+    
 
     # Ensure no reject or current ids are selected
     used_ids = [ObjectId(location['_id']) 

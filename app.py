@@ -280,14 +280,16 @@ def get_next_location(current_chain, history, user_vector=None):
     """
 
     current_location = current_chain[-1]
-    rejected_locations = [location['venue'] for location in history
-                          if location['accepted']==False]
-    
 
     # Ensure no reject or current ids are selected
+    '''
+    rejected_locations = [location['venue'] for location in history
+                          if location['accepted']==False]
     used_ids = [ObjectId(location['_id']) 
                 for location in itertools.chain(current_chain, rejected_locations) 
                 if '_id' in location]
+    '''
+    used_ids = [ObjectId(location['venue']['_id']) for location in history]
 
     # Build the db query
     blocks=10
@@ -314,7 +316,8 @@ def get_next_location(current_chain, history, user_vector=None):
         total_probability += weight_result.probability
 
     while (len(proposed_locations) < 5 or total_probability <= 0.000001):
-        print "Too few nearby locations found within %s blocks (%s)." % (blocks, len(proposed_locations))
+        print "Too few nearby locations found within %s blocks (%s)." \
+            % (blocks, len(proposed_locations))
         blocks += 10
         updated_distance = get_lat_lon_square_query(current_location, blocks=blocks)
         print "Updated Distance: ", updated_distance

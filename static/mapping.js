@@ -25,9 +25,9 @@ var word_bubbles = new bubble_plot("#vis", 700, 300);
 // history = [ {dict: {}, accepted: true},
 //             {dict: {}, accepted: false},
 //           ... ]
-var history = new Array();
+//var history = new Array();
 //var rejected_locations = new Array();
-var choices = new Array();
+var history = new Array();
 
 // Global constants
 var manhattan_bounds = new google.maps.LatLngBounds(
@@ -277,7 +277,7 @@ function removeVenueWithButton(button) {
 	    var venue = venue_list[i];
 	    var original_length = venue_list.length;
 	    choice = {'venue' : venue.data, 'accepted' : false};
-	    choices.push(choice);
+	    history.push(choice);
 	    //rejected_locations.push(venue.data);
 	    venue.clear();
 	    venue_list.splice(i, 1);
@@ -510,7 +510,7 @@ function getNextLocation(accepted) {
 	var data = {'chain' : chain,
 		    //'rejected_locations' : rejected_locations,
 		    'user_vector' : current_user_vector,
-		    'choices' : choices};
+		    'history' : history};
 	// Submit
 	submitToServer('/api/next_location', data);
     }
@@ -591,8 +591,6 @@ function submitToServer(api, data) {
 	    clickable = true;
 	});
     
-    choices.length = 0;
-
     console.log("Sent 'next_location' request to server. Waiting...");    
 }
 
@@ -612,7 +610,7 @@ function rejectLastPoint() {
     console.log("Rejecting last point (length = " + venue_list.length);
     console.log(last_venue);
     last_venue.clear();
-    choices.push({'venue': last_venue.data, 'accepted' : false});
+    history.push({'venue': last_venue.data, 'accepted' : false});
 //    rejected_locations.push(last_venue.data);
 }
 
@@ -685,7 +683,7 @@ $(document).ready(function() {
     $("#button_accept").click(function() {
 	$("#button_accept").html("Get Next");
 	$("#button_try_another").show();
-	choices.push({'venue' : venue_list[venue_list.length-1].data,
+	history.push({'venue' : venue_list[venue_list.length-1].data,
 		      'accepted': true});
 	getNextLocation(true);
     });

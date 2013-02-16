@@ -133,8 +133,8 @@ def api_next_location():
     current_chain = request.json['chain']
     # rejected_locations = request.json['rejected_locations']
     user_vector = request.json['user_vector']
-    choices = request.json['choices']
-    rejected_locations = [location['venue'] for location in choices
+    history = request.json['history']
+    rejected_locations = [location['venue'] for location in history
                           if location['accepted']==False]
 
     #last_venue = request.json['last_venue']
@@ -143,7 +143,7 @@ def api_next_location():
     # Update the user's semantic vector based on
     # whether he accepted or rejected the last location
     print "Updating User Vector"
-    user_vector = update_user_vector(user_vector, choices, len(current_chain))
+    user_vector = update_user_vector(user_vector, history, len(current_chain))
 
     # Get the next location, package it up
     # and send it to the client
@@ -413,7 +413,7 @@ def mc_weight(proposed, current, user_vector):
     return result
 
 
-def update_user_vector(user_vector, choices, chain_length):
+def update_user_vector(user_vector, history, chain_length):
     """
     Update the user's vector 
     based on whether he accepted the last location
@@ -421,18 +421,22 @@ def update_user_vector(user_vector, choices, chain_length):
     entries in the chain that we've had so far
     """
 
+    # The first point in the history has no semantic information
+    history = history[1:]
+
     print "Updating User Vector", user_vector
-    print "Based on: ", [(choice['venue']['name'], choice['accepted'])
-                         for choice in choices]
+    print "Based on: ", history
+    print "Based on: ", [(location['venue']['name'], location['accepted'])
+                         for location in history]
 
     #last_loc_array = lsa.get_svd_document_vector(last_loc_name)
     user_array = numpy.array(user_vector)
     beta = (.5)**chain_length
 
-    for choice in choices:
+    for location in history:
 
-        venue = choice['venue']
-        accepted = choice['accepted']
+        venue = location['venue']
+        accepted = location['accepted']
 
         print "Accepted last location: %s:" % accepted, venue['name']
 

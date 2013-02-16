@@ -10,7 +10,6 @@ var venue_list = new Array();
 // a 'state' object
 var current_path = null;
 var current_user_vector = null;
-var active_chain = false;
 var _lastIndex = 0;
 var clickable = false;
 
@@ -256,6 +255,7 @@ venue.prototype.add_to_table = function() {
     this.table_row = tail_row;
 }
 
+
 /**
  * Action to take when clicking on delete button
  * Finds the row that owns the button and deletes
@@ -299,6 +299,7 @@ function removeVenueWithButton(button) {
     }
 }
 
+
 /**
  * Reset the state and begin a new chain
  * This is fired when someone enters a beginning
@@ -311,7 +312,7 @@ function beginChain(latlon, address) {
 
     // First, check if there is an existing
     // chain.  If so, we kill it.
-    if(active_chain==true) {
+    if( venue_list.length != 0 ) {
 	clearChain();
     }
 
@@ -334,7 +335,6 @@ function beginChain(latlon, address) {
     venue_list.push(initial_location);
 
     // Change the state
-    active_chain = true;
     clickable = true;
     $("#button_accept").html("Find Venue");
     $("#buttons").css("visibility", "visible");
@@ -437,11 +437,11 @@ function clearChain() {
     d3.select("#vis").select("#bubble-labels")
 	.remove();
 
-    active_chain = false;
     $("#buttons").css("visibility", "hidden");
     $("#starting_point_container").css("visibility", "hidden");
     $("#venue_list").hide();
     $("#right_column").hide();
+
     return;
 
 }
@@ -460,17 +460,12 @@ function clearChain() {
  * including whether it was accepted or not,
  * and then send the entire history to the server.
 */
-function getNextLocation(accepted) {
+function getNextLocation() {
 
     $("#right_column").show();
 
     if(clickable == false) {
 	console.log("Cannot Click Yet");
-	return;
-    }
-
-    if(active_chain == false) {
-	console.log("Cannot submit to server, chain isn't yet active");
 	return;
     }
 
@@ -487,31 +482,17 @@ function getNextLocation(accepted) {
     }
     
     // Otherwise, we get the next venue basee
-    // on the current chain
+    // on the current chain and history
     else {
 	var chain = new Array();
 	for( var i = 0; i < venue_list.length; ++i) {
 	    chain.push(venue_list[i].data);
 	}
-	
-	/*
-	if( accepted ) {
-	    choice = {'venue' : chain[chain.length-1],
-		      'accepted' : true}
-	    choices.push(choice);
-	}
-	else {
-	    choice = {'venue' : rejected_locations[rejected_locations.length-1],
-		      'accepted' : true}
-	    choices.push(choice);
-	}
-	*/
 
 	var data = {'chain' : chain,
-		    //'rejected_locations' : rejected_locations,
 		    'user_vector' : current_user_vector,
 		    'history' : history};
-	// Submit
+
 	submitToServer('/api/next_location', data);
     }
 }
@@ -587,7 +568,6 @@ function submitToServer(api, data) {
 	.fail(errorCallback)
 	.always(function() { 
 	    console.log("Server transaction complete");
-
 	    clickable = true;
 	});
     
@@ -611,8 +591,8 @@ function rejectLastPoint() {
     console.log(last_venue);
     last_venue.clear();
     history.push({'venue': last_venue.data, 'accepted' : false});
-//    rejected_locations.push(last_venue.data);
 }
+
 
 /**
  * Take the contents of the searchbar
@@ -692,7 +672,6 @@ $(document).ready(function() {
 	rejectLastPoint();
 	getNextLocation(false);
     });
-
 
     $("#address_searchbar_form input").keypress(function (e) {
 	if ((e.which && e.which == 13) || (e.keyCode && e.keyCode == 13)) {

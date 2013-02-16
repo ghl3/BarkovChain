@@ -422,12 +422,32 @@ def update_user_vector(user_vector, history, chain_length):
     """
 
     # The first point in the history has no semantic information
-    history = history[1:]
+    #history = history[1:]
 
     print "Updating User Vector", user_vector
     print "Based on: ", history
     print "Based on: ", [(location['venue']['name'], location['accepted'])
                          for location in history]
+
+    good_bars = []
+    bad_bars = []
+    for location in history:
+        name = location['venue']['name']
+        data = location['venue']
+
+        if location['accepted']:
+            good_bars.append((name, data))
+        else:
+            bad_bars.append((name, data))
+
+    #good_bars = [lcorpus_lsi_tfidf[bar_idx_map[location['venue']['name']]] for venue in history[1:]
+    #             if location['accepted'] == True]
+    #
+    #bad_bars = [corpus_lsi_tfidf[bar_idx_map[location['venue']['name']]] for venue in history[1:]
+    #            if location['accepted'] == False]
+    print "Good Bars: ", good_bars
+    print "Bad Bars: ", bad_bars
+    
 
     #last_loc_array = lsa.get_svd_document_vector(last_loc_name)
     user_array = numpy.array(user_vector)

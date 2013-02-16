@@ -336,8 +336,10 @@ function beginChain(latlon, address) {
 
     // Change the state
     clickable = true;
-    $("#button_accept").html("Find Venue");
+    //$("#button_accept").html("Find Venue");
     $("#buttons").css("visibility", "visible");
+    $("#button_initial").show();
+    $("#button_accept").hide();
     $("#button_try_another").hide();
     $("#instruction_content").html("Enter another address or click the map to start a new chain");
 
@@ -460,9 +462,7 @@ function clearChain() {
  * including whether it was accepted or not,
  * and then send the entire history to the server.
 */
-function getNextLocation() {
-
-    $("#right_column").show();
+function getInitialLocation() {
 
     if(clickable == false) {
 	console.log("Cannot Click Yet");
@@ -474,27 +474,33 @@ function getNextLocation() {
 	return;
     }
 
-    // If we only have the inital marker, we
-    // must use a special api point
-    if( venue_list.length == 1 ){
-	var data = {'location' : venue_list[0].data}
-	submitToServer('/api/initial_location', data);
+    var data = {'location' : venue_list[0].data}
+    submitToServer('/api/initial_location', data);
+}
+
+
+function getNextLocation() {
+
+    if(clickable == false) {
+	console.log("Cannot Click Yet");
+	return;
+    }
+
+    if( venue_list.length == 0 ) {
+	console.log("Error: No venues exist yet");
+	return;
+    }
+
+    var chain = new Array();
+    for( var i = 0; i < venue_list.length; ++i) {
+	chain.push(venue_list[i].data);
     }
     
-    // Otherwise, we get the next venue basee
-    // on the current chain and history
-    else {
-	var chain = new Array();
-	for( var i = 0; i < venue_list.length; ++i) {
-	    chain.push(venue_list[i].data);
-	}
-
-	var data = {'chain' : chain,
-		    'user_vector' : current_user_vector,
-		    'history' : history};
-
-	submitToServer('/api/next_location', data);
-    }
+    var data = {'chain' : chain,
+		'user_vector' : current_user_vector,
+		'history' : history};
+    
+    submitToServer('/api/next_location', data);
 }
 
 
@@ -660,9 +666,20 @@ $(document).ready(function() {
     // Define clicking on the 'submit' button
     // Send an ajax request to the flask server
     // and get some info
-    $("#button_accept").click(function() {
-	$("#button_accept").html("Get Next");
+    $("#button_initial").click(function() {
+	//$("#button_accept").html("Get Next");
+	$("#button_accept").show();
 	$("#button_try_another").show();
+	$("#button_initial").hide();
+	$("#right_column").show();
+	//history.push({'venue' : venue_list[venue_list.length-1].data,
+	//	      'accepted': true});
+	getInitialLocation(true);
+    });
+
+    $("#button_accept").click(function() {
+	// $("#button_accept").html("Get Next");
+	// $("#button_try_another").show();
 	history.push({'venue' : venue_list[venue_list.length-1].data,
 		      'accepted': true});
 	getNextLocation(true);

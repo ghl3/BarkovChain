@@ -425,7 +425,6 @@ def update_user_vector(user_vector, history, chain_length):
     #history = history[1:]
 
     print "Updating User Vector", user_vector
-    print "Based on: ", history
     print "Based on: ", [(location['venue']['name'], location['accepted'])
                          for location in history]
 
@@ -433,21 +432,24 @@ def update_user_vector(user_vector, history, chain_length):
     bad_bars = []
     for location in history:
         name = location['venue']['name']
-        data = location['venue']
+        #data = location['venue']
+        bar_index = bar_idx_map[name]
+        vec = corpus_lsi_tfidf[bar_index]
 
         if location['accepted']:
-            good_bars.append((name, data))
+            good_bars.append((name, vec))
         else:
-            bad_bars.append((name, data))
+            bad_bars.append((name, vec))
 
     #good_bars = [lcorpus_lsi_tfidf[bar_idx_map[location['venue']['name']]] for venue in history[1:]
     #             if location['accepted'] == True]
     #
     #bad_bars = [corpus_lsi_tfidf[bar_idx_map[location['venue']['name']]] for venue in history[1:]
     #            if location['accepted'] == False]
-    print "Good Bars: ", good_bars
-    print "Bad Bars: ", bad_bars
-    
+    print "Good Bars: "
+    for bar in good_bars: print bar
+    print "Bad Bars: "
+    for bar in bad_bars: print bar
 
     #last_loc_array = lsa.get_svd_document_vector(last_loc_name)
     user_array = numpy.array(user_vector)

@@ -336,7 +336,6 @@ function beginChain(latlon, address) {
 
     // Change the state
     clickable = true;
-    //$("#button_accept").html("Find Venue");
     $("#buttons").css("visibility", "visible");
     $("#button_initial").show();
     $("#button_accept").hide();
@@ -450,17 +449,10 @@ function clearChain() {
 
 
 /**
- * Get the next 'location' from the server
- * based on the current location and the past
- * history of locations.
- * Takes whether the last location was accepted
- * or not.
- * Show the right column if necessary
- *
- * TO DO: Instead of taking whether it was accepted
- * or not, simply append the lost location to the history,
- * including whether it was accepted or not,
- * and then send the entire history to the server.
+ * Get the initial location in the chain.
+ * The initial location is not based on semantic
+ * similairty since it has no previous choices
+ * to compare to.
 */
 function getInitialLocation() {
 
@@ -479,24 +471,29 @@ function getInitialLocation() {
 }
 
 
+/**
+ * Get the next 'location' from the server
+ * based on the current location, reviews, 
+ * and the past history of locations.
+*/
 function getNextLocation() {
 
     if(clickable == false) {
 	console.log("Cannot Click Yet");
 	return;
     }
-
+    
     if( venue_list.length == 0 ) {
 	console.log("Error: No venues exist yet");
 	return;
     }
 
-    var chain = new Array();
+    var venue_chain = new Array();
     for( var i = 0; i < venue_list.length; ++i) {
-	chain.push(venue_list[i].data);
+	venue_chain.push(venue_list[i].data);
     }
     
-    var data = {'chain' : chain,
+    var data = {'chain' : venue_chain,
 		'user_vector' : current_user_vector,
 		'history' : history};
     
@@ -513,6 +510,9 @@ function getNextLocation() {
  * return value.
  */
 function submitToServer(api, data) {
+
+    // Ensure one can't click twice
+    clickable = false;
 
     console.log('Submitting Location To Server: ' + api);
     console.log("Sending data:");
@@ -559,8 +559,6 @@ function submitToServer(api, data) {
 	console.log("Server encountered an error");
 	console.log(data);
     }
-
-    clickable = false;
 
     $.ajax({
 	url: api,
@@ -667,21 +665,18 @@ $(document).ready(function() {
     // Send an ajax request to the flask server
     // and get some info
     $("#button_initial").click(function() {
-	//$("#button_accept").html("Get Next");
 	$("#button_accept").show();
 	$("#button_try_another").show();
 	$("#button_initial").hide();
 	$("#right_column").show();
-	//history.push({'venue' : venue_list[venue_list.length-1].data,
-	//	      'accepted': true});
 	getInitialLocation(true);
     });
 
     $("#button_accept").click(function() {
-	// $("#button_accept").html("Get Next");
-	// $("#button_try_another").show();
-	history.push({'venue' : venue_list[venue_list.length-1].data,
-		      'accepted': true});
+	if( venue_list.length > 1 ) {
+	    history.push({'venue' : venue_list[venue_list.length-1].data,
+			  'accepted': true});
+	}
 	getNextLocation(true);
     });
 
@@ -690,12 +685,15 @@ $(document).ready(function() {
 	getNextLocation(false);
     });
 
+    /*
     $("#address_searchbar_form input").keypress(function (e) {
 	if ((e.which && e.which == 13) || (e.keyCode && e.keyCode == 13)) {
-	    var geocoder = new google.maps.Geocoder();
+
 	    var address = $("#address_searchbar").val();
 	    $("#address_searchbar").val('');
 	    var query = { 'address': address, 'region' : 'US',  'bounds': manhattan_bounds};
+
+	    var geocoder = new google.maps.Geocoder();
 	    geocoder.geocode(query, function(results, status) {
 		if (status == google.maps.GeocoderStatus.OK) { 
 		    console.log("Got location for address: " + address);
@@ -710,13 +708,14 @@ $(document).ready(function() {
 	    return false;
 	}
     });
-    
+    */
+
+    $("#address_searchbar_form input").keypress(searchbarInput); //function (e) {
+
     $(document).on("click", ".button_remove", function(evt) {
 	console.log("Button Click");
 	console.log(evt.target);
 	removeVenueWithButton(evt.target);
-	//var button_id = $(evt.target).attr('id');
-	//removeVenueWithButtonId(button_id);
     });
 
 });

@@ -12,19 +12,19 @@ var clickable = false;
 var word_bubbles = new bubble_plot("#vis", 700, 300);
 var choices = new Array();
 
-var bounds = new google.maps.LatLngBounds(new google.maps.LatLng(40.69886076226103,
-								 -74.02656555175781), 
-					  new google.maps.LatLng(40.8826309751934,
-								 -73.90296936035156));
+var manhattan_bounds = new google.maps.LatLngBounds(
+    new google.maps.LatLng(40.69886076226103,
+			   -74.02656555175781), 
+    new google.maps.LatLng(40.8826309751934,
+			   -73.90296936035156)
+);
 
-
-
-var marker_colors = [/*'66FF99', 'FF0000', '33CCFF', '666633',*/ 'CC3300', 'FFCC33', /*'CC0033',*/ 
-    'FF33CC', '00FFFF', 'FFFFFF', '990066', '006699', '33FFCC', '99FF66', '336666', 
-    'CC66CC', 'FF6699', '00CC33', '996600', 'FF00FF', '9999CC', '663366', '6699FF', 
-    '993333', '99CC99', '0000FF', 'CCFF33', 'FF9966', '66CCCC', '3300CC', '0033CC', 
-    '33CC00', 'FFFF00', '339933', '00FF00', '669900', 'CC9999', 'CCCC66', '333399', 
-    '9966FF', 'CC33FF', '660099', '009966']
+var marker_colors = ['CC3300', 'FFCC33', 'FF33CC', '00FFFF', 'FFFFFF', '990066', '006699', 
+		     '33FFCC', '99FF66', '336666', 'CC66CC', 'FF6699', '00CC33', '996600', 
+		     'FF00FF', '9999CC', '663366', '6699FF', '993333', '99CC99', '0000FF', 
+		     'CCFF33', 'FF9966', '66CCCC', '3300CC', '0033CC', '33CC00', 'FFFF00', 
+		     '339933', '00FF00', '669900', 'CC9999', 'CCCC66', '333399', '9966FF', 
+		     'CC33FF', '660099', '009966']
 
 
 function createMarker(idx) {
@@ -32,25 +32,24 @@ function createMarker(idx) {
 
     var pinColor = marker_colors[ idx % marker_colors.length];
 
-    // var pinColor = "FE7569";
-//    var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + pinColor,
     var pinImage = new google.maps.MarkerImage("/static/markers/marker_" + pinColor + ".png",
 					       new google.maps.Size(21, 34),
 					       new google.maps.Point(0,0),
 					       new google.maps.Point(10, 34));
 
-//    var pinShadow = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_shadow",
     var pinShadow = new google.maps.MarkerImage("/static/markers/map_pin_shadow.png",
 						new google.maps.Size(40, 37),
 						new google.maps.Point(0, 0),
 						new google.maps.Point(12, 35));
-    
-    return [pinImage, pinShadow] //"/static/markers/" + color + ".png"; 
-    
+    return [pinImage, pinShadow]
 }
 
 
-// Venue class
+/**
+* Class venue
+* Stores information about each venue that
+* must be coherent across the pages
+*/
 function venue(data) {
 
     var self = this;
@@ -83,23 +82,22 @@ function venue(data) {
 
 }
 
-
+/**
+* Remove the marker frm the map and
+* remove the row from the table
+*/
 venue.prototype.clear = function() {
-
-    // Remove the marker from the map
     this.marker.setMap(null);
-    //$("#right_column").hide();
-    // Remove the entry from the table    
     if( this.table_row != null ) {
-	console.log("Removing table entry");
 	this.table_row.remove();
     }
 }
 
-
-// http://maps.googleapis.com/maps/api/directions/json?origin=Boston,MA&destination=Concord,MA&waypoints=Charlestown,MA|Lexington,MA&sensor=false
-
-
+/**
+* Create a path between the supplied last
+* point and this venue's point using the
+* google Direction api
+*/
 venue.prototype.add_path = function(last_point, callback) {
     var self = this;
     var service = new google.maps.DirectionsService();
@@ -110,8 +108,6 @@ venue.prototype.add_path = function(last_point, callback) {
     }, function(result, status) {
 	if (status == google.maps.DirectionsStatus.OK) {
 	    var new_path = result.routes[0].overview_path;
-	    console.log("Found Path:");
-	    console.log(result);
 	    self.path = new_path;
 	    updatePath();
 
@@ -527,7 +523,7 @@ function submitToServer(api, data) {
 
 	word_bubbles = new bubble_plot("#vis", 700, 300);
 	word_bubbles.draw(word_list);
-	
+
 	$("#venue_list").show();
     }
     
@@ -574,6 +570,28 @@ function rejectLastPoint() {
     console.log(last_venue);
     last_venue.clear();
     rejected_locations.push(last_venue.data);
+}
+
+
+function searchbarInput(e) {
+    if ((e.which && e.which == 13) || (e.keyCode && e.keyCode == 13)) {
+	var geocoder = new google.maps.Geocoder();
+	var address = $("#address_searchbar").val();
+	$("#address_searchbar").val('');
+	var query = { 'address': address, 'region' : 'US',  'bounds': manhattan_bounds};
+	geocoder.geocode(query, function(results, status) {
+	    if (status == google.maps.GeocoderStatus.OK) { 
+		console.log("Got location for address: " + address);
+		var latlon = results[0]['geometry']['location'];
+		beginChain(latlon, address);
+		map.setCenter(latlon);
+	    }
+	    else {
+		console.log("Couldn't get location of: " + address);
+	    }
+	});
+	return false;
+    }
 }
 
 
@@ -627,27 +645,25 @@ $(document).ready(function() {
     });
 
 
-    $(function() {
-        $("#address_searchbar_form input").keypress(function (e) {
-	    if ((e.which && e.which == 13) || (e.keyCode && e.keyCode == 13)) {
-		var geocoder = new google.maps.Geocoder();
-		var address = $("#address_searchbar").val();
-		$("#address_searchbar").val('');
-		var query = { 'address': address, 'region' : 'US',  'bounds': bounds};
-		geocoder.geocode(query, function(results, status) {
-		    if (status == google.maps.GeocoderStatus.OK) { 
-			console.log("Got location for address: " + address);
-			var latlon = results[0]['geometry']['location'];
-			beginChain(latlon, address);
-			map.setCenter(latlon);
-		    }
-		    else {
-			console.log("Couldn't get location of: " + address);
-		    }
-		});
-		return false;
-	    }
-	});
+    $("#address_searchbar_form input").keypress(function (e) {
+	if ((e.which && e.which == 13) || (e.keyCode && e.keyCode == 13)) {
+	    var geocoder = new google.maps.Geocoder();
+	    var address = $("#address_searchbar").val();
+	    $("#address_searchbar").val('');
+	    var query = { 'address': address, 'region' : 'US',  'bounds': manhattan_bounds};
+	    geocoder.geocode(query, function(results, status) {
+		if (status == google.maps.GeocoderStatus.OK) { 
+		    console.log("Got location for address: " + address);
+		    var latlon = results[0]['geometry']['location'];
+		    beginChain(latlon, address);
+		    map.setCenter(latlon);
+		}
+		else {
+		    console.log("Couldn't get location of: " + address);
+		}
+	    });
+	    return false;
+	}
     });
     
     $(document).on("click", ".button_remove", function(evt) {

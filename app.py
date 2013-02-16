@@ -52,14 +52,6 @@ app = Flask(__name__)
 def index():
     return render_template('index.html')
 
-@app.route('/bubble')
-def bubble():
-    return render_template('bubble.html')
-
-@app.route('/cloud')
-def cloud():
-    return render_template('cloud.html')
-
 @app.route('/slides')
 def slides():
     return render_template('slides.html')

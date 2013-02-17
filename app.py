@@ -315,11 +315,11 @@ def get_next_location(current_chain, history, user_vector=None):
     print "Getting Total Probability"
     total_probability = 0.0
 
-    weights = {}
+    weight_results = {}
     for location in proposed_locations:
         weight_result = mc_weight(location, current_location, user_vector, history)
         total_probability += weight_result.probability
-        weights[location['nymag']['name']] = weight_result
+        weight_results[location['nymag']['name']] = weight_result
 
 #    for location in proposed_locations:
 #        weight_result = mc_weight(location, current_location, user_vector, history)
@@ -336,8 +336,20 @@ def get_next_location(current_chain, history, user_vector=None):
 
         for location in proposed_locations:
             weight_result = mc_weight(location, current_location, user_vector, history)
+            weight_results[location['nymag']['name']] = weight_result
             total_probability += weight_result.probability
-            weights[location['nymag']['name']] = weight_result
+
+
+    # Get the locations with the highest weight
+    # We will choose from these
+    closest = [(location, weight_results[location['nymag']['name']].probability) 
+               for location in proposed_locations]
+    closest.sort(key=lambda x: x[1], reverse=True)
+    print "Closest Bars: "
+    print closest[:5]
+
+    # Pick only the top 5
+    proposed_locations = [location for (location, weight) in closest][:5]
 
     # Calculate the weight function
     print "Running MC"
@@ -347,8 +359,7 @@ def get_next_location(current_chain, history, user_vector=None):
         if mc_steps % 1000 == 0:
             print "MC Step: ", mc_steps
         proposed = random.choice(proposed_locations)
-        #weight_result = mc_weight(proposed, current_location, user_vector)
-        weight_result = weights[proposed['nymag']['name']]
+        weight_result = weight_results[proposed['nymag']['name']]
         weight_result.probability /= total_probability
         mc_throw = random.uniform(0.0, 1.0)
         if weight_result.probability > mc_throw:

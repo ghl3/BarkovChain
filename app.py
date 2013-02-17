@@ -44,9 +44,6 @@ lsi, corpus_lsi_tfidf, lsi_index = load_lsi()
 mongo_db, mongo_connection = connect_to_database(table_name="barkov_chain")
 
 app = Flask(__name__)
-#app.config['SECRET_KEY'] = 'asd'
-#from flask.ext.debugtoolbar import DebugToolbarExtension
-#toolbar = DebugToolbarExtension(app)
 
 @app.route('/')
 def index():
@@ -72,7 +69,6 @@ def api_initial_location():
     location dict, the id in the database, and the
     updated user preference vector:
 
-    { 'location' : {'_id' : id, ...}, 'user_vector' : [...]}
     """
 
     if 'json' not in request.headers['Content-Type']:
@@ -85,13 +81,6 @@ def api_initial_location():
     marker_location['initial'] = True
     current_chain = [marker_location]
     next_location = get_next_location(current_chain, history=[])
-
-    # Update the user vector
-    #print "Updating the User Vector"
-    #bar_index = bar_idx_map[next_location['nymag']['name']]
-    #initial_user_vector = [var for idx, var in corpus_lsi_tfidf[bar_index]]
-    #print "Created Initial User Vector: ", 
-    #print initial_user_vector
 
     # Return the data
     print "Returning Data"
@@ -131,13 +120,7 @@ def api_next_location():
         return not_found()
 
     current_chain = request.json['chain']
-    #user_vector = request.json['user_vector']
     history = request.json['history']
-
-    # Update the user's semantic vector based on
-    # whether he accepted or rejected the last location
-    #print "Updating User Vector"
-    #user_vector = update_user_vector(user_vector, history, len(current_chain))
 
     # Get the next location, package it up
     # and send it to the client
@@ -205,8 +188,6 @@ def format_location(db_entry):
     data_for_app['location']['_id'] = str(db_entry['_id'])
     data_for_app['location']['nymag'] = db_entry['nymag']
     data_for_app['location']['foursquare'] = db_entry['foursquare']
-
-    #data_for_app['user_vector'] = user_vector
     #data_for_app['user_words'] = important_words(lsi, user_vector, 15)
 
     data_json = json.dumps(data_for_app, default=json_util.default)
@@ -237,7 +218,6 @@ class weight(object):
         for csn in self.cosine[1]:
             repr_str += "%.4s," % csn
         repr_str += ") = %.7s," % self.pdf_cosine
-#        %.7s] = %.7s, " % (self.cosine, )
         repr_str += "Critics Pic: %s" % self.critics_pic
         repr_str += ")"
         return repr_str
@@ -328,11 +308,6 @@ def get_next_location(current_chain, history):
         db_query.update(updated_distance)
         proposed_locations = list(bars.find(db_query))
 
-        #for location in proposed_locations:
-        #    weight_result = mc_weight(location, current_location, user_vector, history)
-        #    weight_results[location['nymag']['name']] = weight_result
-        #    total_probability += weight_result.probability
-
     # Get the weights for the nearby locations
     weight_results = {}
     for location in proposed_locations:
@@ -344,8 +319,6 @@ def get_next_location(current_chain, history):
     for location in proposed_locations:
         weight_result = weight_results[location['nymag']['name']]
         closest.append((location, weight_result.pdf_cosine, weight_result.probability))
-    #closest = [(location, weight_results[location['nymag']['name']].probability) 
-    #           for location in proposed_locations]
     closest.sort(key=lambda x: (x[1], x[2]), reverse=True)
 
     # Pick only the top 5
@@ -353,17 +326,11 @@ def get_next_location(current_chain, history):
     print "Closest Locations: "
     print [location['nymag']['name'] for location in proposed_locations]
 
-
+    # Get the normalization factor
     total_probability = 0.0
     for location in proposed_locations:
         weight_result = weight_results[location['nymag']['name']]
         total_probability += weight_result.probability
-
-#    for location in proposed_locations:
-#        weight_result = mc_weight(location, current_location, user_vector, history)
-#        total_probability += weight_result.probability
-    # Get the locations with the highest weight
-    # We will choose from these
 
     # Calculate the weight function
     print "Running MC"
@@ -380,8 +347,6 @@ def get_next_location(current_chain, history):
             print "Monte Carlo Converged after %s throws: " % mc_steps,
             print weight_result
             print "Words in Selected: ", weight_result.words
-            #if user_vector:
-            #    print "User Vector: ", ["%.5f" % val for val in user_vector]
             return proposed
 
     return None
@@ -403,13 +368,12 @@ def mc_weight(proposed, current, history):
     result.probability = 1.0
 
     name = proposed['nymag']['name']
-    initial = False if len(history) > 0 else True #current.get('initial', False)
+    initial = False if len(history) > 0 else True
 
     #
     # To Do: favor linear paths
     #
     result.distance = distance_dr(proposed['nymag'], current)
-    #result.pdf_distance = exponential_distribution(result.distance, 300) # size is 100 meters
     result.pdf_distance = scipy.stats.expon.pdf(result.distance, scale=300) # size is 100 meters
     result.probability *= result.pdf_distance
 
@@ -466,11 +430,6 @@ def mc_weight(proposed, current, history):
                 else:
                     cosines_bad.append(csn)
 
-            #ave_cosine_good = sum(cosines_good) / len(cosines_good) if len(cosines_good)>0 else 0.0
-            #ave_cosine_bad = sum(cosines_bad) / len(cosines_bad)if len(cosines_bad)>0 else 0.0
-            #print "Average Cosine to Good ", ave_cosine_good #sum(cosines_good) / len(cosines_good)
-            #print "Average Cosine to Bad ", ave_cosine_bad #sum(cosines_bad) / len(cosines_bad)
-
             ave_cosine_good = sum(cosines_good)/len(cosines_good) if len(cosines_good)>0 else 0.0
             ave_cosine_bad = sum(cosines_bad)/len(cosines_bad) if len(cosines_bad)>0 else 0.0
             print "Ave Cosine to Good ", ave_cosine_good #sum(cosines_good) / len(cosines_good)
@@ -482,73 +441,16 @@ def mc_weight(proposed, current, history):
                 result.pdf_cosine *= sigmoid(ave_cosine_good)
             for csn in cosines_bad:
                 result.pdf_cosine *= sigmoid(-1*ave_cosine_bad)
-            
-            #user_array = numpy.array(user_vector)
-            #proposed_bar_idx = bar_idx_map[name]
-            #sims = lsi_index[user_array]
-            #result.cosine = sims[proposed_bar_idx]
             result.words = [dictionary[pair[0]] for pair in corpus[proposed_bar_idx]]
+
         except:
             print "Cosine Error"
             raise
 
-        # We here directly use the cosine as the pdf, but one
-        # could be smarter about this
-        # similarity_pdf = scipy.stats.expon.pdf(cosine+1.0, scale=0.001)
-
-        #if cosine <= 0.5:
-        #    similarity_pdf = 0.0
-        #else:
-        #    similarity_pdf = cosine
         result.probability *= result.pdf_cosine
-
-    # Return a weight object
-    #result.probability = probability
-    #result.distance = distance
-    #result.cosine = cosine
-    #result.critics_pic = critics_pic
 
     return result
 
-
-# def update_user_vector(user_vector, history, chain_length):
-#     """
-#     Update the user's vector 
-#     based on whether he accepted the last location
-#     The size of the update is based on how many 
-#     entries in the chain that we've had so far
-#     """
-
-#     # The first point in the history has no semantic information
-#     #history = history[1:]
-
-#     print "Updating User Vector", user_vector
-#     #print "Based on: ", [(location['venue']['name'], location['accepted'])
-#     #                     for location in history]
-
-#     #last_loc_array = lsa.get_svd_document_vector(last_loc_name)
-#     user_array = numpy.array(user_vector)
-#     beta = (.5)**chain_length
-
-#     for location in history:
-
-#         venue = location['venue']
-#         accepted = location['accepted']
-
-#         #print "Accepted last location: %s:" % accepted, venue['name']
-
-#         # Get the vector of the last location
-#         venue_name = venue['name']
-#         bar_index = bar_idx_map[venue_name]
-#         venue_array = [var for idx, var in corpus_lsi_tfidf[bar_index]]
-
-#         user_array = update_vector(user_array, venue_array, 
-#                                    accepted, beta)
-
-#     print "Updated Vector: ", user_array
-
-#     return list(user_array)
-    
 
 def distance_dr(loc0, loc1):
     """

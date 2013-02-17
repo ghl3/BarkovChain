@@ -446,6 +446,7 @@ function clearChain() {
 	venue_list[i].clear();
     }
     venue_list.length = 0;
+    history.length = 0;
 
     if( current_path != null ) current_path.setMap(null);
     current_path = null;
@@ -513,7 +514,7 @@ function getNextLocation() {
     var data = {'chain' : venue_chain,
 		'user_vector' : current_user_vector,
 		'history' : history};
-    
+
     submitToServer('/api/next_location', data);
 }
 
@@ -695,15 +696,21 @@ $(document).ready(function() {
     $("#button_accept").click(function() {
 	if( venue_list.length > 1 ) {
 	    addToHistory(venue_list[venue_list.length-1], true);
-	    //history.push({'venue' : venue_list[venue_list.length-1].data,
-	//		  'accepted': true});
 	}
-	getNextLocation(true);
+	getNextLocation();
     });
 
     $("#button_try_another").click(function() {
-	rejectLastPoint();
-	getNextLocation(false);
+	//rejectLastPoint();
+	if( venue_list.length > 1 ) {
+	    //addToHistory(venue_list[venue_list.length-1], false);
+	    var last_venue = venue_list.pop();
+	    last_venue.clear();
+	    addToHistory(last_venue, false);
+	}
+	console.log("Trying Another - History:");
+	console.log(history);
+	getNextLocation();
     });
 
     /*

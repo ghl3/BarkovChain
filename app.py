@@ -230,7 +230,14 @@ class weight(object):
         repr_str += "Probability = %.5s " % self.probability
         repr_str += "("
         repr_str += "Distance: pdf[%.5s m] = %.7s, " % (self.distance, self.pdf_distance)
-        repr_str += "Cosine: pdf[%.7s] = %.7s, " % (self.cosine, self.pdf_cosine)
+        repr_str += "Cosine: pdf[("
+        for csn in self.cosine[0]:
+            repr_str += "%.4s," % csn
+        repr_str += "), ("
+        for csn in self.cosine[1]:
+            repr_str += "%.4s," % csn
+        repr_str += ") = %.7s," % self.pdf_cosine
+#        %.7s] = %.7s, " % (self.cosine, )
         repr_str += "Critics Pic: %s" % self.critics_pic
         repr_str += ")"
         return repr_str
@@ -333,14 +340,20 @@ def get_next_location(current_chain, history, user_vector=None):
         weight_results[location['nymag']['name']] = weight_result
 
     # Pick the highest weighted locations
-    closest = [(location, weight_results[location['nymag']['name']].probability) 
-               for location in proposed_locations]
-    closest.sort(key=lambda x: x[1], reverse=True)
+    closest = []
+    for location in proposed_locations:
+        weight_result = weight_results[location['nymag']['name']]
+        closest.append((location, weight_result.pdf_cosine, weight_result.probability))
+    #closest = [(location, weight_results[location['nymag']['name']].probability) 
+    #           for location in proposed_locations]
+    closest.sort(key=lambda x: (x[1], x[2]), reverse=True)
 
     # Pick only the top 5
-    proposed_locations = [location for (location, weight) in closest][:5]
+    proposed_locations = [location for (location, weight, pdf) in closest][:5]
+    print "Closest Locations: "
+    print [location['nymag']['name'] for location in proposed_locations]
 
-    print "Getting Total Probability"
+
     total_probability = 0.0
     for location in proposed_locations:
         weight_result = weight_results[location['nymag']['name']]
@@ -390,7 +403,7 @@ def mc_weight(proposed, current, user_vector, history):
     result.probability = 1.0
 
     name = proposed['nymag']['name']
-    initial = current.get('initial', False)
+    initial = False if len(history) > 0 else True #current.get('initial', False)
 
     #
     # To Do: favor linear paths
@@ -409,24 +422,46 @@ def mc_weight(proposed, current, user_vector, history):
         
     # Get the lsa cosine, but only if this isn't
     # the initial marker
-    result.cosine = None #None
-    result.pdf_cosine = 1.0# cosine = None #None
+    result.cosine = [[], []] #None
+    result.pdf_cosine = 1.0 # cosine = None #None
     if not initial:
         try:
+
+            good_bars = []
+            bad_bars = []
+            for location in history:
+                location_name = location['venue']['name']
+                if location['accepted']:
+                    good_bars.append(location_name)
+                else:
+                    bad_bars.append(location_name)
+
+            print "Good Bars: ",
+            for bar in good_bars: print bar,
+            print ''
+                        
+            print "Bad Bars: ",
+            for bar in bad_bars: print bar,
+            print ''
+
+            # Get the index of the proposed bar
+            proposed_bar_idx = bar_idx_map[name]   
+            proposed_bar_vec = corpus_lsi_tfidf[proposed_bar_idx]
+
             # User vector lives in the lsa[tfidf] space
             cosines_good = []
             cosines_bad = []
+
             for location in history:
+
                 location_name = location['venue']['name']
                 bar_index = bar_idx_map[location_name]
                 vec = corpus_lsi_tfidf[bar_index]
-
-                proposed_bar_idx = bar_idx_map[name]                    
-                proposed_bar_vec = corpus_lsi_tfidf[proposed_bar_idx]                    
-
                 csn = cosine(vec, proposed_bar_vec)
-
-                if location['accepted']:
+                accepted = True if location['accepted'] else False
+                print "%s, accepted = %s, cosine = %s" % (location_name, accepted, csn)
+                
+                if accepted:
                     cosines_good.append(csn)
                 else:
                     cosines_bad.append(csn)
@@ -436,19 +471,22 @@ def mc_weight(proposed, current, user_vector, history):
             #print "Average Cosine to Good ", ave_cosine_good #sum(cosines_good) / len(cosines_good)
             #print "Average Cosine to Bad ", ave_cosine_bad #sum(cosines_bad) / len(cosines_bad)
 
-            max_cosine_good = max(cosines_good) if len(cosines_good)>0 else 0.0
-            max_cosine_bad = max(cosines_bad) if len(cosines_bad)>0 else 0.0
-            print "Max Cosine to Good ", max_cosine_good #sum(cosines_good) / len(cosines_good)
-            print "Max Cosine to Bad ", max_cosine_bad #sum(cosines_bad) / len(cosines_bad)
+            ave_cosine_good = sum(cosines_good)/len(cosines_good) if len(cosines_good)>0 else 0.0
+            ave_cosine_bad = sum(cosines_bad)/len(cosines_bad) if len(cosines_bad)>0 else 0.0
+            print "Ave Cosine to Good ", ave_cosine_good #sum(cosines_good) / len(cosines_good)
+            print "Ave Cosine to Bad ", ave_cosine_bad #sum(cosines_bad) / len(cosines_bad)
             
-            result.cosine = max_cosine_good - max_cosine_bad 
-            result.pdf_cosine = sigmoid(result.cosine)
-            #(result.cosine+1.0)/(2.0)*(result.cosine+1.0)/(2.0)
-
+            result.cosine = [cosines_good, cosines_bad] #ave_cosine_good - ave_cosine_bad 
+            result.pdf_cosine = 1.0
+            for csn in cosines_good:
+                result.pdf_cosine *= sigmoid(ave_cosine_good)
+            for csn in cosines_bad:
+                result.pdf_cosine *= sigmoid(-1*ave_cosine_bad)
+            
             user_array = numpy.array(user_vector)
-            sims = lsi_index[user_array]
-            proposed_bar_idx = bar_idx_map[name]
-            result.cosine = sims[proposed_bar_idx]
+            #proposed_bar_idx = bar_idx_map[name]
+            #sims = lsi_index[user_array]
+            #result.cosine = sims[proposed_bar_idx]
             result.words = [dictionary[pair[0]] for pair in corpus[proposed_bar_idx]]
         except:
             print "Cosine Error"
@@ -485,32 +523,8 @@ def update_user_vector(user_vector, history, chain_length):
     #history = history[1:]
 
     print "Updating User Vector", user_vector
-    print "Based on: ", [(location['venue']['name'], location['accepted'])
-                         for location in history]
-
-    good_bars = []
-    bad_bars = []
-    for location in history:
-        name = location['venue']['name']
-        #data = location['venue']
-        bar_index = bar_idx_map[name]
-        vec = corpus_lsi_tfidf[bar_index]
-
-        if location['accepted']:
-            good_bars.append((name, vec))
-        else:
-            bad_bars.append((name, vec))
-
-    #good_bars = [lcorpus_lsi_tfidf[bar_idx_map[location['venue']['name']]] for venue in history[1:]
-    #             if location['accepted'] == True]
-    #
-    #bad_bars = [corpus_lsi_tfidf[bar_idx_map[location['venue']['name']]] for venue in history[1:]
-    #            if location['accepted'] == False]
-
-    print "Good Bars: "
-    for bar in good_bars: print bar
-    print "Bad Bars: "
-    for bar in bad_bars: print bar
+    #print "Based on: ", [(location['venue']['name'], location['accepted'])
+    #                     for location in history]
 
     #last_loc_array = lsa.get_svd_document_vector(last_loc_name)
     user_array = numpy.array(user_vector)
@@ -521,7 +535,7 @@ def update_user_vector(user_vector, history, chain_length):
         venue = location['venue']
         accepted = location['accepted']
 
-        print "Accepted last location: %s:" % accepted, venue['name']
+        #print "Accepted last location: %s:" % accepted, venue['name']
 
         # Get the vector of the last location
         venue_name = venue['name']

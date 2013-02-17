@@ -312,20 +312,7 @@ def get_next_location(current_chain, history, user_vector=None):
 
     # If we didn't grab enough locations,
     # try a larger search block
-    print "Getting Total Probability"
-    total_probability = 0.0
-
-    weight_results = {}
-    for location in proposed_locations:
-        weight_result = mc_weight(location, current_location, user_vector, history)
-        total_probability += weight_result.probability
-        weight_results[location['nymag']['name']] = weight_result
-
-#    for location in proposed_locations:
-#        weight_result = mc_weight(location, current_location, user_vector, history)
-#        total_probability += weight_result.probability
-
-    while (len(proposed_locations) < 5 or total_probability <= 0.000001):
+    while (len(proposed_locations) < 5):
         print "Too few nearby locations found within %s blocks (%s)." \
             % (blocks, len(proposed_locations))
         blocks *= 2
@@ -334,22 +321,36 @@ def get_next_location(current_chain, history, user_vector=None):
         db_query.update(updated_distance)
         proposed_locations = list(bars.find(db_query))
 
-        for location in proposed_locations:
-            weight_result = mc_weight(location, current_location, user_vector, history)
-            weight_results[location['nymag']['name']] = weight_result
-            total_probability += weight_result.probability
+        #for location in proposed_locations:
+        #    weight_result = mc_weight(location, current_location, user_vector, history)
+        #    weight_results[location['nymag']['name']] = weight_result
+        #    total_probability += weight_result.probability
 
+    # Get the weights for the nearby locations
+    weight_results = {}
+    for location in proposed_locations:
+        weight_result = mc_weight(location, current_location, user_vector, history)
+        weight_results[location['nymag']['name']] = weight_result
 
-    # Get the locations with the highest weight
-    # We will choose from these
+    # Pick the highest weighted locations
     closest = [(location, weight_results[location['nymag']['name']].probability) 
                for location in proposed_locations]
     closest.sort(key=lambda x: x[1], reverse=True)
-    print "Closest Bars: "
-    print closest[:5]
 
     # Pick only the top 5
     proposed_locations = [location for (location, weight) in closest][:5]
+
+    print "Getting Total Probability"
+    total_probability = 0.0
+    for location in proposed_locations:
+        weight_result = weight_results[location['nymag']['name']]
+        total_probability += weight_result.probability
+
+#    for location in proposed_locations:
+#        weight_result = mc_weight(location, current_location, user_vector, history)
+#        total_probability += weight_result.probability
+    # Get the locations with the highest weight
+    # We will choose from these
 
     # Calculate the weight function
     print "Running MC"
@@ -439,7 +440,6 @@ def mc_weight(proposed, current, user_vector, history):
             max_cosine_bad = max(cosines_bad) if len(cosines_bad)>0 else 0.0
             print "Max Cosine to Good ", max_cosine_good #sum(cosines_good) / len(cosines_good)
             print "Max Cosine to Bad ", max_cosine_bad #sum(cosines_bad) / len(cosines_bad)
-
             
             result.cosine = max_cosine_good - max_cosine_bad 
             result.pdf_cosine = sigmoid(result.cosine)

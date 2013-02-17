@@ -480,10 +480,10 @@ def update_user_vector(user_vector, history, chain_length):
     #bad_bars = [corpus_lsi_tfidf[bar_idx_map[location['venue']['name']]] for venue in history[1:]
     #            if location['accepted'] == False]
 
-    #print "Good Bars: ", sum(good_bars)/len(good_bars)
-    #for bar in good_bars: print bar
-    #print "Bad Bars: ", sum(bad_bars)/len(bad_bars)
-    #for bar in bad_bars: print bar
+    print "Good Bars: "
+    for bar in good_bars: print bar
+    print "Bad Bars: "
+    for bar in bad_bars: print bar
 
     #last_loc_array = lsa.get_svd_document_vector(last_loc_name)
     user_array = numpy.array(user_vector)

@@ -29,7 +29,7 @@ import scipy.stats
 from math import pi
 from math import tan                
 
-from semantic import load_corpus, load_lsi
+from semantic import load_corpus, load_lsi, cosine
 from semantic import update_vector, important_words
 
 from assets import gather_assets
@@ -394,10 +394,30 @@ def mc_weight(proposed, current, user_vector, history):
         
     # Get the lsa cosine, but only if this isn't
     # the initial marker
-    result.cosine = None
+    result.cosine = [] #None
     if not initial:
         try:
             # User vector lives in the lsa[tfidf] space
+            distances_to_good = []
+            distances_to_bad = []
+            for location in history:
+                location_name = location['venue']['name']
+                bar_index = bar_idx_map[location_name]
+                vec = corpus_lsi_tfidf[bar_index]
+
+                proposed_bar_idx = bar_idx_map[name]                    
+                proposed_bar_vec = corpus_lsi_tfidf[proposed_bar_idx]                    
+
+                csn = cosine(vec, proposed_bar_vec)
+
+                if location['accepted']:
+                    distances_to_good.append(csn)
+                else:
+                    distances_to_bad.append(csn)
+
+            print "Distances to Good ", distances_to_good
+            print "Distances to Bad ", distances_to_bad
+
             user_array = numpy.array(user_vector)
             sims = lsi_index[user_array]
             proposed_bar_idx = bar_idx_map[name]

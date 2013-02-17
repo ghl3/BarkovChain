@@ -1,32 +1,14 @@
 
 // Global Variables
 var map = null;
-//var marker = null;
-
-// The current venue list
 var venue_list = new Array();
-
-// Consider putting these into
-// a 'state' object
 var current_path = null;
-//var current_user_vector = null;
 var _lastIndex = 0;
 var clickable = false;
+var history = new Array();
 
 // Remove this
-var word_bubbles = new bubble_plot("#vis", 700, 300);
-
-// Merge 'rejected locations' and 'choices'
-// into a single 'history' object
-
-// The history object is a list of past location dicts
-// that were either accepted or rejected:
-// history = [ {dict: {}, accepted: true},
-//             {dict: {}, accepted: false},
-//           ... ]
-//var history = new Array();
-//var rejected_locations = new Array();
-var history = new Array();
+// var word_bubbles = new bubble_plot("#vis", 700, 300);
 
 function addToHistory(venue, accepted) {
 
@@ -293,9 +275,6 @@ function removeVenueWithButton(button) {
 	    var venue = venue_list[i];
 	    var original_length = venue_list.length;
 	    addToHistory(venue, false);
-	    //var choice = {'venue' : venue.data, 'accepted' : false};
-	    //history.push(choice);
-	    //rejected_locations.push(venue.data);
 	    venue.clear();
 	    venue_list.splice(i, 1);
 	    updatePath();
@@ -512,7 +491,6 @@ function getNextLocation() {
     }
     
     var data = {'chain' : venue_chain,
-//		'user_vector' : current_user_vector,
 		'history' : history};
 
     submitToServer('/api/next_location', data);
@@ -576,8 +554,6 @@ function submitToServer(api, data) {
 	$("#button_try_another").show();
 	$("#button_initial").hide();
 	$("#right_column").show();
-
-	//if (success instanceof Function) { success(); }
     }
     
     function errorCallback(data) {
@@ -602,27 +578,6 @@ function submitToServer(api, data) {
     
     console.log("Sent 'next_location' request to server. Waiting...");    
 }
-
-
-/**
- * Remove the last restaurant from
- * the current chain 
- * Add this chain to the history.
- */
-function rejectLastPoint() {
-    if(clickable == false) {
-	console.log("Cannot Click Yet");
-	return;
-    }
-
-    var last_venue = venue_list.pop();
-    console.log("Rejecting last point (length = " + venue_list.length);
-    console.log(last_venue);
-    last_venue.clear();
-    //history.push({'venue': last_venue.data, 'accepted' : false});
-    addToHistory(last_venue, false);
-}
-
 
 /**
  * Take the contents of the searchbar
@@ -702,9 +657,7 @@ $(document).ready(function() {
     });
 
     $("#button_try_another").click(function() {
-	//rejectLastPoint();
 	if( venue_list.length > 1 ) {
-	    //addToHistory(venue_list[venue_list.length-1], false);
 	    var last_venue = venue_list.pop();
 	    last_venue.clear();
 	    addToHistory(last_venue, false);
@@ -714,32 +667,7 @@ $(document).ready(function() {
 	getNextLocation();
     });
 
-    /*
-    $("#address_searchbar_form input").keypress(function (e) {
-	if ((e.which && e.which == 13) || (e.keyCode && e.keyCode == 13)) {
-
-	    var address = $("#address_searchbar").val();
-	    $("#address_searchbar").val('');
-	    var query = { 'address': address, 'region' : 'US',  'bounds': manhattan_bounds};
-
-	    var geocoder = new google.maps.Geocoder();
-	    geocoder.geocode(query, function(results, status) {
-		if (status == google.maps.GeocoderStatus.OK) { 
-		    console.log("Got location for address: " + address);
-		    var latlon = results[0]['geometry']['location'];
-		    beginChain(latlon, address);
-		    map.setCenter(latlon);
-		}
-		else {
-		    console.log("Couldn't get location of: " + address);
-		}
-	    });
-	    return false;
-	}
-    });
-    */
-
-    $("#address_searchbar_form input").keypress(searchbarInput); //function (e) {
+    $("#address_searchbar_form input").keypress(searchbarInput); 
 
     $(document).on("click", ".button_remove", function(evt) {
 	console.log("Button Click");

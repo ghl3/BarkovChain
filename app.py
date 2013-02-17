@@ -188,6 +188,9 @@ def not_found(error=None):
     return resp
 
 
+def sigmoid(x):
+    return 1 / (1 + math.exp(-x))
+
 def format_location(db_entry, user_vector):
     """
     Convert a db entry and a user vector
@@ -394,12 +397,13 @@ def mc_weight(proposed, current, user_vector, history):
         
     # Get the lsa cosine, but only if this isn't
     # the initial marker
-    result.cosine = [] #None
+    result.cosine = None #None
+    result.pdf_cosine = 1.0# cosine = None #None
     if not initial:
         try:
             # User vector lives in the lsa[tfidf] space
-            distances_to_good = []
-            distances_to_bad = []
+            cosines_good = []
+            cosines_bad = []
             for location in history:
                 location_name = location['venue']['name']
                 bar_index = bar_idx_map[location_name]
@@ -411,12 +415,24 @@ def mc_weight(proposed, current, user_vector, history):
                 csn = cosine(vec, proposed_bar_vec)
 
                 if location['accepted']:
-                    distances_to_good.append(csn)
+                    cosines_good.append(csn)
                 else:
-                    distances_to_bad.append(csn)
+                    cosines_bad.append(csn)
 
-            print "Distances to Good ", sum(distances_to_good) / len(distances_to_good)
-            print "Distances to Bad ", sum(distances_to_bad) / len(distances_to_good)
+            #ave_cosine_good = sum(cosines_good) / len(cosines_good) if len(cosines_good)>0 else 0.0
+            #ave_cosine_bad = sum(cosines_bad) / len(cosines_bad)if len(cosines_bad)>0 else 0.0
+            #print "Average Cosine to Good ", ave_cosine_good #sum(cosines_good) / len(cosines_good)
+            #print "Average Cosine to Bad ", ave_cosine_bad #sum(cosines_bad) / len(cosines_bad)
+
+            max_cosine_good = max(cosines_good) if len(cosines_good)>0 else 0.0
+            max_cosine_bad = max(cosines_bad) if len(cosines_bad)>0 else 0.0
+            print "Max Cosine to Good ", max_cosine_good #sum(cosines_good) / len(cosines_good)
+            print "Max Cosine to Bad ", max_cosine_bad #sum(cosines_bad) / len(cosines_bad)
+
+            
+            result.cosine = max_cosine_good - max_cosine_bad 
+            result.pdf_cosine = sigmoid(result.cosine)
+            #(result.cosine+1.0)/(2.0)*(result.cosine+1.0)/(2.0)
 
             user_array = numpy.array(user_vector)
             sims = lsi_index[user_array]
@@ -430,7 +446,7 @@ def mc_weight(proposed, current, user_vector, history):
         # We here directly use the cosine as the pdf, but one
         # could be smarter about this
         # similarity_pdf = scipy.stats.expon.pdf(cosine+1.0, scale=0.001)
-        result.pdf_cosine = (result.cosine+1.0)/(2.0)*(result.cosine+1.0)/(2.0)
+
         #if cosine <= 0.5:
         #    similarity_pdf = 0.0
         #else:

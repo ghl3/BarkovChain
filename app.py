@@ -415,8 +415,8 @@ def mc_weight(proposed, current, user_vector, history):
                 else:
                     distances_to_bad.append(csn)
 
-            print "Distances to Good ", distances_to_good
-            print "Distances to Bad ", distances_to_bad
+            print "Distances to Good ", sum(distances_to_good) / len(distances_to_good)
+            print "Distances to Bad ", sum(distances_to_bad) / len(distances_to_good)
 
             user_array = numpy.array(user_vector)
             sims = lsi_index[user_array]
@@ -479,10 +479,11 @@ def update_user_vector(user_vector, history, chain_length):
     #
     #bad_bars = [corpus_lsi_tfidf[bar_idx_map[location['venue']['name']]] for venue in history[1:]
     #            if location['accepted'] == False]
-    print "Good Bars: "
-    for bar in good_bars: print bar
-    print "Bad Bars: "
-    for bar in bad_bars: print bar
+
+    #print "Good Bars: ", sum(good_bars)/len(good_bars)
+    #for bar in good_bars: print bar
+    #print "Bad Bars: ", sum(bad_bars)/len(bad_bars)
+    #for bar in bad_bars: print bar
 
     #last_loc_array = lsa.get_svd_document_vector(last_loc_name)
     user_array = numpy.array(user_vector)

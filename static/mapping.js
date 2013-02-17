@@ -553,6 +553,12 @@ function submitToServer(api, data) {
 	word_bubbles.draw(word_list);
 
 	$("#venue_list").show();
+	$("#button_accept").show();
+	$("#button_try_another").show();
+	$("#button_initial").hide();
+	$("#right_column").show();
+
+	//if (success instanceof Function) { success(); }
     }
     
     function errorCallback(data) {
@@ -665,10 +671,6 @@ $(document).ready(function() {
     // Send an ajax request to the flask server
     // and get some info
     $("#button_initial").click(function() {
-	$("#button_accept").show();
-	$("#button_try_another").show();
-	$("#button_initial").hide();
-	$("#right_column").show();
 	getInitialLocation(true);
     });
 

@@ -311,22 +311,30 @@ def get_next_location(current_chain, history, user_vector=None):
     # try a larger search block
     print "Getting Total Probability"
     total_probability = 0.0
+
+    weights = {}
     for location in proposed_locations:
-        weight_result = mc_weight(location, current_location, user_vector)
+        weight_result = mc_weight(location, current_location, user_vector, history)
         total_probability += weight_result.probability
+        weights[location['nymag']['name']] = weight_result
+
+#    for location in proposed_locations:
+#        weight_result = mc_weight(location, current_location, user_vector, history)
+#        total_probability += weight_result.probability
 
     while (len(proposed_locations) < 5 or total_probability <= 0.000001):
         print "Too few nearby locations found within %s blocks (%s)." \
             % (blocks, len(proposed_locations))
-        blocks += 10
+        blocks *= 2
         updated_distance = get_lat_lon_square_query(current_location, blocks=blocks)
         print "Updated Distance: ", updated_distance
         db_query.update(updated_distance)
         proposed_locations = list(bars.find(db_query))
 
         for location in proposed_locations:
-            weight_result = mc_weight(location, current_location, user_vector)
+            weight_result = mc_weight(location, current_location, user_vector, history)
             total_probability += weight_result.probability
+            weights[location['nymag']['name']] = weight_result
 
     # Calculate the weight function
     print "Running MC"
@@ -336,7 +344,8 @@ def get_next_location(current_chain, history, user_vector=None):
         if mc_steps % 1000 == 0:
             print "MC Step: ", mc_steps
         proposed = random.choice(proposed_locations)
-        weight_result = mc_weight(proposed, current_location, user_vector)
+        #weight_result = mc_weight(proposed, current_location, user_vector)
+        weight_result = weights[proposed['nymag']['name']]
         weight_result.probability /= total_probability
         mc_throw = random.uniform(0.0, 1.0)
         if weight_result.probability > mc_throw:
@@ -356,7 +365,8 @@ def exponential_distribution(x, lam):
         return lam*exp(-1*lam*x)
     return 
 
-def mc_weight(proposed, current, user_vector):
+
+def mc_weight(proposed, current, user_vector, history):
     """ 
     Calculate the probability of jumping from current to proposed
     """

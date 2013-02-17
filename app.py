@@ -87,15 +87,15 @@ def api_initial_location():
     next_location = get_next_location(current_chain, history=[])
 
     # Update the user vector
-    print "Updating the User Vector"
-    bar_index = bar_idx_map[next_location['nymag']['name']]
-    initial_user_vector = [var for idx, var in corpus_lsi_tfidf[bar_index]]
-    print "Created Initial User Vector: ", 
-    print initial_user_vector
+    #print "Updating the User Vector"
+    #bar_index = bar_idx_map[next_location['nymag']['name']]
+    #initial_user_vector = [var for idx, var in corpus_lsi_tfidf[bar_index]]
+    #print "Created Initial User Vector: ", 
+    #print initial_user_vector
 
     # Return the data
     print "Returning Data"
-    data_for_app = format_location(next_location, initial_user_vector)
+    data_for_app = format_location(next_location)
     resp = Response(data_for_app, status=200, mimetype='application/json')
     return resp
 
@@ -131,21 +131,21 @@ def api_next_location():
         return not_found()
 
     current_chain = request.json['chain']
-    user_vector = request.json['user_vector']
+    #user_vector = request.json['user_vector']
     history = request.json['history']
 
     # Update the user's semantic vector based on
     # whether he accepted or rejected the last location
-    print "Updating User Vector"
-    user_vector = update_user_vector(user_vector, history, len(current_chain))
+    #print "Updating User Vector"
+    #user_vector = update_user_vector(user_vector, history, len(current_chain))
 
     # Get the next location, package it up
     # and send it to the client
     print "Getting Next Location"
-    next_location = get_next_location(current_chain, user_vector=user_vector, history=history)
+    next_location = get_next_location(current_chain, history=history)
 
     print "Formatting Location Dict"
-    data_for_app = format_location(next_location, user_vector)
+    data_for_app = format_location(next_location)
 
     print "Creating Response"
     resp = Response(data_for_app, status=200, mimetype='application/json')
@@ -191,7 +191,7 @@ def not_found(error=None):
 def sigmoid(x):
     return 1 / (1 + math.exp(-x))
 
-def format_location(db_entry, user_vector):
+def format_location(db_entry):
     """
     Convert a db entry and a user vector
     into the JSON to be sent to the app.
@@ -206,8 +206,8 @@ def format_location(db_entry, user_vector):
     data_for_app['location']['nymag'] = db_entry['nymag']
     data_for_app['location']['foursquare'] = db_entry['foursquare']
 
-    data_for_app['user_vector'] = user_vector
-    data_for_app['user_words'] = important_words(lsi, user_vector, 15)
+    #data_for_app['user_vector'] = user_vector
+    #data_for_app['user_words'] = important_words(lsi, user_vector, 15)
 
     data_json = json.dumps(data_for_app, default=json_util.default)
 
@@ -269,7 +269,7 @@ def get_lat_lon_square_query(current_location, blocks):
     return query
 
 
-def get_next_location(current_chain, history, user_vector=None):
+def get_next_location(current_chain, history):
     """
     Return the next location based on the user's current
     preference vector, his current location, and the list
@@ -336,7 +336,7 @@ def get_next_location(current_chain, history, user_vector=None):
     # Get the weights for the nearby locations
     weight_results = {}
     for location in proposed_locations:
-        weight_result = mc_weight(location, current_location, user_vector, history)
+        weight_result = mc_weight(location, current_location, history)
         weight_results[location['nymag']['name']] = weight_result
 
     # Pick the highest weighted locations
@@ -380,8 +380,8 @@ def get_next_location(current_chain, history, user_vector=None):
             print "Monte Carlo Converged after %s throws: " % mc_steps,
             print weight_result
             print "Words in Selected: ", weight_result.words
-            if user_vector:
-                print "User Vector: ", ["%.5f" % val for val in user_vector]
+            #if user_vector:
+            #    print "User Vector: ", ["%.5f" % val for val in user_vector]
             return proposed
 
     return None
@@ -394,7 +394,7 @@ def exponential_distribution(x, lam):
     return 
 
 
-def mc_weight(proposed, current, user_vector, history):
+def mc_weight(proposed, current, history):
     """ 
     Calculate the probability of jumping from current to proposed
     """
@@ -483,7 +483,7 @@ def mc_weight(proposed, current, user_vector, history):
             for csn in cosines_bad:
                 result.pdf_cosine *= sigmoid(-1*ave_cosine_bad)
             
-            user_array = numpy.array(user_vector)
+            #user_array = numpy.array(user_vector)
             #proposed_bar_idx = bar_idx_map[name]
             #sims = lsi_index[user_array]
             #result.cosine = sims[proposed_bar_idx]
@@ -511,43 +511,43 @@ def mc_weight(proposed, current, user_vector, history):
     return result
 
 
-def update_user_vector(user_vector, history, chain_length):
-    """
-    Update the user's vector 
-    based on whether he accepted the last location
-    The size of the update is based on how many 
-    entries in the chain that we've had so far
-    """
+# def update_user_vector(user_vector, history, chain_length):
+#     """
+#     Update the user's vector 
+#     based on whether he accepted the last location
+#     The size of the update is based on how many 
+#     entries in the chain that we've had so far
+#     """
 
-    # The first point in the history has no semantic information
-    #history = history[1:]
+#     # The first point in the history has no semantic information
+#     #history = history[1:]
 
-    print "Updating User Vector", user_vector
-    #print "Based on: ", [(location['venue']['name'], location['accepted'])
-    #                     for location in history]
+#     print "Updating User Vector", user_vector
+#     #print "Based on: ", [(location['venue']['name'], location['accepted'])
+#     #                     for location in history]
 
-    #last_loc_array = lsa.get_svd_document_vector(last_loc_name)
-    user_array = numpy.array(user_vector)
-    beta = (.5)**chain_length
+#     #last_loc_array = lsa.get_svd_document_vector(last_loc_name)
+#     user_array = numpy.array(user_vector)
+#     beta = (.5)**chain_length
 
-    for location in history:
+#     for location in history:
 
-        venue = location['venue']
-        accepted = location['accepted']
+#         venue = location['venue']
+#         accepted = location['accepted']
 
-        #print "Accepted last location: %s:" % accepted, venue['name']
+#         #print "Accepted last location: %s:" % accepted, venue['name']
 
-        # Get the vector of the last location
-        venue_name = venue['name']
-        bar_index = bar_idx_map[venue_name]
-        venue_array = [var for idx, var in corpus_lsi_tfidf[bar_index]]
+#         # Get the vector of the last location
+#         venue_name = venue['name']
+#         bar_index = bar_idx_map[venue_name]
+#         venue_array = [var for idx, var in corpus_lsi_tfidf[bar_index]]
 
-        user_array = update_vector(user_array, venue_array, 
-                                   accepted, beta)
+#         user_array = update_vector(user_array, venue_array, 
+#                                    accepted, beta)
 
-    print "Updated Vector: ", user_array
+#     print "Updated Vector: ", user_array
 
-    return list(user_array)
+#     return list(user_array)
     
 
 def distance_dr(loc0, loc1):

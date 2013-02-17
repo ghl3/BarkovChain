@@ -9,7 +9,7 @@ var venue_list = new Array();
 // Consider putting these into
 // a 'state' object
 var current_path = null;
-var current_user_vector = null;
+//var current_user_vector = null;
 var _lastIndex = 0;
 var clickable = false;
 
@@ -512,7 +512,7 @@ function getNextLocation() {
     }
     
     var data = {'chain' : venue_chain,
-		'user_vector' : current_user_vector,
+//		'user_vector' : current_user_vector,
 		'history' : history};
 
     submitToServer('/api/next_location', data);
@@ -544,11 +544,12 @@ function submitToServer(api, data) {
 	addToChain(data['location']);
 
 	// Update the current user vector
-	current_user_vector = data['user_vector'];
-	console.log("Updated user vector:");
-	console.log(current_user_vector);
+	//current_user_vector = data['user_vector'];
+	//console.log("Updated user vector:");
+	//console.log(current_user_vector);
 	
 	// Create the word bubbles
+	/*
 	var user_words = data['user_words'];
 	console.log(user_words);
 	var word_list = new Array();
@@ -569,7 +570,7 @@ function submitToServer(api, data) {
 
 	word_bubbles = new bubble_plot("#vis", 700, 300);
 	word_bubbles.draw(word_list);
-
+	*/
 	$("#venue_list").show();
 	$("#button_accept").show();
 	$("#button_try_another").show();

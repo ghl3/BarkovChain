@@ -235,10 +235,10 @@ venue.prototype.add_to_table = function() {
 
     var row_html_string = '<div class="venue_row_element row-fluid span12 well" id="row_' + row_index + '">\
 \
-<div class="span2"><img src="' + this.marker_image.url +'"> </div><div class="span4"><p><strong>' + name + '</strong></p> </div>\
+<div class="span2"><img src="' + this.marker_image.url +'"> </div><div class="span4" style="text-align: left;"><p><strong>' + name + '</strong></p> </div>\
 <div class="span5" style="text-align: right;"> \
 <button id="button_remove_' + row_index + '" class="button_remove btn btn-small btn-danger">Remove</button> </div> \
-<div class="span6"> <p>' + address + '</p> </div> \
+<div class="span6" style="text-align: left;"> <p>' + address + '</p> </div> \
 <div class="span12">' + category_string + '</div> \
 <div class="span12 Description_container"> <div class="Description"> </div> </div>\
 </div>';

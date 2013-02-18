@@ -143,6 +143,11 @@ def reformat_database(db, num_to_reformat):
     pass
 
 
+def acceptable_location(location):
+    for category in location['nymag']['categories']:
+        if "Gay" in category: return False
+    return True
+
 def clean_lon_lat(db, num_to_clean):
     """
     Convert any lon, lat unicode

@@ -19,6 +19,7 @@ from bson import ObjectId
 
 from database import connect_to_database
 from database import valid_entry_dict
+from database import acceptable_location
 
 import geopy
 import geopy.distance
@@ -297,9 +298,7 @@ def get_next_location(current_chain, history):
     proposed_locations = list(db_return)
     print proposed_locations
     proposed_locations = [location for location in proposed_locations
-                          if "Gay" not in location['nymag']['categories']
-                          and "Gay Bar" not in location['nymag']['categories']]
-    print [location['nymag']['name'] for location in proposed_locations]
+                          if acceptable_location(location)]
 
     # If we didn't grab enough locations,
     # try a larger search block
@@ -312,8 +311,7 @@ def get_next_location(current_chain, history):
         db_query.update(updated_distance)
         proposed_locations = list(bars.find(db_query))
         proposed_locations = [location for location in proposed_locations
-                              if "Gay" not in location['nymag']['categories']
-                              and "Gay Bar" not in location['nymag']['categories']]
+                              if acceptable_location(location)]
 
     # Get the weights for the nearby locations
     weight_results = {}

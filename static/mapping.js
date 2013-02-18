@@ -439,7 +439,7 @@ function clearChain() {
     $("#starting_point_container").css("visibility", "hidden");
     $("#venue_list").hide();
     $("#right_column").hide();
-
+    $("#waiting").css("visibility", "hidden");
     return;
 
 }
@@ -509,6 +509,7 @@ function submitToServer(api, data) {
 
     // Ensure one can't click twice
     clickable = false;
+    $("#waiting").css("visibility", "visible");
 
     console.log('Submitting Location To Server: ' + api);
     console.log("Sending data:");
@@ -574,6 +575,7 @@ function submitToServer(api, data) {
 	.always(function() { 
 	    console.log("Server transaction complete");
 	    clickable = true;
+	    $("#waiting").css("visibility", "hidden");
 	});
     
     console.log("Sent 'next_location' request to server. Waiting...");    

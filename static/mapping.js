@@ -306,12 +306,8 @@ function removeVenueWithButton(button) {
  */
 function beginChain(latlon, address) {
 
-    // First, check if there is an existing
-    // chain.  If so, we kill it.
-    if( venue_list.length != 0 ) {
-	clearChain();
-    }
-
+    clearChain();
+    
     // Create a new path
     current_path = new google.maps.Polyline({
 	strokeColor: "#0000FF",
@@ -426,6 +422,7 @@ function clearChain() {
     }
     venue_list.length = 0;
     history.length = 0;
+    _lastIndex = 0;
 
     if( current_path != null ) current_path.setMap(null);
     current_path = null;

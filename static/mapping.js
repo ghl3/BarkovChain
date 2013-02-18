@@ -246,11 +246,15 @@ venue.prototype.add_to_table = function() {
     var tail_row = $(row_html_string);
 
     // Add the collapsable Description
-    var collapsable = createCollapsable("row_" + row_index + "_Description", "Description", Description);
+    var collapsable = createCollapsable("row_" + row_index + "_Description", "Description", 
+					Description);
     tail_row.find(".Description").html(collapsable);
 
     table.append(tail_row);
     this.table_row = tail_row;
+
+    $("#venue_list").scrollTop($("#venue_list")[0].scrollHeight);
+
 }
 
 

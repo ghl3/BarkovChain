@@ -448,9 +448,9 @@ def mc_weight(proposed, current, history):
                 result.pdf_cosine *= sigmoid(-1*ave_cosine_bad)
             result.words = [dictionary[pair[0]] for pair in corpus[proposed_bar_idx]]
 
-        except:
+        except Exception as e:
             print "Cosine Error"
-            raise
+            print e
 
         result.probability *= result.pdf_cosine
 

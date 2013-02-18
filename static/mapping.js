@@ -181,7 +181,7 @@ function createCollapsable(id, title, content) {
 <div class="accordion-heading"> \
 <a class="accordion-toggle" data-toggle="collapse" \
 data-parent="#' + id + '" href="#collapse_' + id + '"> \
-' + title + ' \
+' + title + ' <span class="caret" style="margin-top: 10px;"></span>\
 </a> \
 </div> \
 <div id="collapse_' + id + '" class="accordion-body collapse" style="max-height: 200px" > \
@@ -215,8 +215,9 @@ venue.prototype.add_to_table = function() {
     var category_list = data['nymag']['categories'];
     var tips_list = data['foursquare']['tips'];
 
-    var Description = data['nymag']['review'];
-    Description += '<br> <br> <ul>';
+    var Description = "<b>New York Magazine Review</b>: <br>"
+    Description += data['nymag']['review'];
+    Description += '<br> <br> <b>Foursquare Tips:</b> <br> <ul>';
     for(var i=0; i < tips_list.length && i < 5; ++i) {
 	Description += "<li>" + tips_list[i]['text'] + "</li>";
     }

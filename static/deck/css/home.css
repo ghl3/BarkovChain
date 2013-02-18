@@ -608,6 +608,7 @@
     display: block;
   }
 
+/*
   .csstransforms.csstransitions #intro.deck-previous, .csstransforms.csstransitions #intro.deck-before {
     left: 0;
     top: 0;
@@ -641,7 +642,7 @@
     -o-transition: -o-transform 300ms ease-in-out 200ms;
     transition: transform 300ms ease-in-out 200ms;
   }
-
+*/
 /* Begin */
 
   .csstransforms.csstransitions #sample.deck-next, .csstransforms.csstransitions #sample.deck-before:not(.deck-child-current) {

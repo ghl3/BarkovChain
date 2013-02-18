@@ -14,7 +14,6 @@
 {% endblock %}
 
 
-
 {% block main %}
 
 <div id="middle_container" class="row-fluid page" style="margin-top: 25px;">
@@ -56,7 +55,7 @@
 </div>
 
 <!-- Map Section -->
-<div id="middle_container" class="row-fluid page" style="margin-top: 25px;">
+<div id="middle_container" class="row-fluid page" style="margin-top: 25px; height: 580px;">
 
   <div id="map_container" class="span6 offset1 row-fluid">
     <div id="map_canvas" style="width:500px; height:500px; border: 3px solid black;"></div>
@@ -64,7 +63,7 @@
     <div id="buttons" class="centered" style="margin-top: 10px;">
       <a id="button_initial" class="btn btn-large btn-success">Get First Bar</a>
       <a id="button_accept" class="btn btn-large btn-success">Get Next</a>
-      <a id="button_try_another" class="btn btn-large btn-danger">Try Another</a>
+      <a id="button_try_another" class="btn btn-large btn-danger">Try Again</a>
     </div>
 
     <div class="accordion" id="accordion2" style="margin-top: 20px;" hidden>
@@ -87,7 +86,7 @@
 
   <div id="right_column" class="row-fluid span5">
     <div id="venue_title" class="well span10 centered lead" style="height: 32px; padding: 1px;" >Itinerary</div>
-    <div id="venue_list"  class="span10 centered" style="margin: 0px;" ></div>
+    <div id="venue_list"  class="span10 centered" style="margin: 0px; overflow: auto; height: 525px;" ></div>
   </div>
 </div>
 

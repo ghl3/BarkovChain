@@ -96,6 +96,7 @@ def valid_entry_dict():
         'nymag' : {'$exists':True}, 
         'foursquare' : {'$exists':True}, 
         'nymag.review' : {'$exists':True, '$ne':None }, 
+        'nymag.categories' : {'$exists':True, '$ne':None }, 
 #        'nymag.review' : {}, 
         'foursquare.tips' : {'$exists':True, '$ne':None}, 
 #        'foursquare.tips' : {}, 

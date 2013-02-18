@@ -297,7 +297,8 @@ def get_next_location(current_chain, history):
     proposed_locations = list(db_return)
     print proposed_locations
     proposed_locations = [location for location in proposed_locations
-                          if "Gay" not in location['nymag']['categories']]
+                          if "Gay" not in location['nymag']['categories']
+                          and "Gay Bar" not in location['nymag']['categories']]
     print [location['nymag']['name'] for location in proposed_locations]
 
     # If we didn't grab enough locations,
@@ -311,7 +312,8 @@ def get_next_location(current_chain, history):
         db_query.update(updated_distance)
         proposed_locations = list(bars.find(db_query))
         proposed_locations = [location for location in proposed_locations
-                              if "Gay" not in location['nymag']['categories']]
+                              if "Gay" not in location['nymag']['categories']
+                              and "Gay Bar" not in location['nymag']['categories']]
 
     # Get the weights for the nearby locations
     weight_results = {}

@@ -24,10 +24,6 @@ from gensim.models.ldamodel import LdaModel
 from gensim import corpora, models, similarities
 from math import sqrt, fabs
 
-# LDA Distance Measures
-# http://www.ces.clemson.edu/~stb/ece847/projects/distance_measures.pdf
-# http://cs.gmu.edu/~carlotta/publications/ECML09_AlSumaitetal.pdf
-
 def get_stopwords():
     """
     Load the collection of stop words
@@ -117,7 +113,6 @@ def create_string_from_database(db_entry):
     convert it into a single string, 
     including reviews and tips
     """
-
     nymag = db_entry['nymag']
     name = nymag['name']
     text = nymag['review']
@@ -171,9 +166,6 @@ def create_models(db, lsi_num_topics=10, lda_num_topics=5, num_bars=None):
         idx_bar_map[int(idx)] = bar_name
         text = create_string_from_database(location)
         tokens = tokenize_document(text, stopwords, ignorechars)
-        #print "Tokenizing %s (%s):" % (location, idx),
-        #print text
-        #print tokens
         texts.append(tokens)
 
     # Do some cleaning
@@ -374,7 +366,6 @@ def test_lda(db):
     lda, corpus_lda = load_lda()
 
     print lda.num_topics
-    #lda.print_topics()
     lda.show_topics(-1, 10, True)
 
     # Print some vector
@@ -390,7 +381,6 @@ def test_lda(db):
 
     index = similarities.MatrixSimilarity(corpus_lda)
     sims = index[test_vector]
-    #sims = [euclidean(test_vector, vec) for vec in corpus_lda]
     sims = sorted(enumerate(sims), key=lambda item: -item[1])
 
     print "Comparing to: "
@@ -486,7 +476,6 @@ def important_words(lsi, state, num=None):
     return sorted_list
 
 
-
 def important_words_relative(lsi, docA, docB):
     """
     Return an ordered list of 
@@ -502,9 +491,6 @@ def important_words_relative(lsi, docA, docB):
     
     # Calculate the element-by-element overlap
     overlap = [valA[1]*valB[1] for (valA, valB) in zip(docA, docB)]
-
-    # Reverse sort it
-    # overlap = sort(enumerate(overlap), key=lambda x: x[1], reverse=True)
 
     # Create a dictionary to hold the word values
     word_val_dict = {}
@@ -537,7 +523,6 @@ def update_vector(original, latest, closer, beta):
         new = original - beta
 
     return new
-
 
 
 def main():

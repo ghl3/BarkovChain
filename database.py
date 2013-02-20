@@ -104,7 +104,6 @@ def valid_entry_dict():
         }
 
     return criteria
-    #return { 'nymag.review' : {'$ne':None} }
 
 
 def reformat_database(db, num_to_reformat):
@@ -140,7 +139,6 @@ def reformat_database(db, num_to_reformat):
         total += 1
     
     print "Updated %s entries" % total
-    pass
 
 
 def acceptable_location(location):

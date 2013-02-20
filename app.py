@@ -7,7 +7,9 @@ import random
 import math
 import json
 import random
-import itertools
+from math import pi
+from math import tan                
+import scipy.stats
 
 from flask import Flask
 from flask import render_template
@@ -23,12 +25,6 @@ from database import acceptable_location
 
 import geopy
 import geopy.distance
-
-import numpy
-import scipy.stats
-
-from math import pi
-from math import tan                
 
 from semantic import load_corpus, load_lsi, cosine
 from semantic import update_vector, important_words
@@ -346,17 +342,9 @@ def get_next_location(current_chain, history):
         if weight_result.probability > mc_throw:
             print "Monte Carlo Converged after %s throws: " % mc_steps,
             print weight_result
-            #print "Words in Selected: ", weight_result.words
             return proposed
 
     raise Exception("MonteCarloError")
-
-
-#def exponential_distribution(x, lam):
-#    if x < 0: return 0
-#    else:
-#        return lam*exp(-1*lam*x)
-#    return 
 
 
 def mc_weight(proposed, current, history):
@@ -389,29 +377,10 @@ def mc_weight(proposed, current, history):
     else:
         result.probability *= .5
         
-    # Get the lsa cosine, but only if this isn't
-    # the initial marker:
-    # [ [cosine of accepted locations], [cosine of rejected locations] ]
-    # result.cosine = [[], []] 
+    # Get the lsa cosine if there is a history
     result.pdf_cosine = 1.0 
     if not initial:
         try:
-            # good_bars = []
-            # bad_bars = []
-            # for location in history:
-            #     location_name = location['venue']['name']
-            #     if location['accepted']:
-            #         good_bars.append(location_name)
-            #     else:
-            #         bad_bars.append(location_name)
-
-            # print "Good Bars: ",
-            # for bar in good_bars: print bar,
-            # print ''
-                        
-            # print "Bad Bars: ",
-            # for bar in bad_bars: print bar,
-            # print ''
 
             # Get the index of the proposed bar
             proposed_bar_idx = bar_idx_map[name]   
@@ -432,28 +401,11 @@ def mc_weight(proposed, current, history):
                 print "%s, accepted = %s, cosine = %s" % (location_name, accepted, csn)
                 
                 if accepted:
-                    #cosines_good.append(csn)
                     result.pdf_cosine *= sigmoid(csn)
                     result.cosines_to_good.append(csn)
                 else:
-                    #cosines_bad.append(csn)
                     result.pdf_cosine *= sigmoid(-1*csn)
                     result.cosines_to_bad.append(csn)
-
-            # ave_cosine_good = sum(cosines_good)/len(cosines_good) if len(cosines_good)>0 else 0.0
-            # ave_cosine_bad = sum(cosines_bad)/len(cosines_bad) if len(cosines_bad)>0 else 0.0
-            # print "Ave Cosine to Good ", ave_cosine_good #sum(cosines_good) / len(cosines_good)
-            # print "Ave Cosine to Bad ", ave_cosine_bad #sum(cosines_bad) / len(cosines_bad)
-            
-            # result.cosine = [cosines_good, cosines_bad] #ave_cosine_good - ave_cosine_bad 
-            # result.pdf_cosine = 1.0
-            # for csn in cosines_good:
-            #     #result.pdf_cosine *= sigmoid(ave_cosine_good)
-            #     result.pdf_cosine *= sigmoid(csn)
-            # for csn in cosines_bad:
-            #     #result.pdf_cosine *= sigmoid(-1*ave_cosine_bad)
-            #     result.pdf_cosine *= sigmoid(-1*csn)
-            # #result.words = [dictionary[pair[0]] for pair in corpus[proposed_bar_idx]]
 
         except Exception as e:
             print "Cosine Error"

@@ -35,9 +35,11 @@ from semantic import update_vector, important_words
 
 from assets import gather_assets
 
+# If necessary, download the trained
+# model from Amazon S3
 gather_assets()
 
-# Gather the semantic model
+# Load the semantic models
 dictionary, corpus, tfidf, bar_idx_map, idx_bar_map = load_corpus()
 lsi, corpus_lsi_tfidf, lsi_index = load_lsi()
 
@@ -61,29 +63,28 @@ def api_initial_location():
     the initial location, as well as the
     initial user vector.
 
-    Input - Takes a dictionary with a 'location' key
-    consisting of 'latitude' and 'longitude':
+    Input:
+    {'location' : {'latitude' : lat, 'longitude' : lon}}
 
-    {'latitude' : lat, 'longitude' : lon}
-
-    Output - Return a dictionary consisting of the 
-    location dict, the id in the database, and the
-    updated user preference vector:
-
+    Returns:
+    { 'location' : { 'name' : ..., 
+                     'longitude' : ..., 
+                     'latitude' : ..., 
+                     '_id' : ..., 
+                     'nymag' : {}, 
+                     'foursquare' : {} } }
     """
 
     if 'json' not in request.headers['Content-Type']:
         print "Bad Content-Type : Expected JSON"
         return not_found()
 
-    # Get initial location
     print "Getting Initial Location"
     marker_location = request.json['location']
     marker_location['initial'] = True
     current_chain = [marker_location]
     next_location = get_next_location(current_chain, history=[])
 
-    # Return the data
     print "Returning Data"
     data_for_app = format_location(next_location)
     resp = Response(data_for_app, status=200, mimetype='application/json')
@@ -100,22 +101,20 @@ def api_next_location():
     consider, whether or not the user accepted or 
     rejected the last point, and the user's 
     preference vector:
-    { 'chain' : [{...}, {...}, ...],
-      'rejected_locations' : [...],
-      'last
-      'accepted' : True (False),
-      'user_vector' : [...] }
 
-    Output - Return a dictionary consisting of the 
-    location dict, the id in the database, and the
-    updated user preference vector:
+    Input:
+    { 'chain' : [...],
+      'history' [...] }
 
-    { 'location' : {'_id' : id, ...}, 'user_vector' : [...]}
+    Returns:
+    { 'location' : { 'name' : ..., 
+                     'longitude' : ..., 
+                     'latitude' : ..., 
+                     '_id' : ..., 
+                     'nymag' : {}, 
+                     'foursquare' : {} } }
     """
 
-    # Check content type (only json for now)
-    # Be tolerent when recieving, 
-    # be string when sending
     if 'json' not in request.headers['Content-Type']:
         print "Bad Content-Type : Expected JSON"
         return not_found()
@@ -123,8 +122,6 @@ def api_next_location():
     current_chain = request.json['chain']
     history = request.json['history']
 
-    # Get the next location, package it up
-    # and send it to the client
     print "Getting Next Location"
     next_location = get_next_location(current_chain, history=history)
 
@@ -173,7 +170,9 @@ def not_found(error=None):
 
 
 def sigmoid(x):
+    """ Return the sigmoid function"""
     return 1 / (1 + math.exp(-x))
+
 
 def format_location(db_entry):
     """
@@ -189,7 +188,6 @@ def format_location(db_entry):
     data_for_app['location']['_id'] = str(db_entry['_id'])
     data_for_app['location']['nymag'] = db_entry['nymag']
     data_for_app['location']['foursquare'] = db_entry['foursquare']
-    #data_for_app['user_words'] = important_words(lsi, user_vector, 15)
 
     data_json = json.dumps(data_for_app, default=json_util.default)
 
@@ -197,6 +195,16 @@ def format_location(db_entry):
 
 
 class weight(object):
+    """
+    An object to hold a locations transition weight
+    
+    - probability: The total transition probability
+    - distance: The spacial distance to this location
+    - pdf_distance: The pdf of the spacial distance
+    - cosine: A list of semantic cosines to this location
+    - pdf_cosine: The pdf associated with the semantic cosines
+    - critics_pick: If this location is well reviewed
+    """
     
     def __init__(self):
         self.probability = None
@@ -205,7 +213,6 @@ class weight(object):
         self.cosine = None
         self.pdf_cosine = None
         self.critics_pic = None
-        self.words = None
 
     def __repr__(self):
         repr_str = ''
@@ -226,8 +233,8 @@ class weight(object):
 
 def get_lat_lon_square_query(current_location, blocks):
     """
-    Return the min/max of lat and lon
-    to be used in the query's bounding box.
+    Return the db query specifying the 
+    min/max of lat and lon bounding box
     """
 
     lat, lon = current_location['latitude'], current_location['longitude']
@@ -250,36 +257,31 @@ def get_lat_lon_square_query(current_location, blocks):
     return query
 
 
+def get_proposed_locations(collection, query):
+    """
+    Query the database and return a list
+    of acceptable locations
+    """
+    db_return = collection.find(query)
+    proposed_locations = list(db_return)
+    return [location for location in proposed_locations
+            if acceptable_location(location)]
+    
+
 def get_next_location(current_chain, history):
     """
-    Return the next location based on the user's current
-    preference vector, his current location, and the list
-    of rejected (blacklisted) locations.
+    Return the next location 
 
-    Return the next location based on the current markov chain.
+    Based on:
+     - The current location
+     - The user's history of accepts and rejects
 
-    'current_chain' is a list of location dictionaries that
-    was sent from the javascript GET request
+    Do not return a location that the user has already seen
 
-    We return a single dictionary containing the information
-    about the next location.
-
-    The 'initial' boolean determines if this will be the first
-    entry or not.  This is passed to the 'monte carlo' function
-
-    Return a list
+    Return a dictionary describing the 'next' location
     """
 
     current_location = current_chain[-1]
-
-    # Ensure no reject or current ids are selected
-    '''
-    rejected_locations = [location['venue'] for location in history
-                          if location['accepted']==False]
-    used_ids = [ObjectId(location['_id']) 
-                for location in itertools.chain(current_chain, rejected_locations) 
-                if '_id' in location]
-    '''
     used_ids = [ObjectId(location['venue']['_id']) for location in history]
 
     # Build the db query
@@ -289,26 +291,31 @@ def get_next_location(current_chain, history):
     db_query.update(valid_entry_dict())
     db_query.update( {'_id' : {'$nin' : used_ids}})
 
-    # Get the nearby locations
     print "Fetching Locations"
     bars = mongo_db['bars']
-    db_return = bars.find(db_query)
 
-    print "Found Nearby Locations: ", 
-    proposed_locations = list(db_return)
-    print proposed_locations
-    proposed_locations = [location for location in proposed_locations
-                          if acceptable_location(location)]
+
+    proposed_locations = get_proposed_locations(bars, db_query)
+
+    #db_return = bars.find(db_query)
+
+    #print "Found Nearby Locations: ", 
+    #proposed_locations = list(db_return)
+    #print proposed_locations
+    #proposed_locations = [location for location in proposed_locations
+    #                      if acceptable_location(location)]
 
     # If we didn't grab enough locations,
     # try a larger search block
     while (len(proposed_locations) < 5):
         print "Too few nearby locations found within %s blocks (%s)." \
             % (blocks, len(proposed_locations))
+
         blocks *= 2
         updated_distance = get_lat_lon_square_query(current_location, blocks=blocks)
         print "Updated Distance: ", updated_distance
         db_query.update(updated_distance)
+
         proposed_locations = list(bars.find(db_query))
         proposed_locations = [location for location in proposed_locations
                               if acceptable_location(location)]
@@ -351,7 +358,7 @@ def get_next_location(current_chain, history):
         if weight_result.probability > mc_throw:
             print "Monte Carlo Converged after %s throws: " % mc_steps,
             print weight_result
-            print "Words in Selected: ", weight_result.words
+            #print "Words in Selected: ", weight_result.words
             return proposed
 
     return None
@@ -446,7 +453,7 @@ def mc_weight(proposed, current, history):
                 result.pdf_cosine *= sigmoid(ave_cosine_good)
             for csn in cosines_bad:
                 result.pdf_cosine *= sigmoid(-1*ave_cosine_bad)
-            result.words = [dictionary[pair[0]] for pair in corpus[proposed_bar_idx]]
+            #result.words = [dictionary[pair[0]] for pair in corpus[proposed_bar_idx]]
 
         except Exception as e:
             print "Cosine Error"

@@ -210,7 +210,9 @@ class weight(object):
         self.probability = None
         self.distance = None
         self.pdf_distance = None
-        self.cosine = None
+        #self.cosine = None
+        self.cosines_to_good = []
+        self.cosines_to_bad = []
         self.pdf_cosine = None
         self.critics_pic = None
 
@@ -220,10 +222,10 @@ class weight(object):
         repr_str += "("
         repr_str += "Distance: pdf[%.5s m] = %.7s, " % (self.distance, self.pdf_distance)
         repr_str += "Cosine: pdf[("
-        for csn in self.cosine[0]:
+        for csn in self.cosines_to_good:
             repr_str += "%.4s," % csn
         repr_str += "), ("
-        for csn in self.cosine[1]:
+        for csn in self.cosines_to_bad:
             repr_str += "%.4s," % csn
         repr_str += ") = %.7s," % self.pdf_cosine
         repr_str += "Critics Pic: %s" % self.critics_pic
@@ -390,7 +392,7 @@ def mc_weight(proposed, current, history):
     # Get the lsa cosine, but only if this isn't
     # the initial marker:
     # [ [cosine of accepted locations], [cosine of rejected locations] ]
-    result.cosine = [[], []] 
+    # result.cosine = [[], []] 
     result.pdf_cosine = 1.0 
     if not initial:
         try:
@@ -418,6 +420,7 @@ def mc_weight(proposed, current, history):
             # User vector lives in the lsa[tfidf] space
             cosines_good = []
             cosines_bad = []
+            result.pdf_cosine = 1.0
 
             for location in history:
 
@@ -429,24 +432,28 @@ def mc_weight(proposed, current, history):
                 print "%s, accepted = %s, cosine = %s" % (location_name, accepted, csn)
                 
                 if accepted:
-                    cosines_good.append(csn)
+                    #cosines_good.append(csn)
+                    result.pdf_cosine *= sigmoid(csn)
+                    result.cosines_to_good.append(csn)
                 else:
-                    cosines_bad.append(csn)
+                    #cosines_bad.append(csn)
+                    result.pdf_cosine *= sigmoid(-1*csn)
+                    result.cosines_to_bad.append(csn)
 
-            ave_cosine_good = sum(cosines_good)/len(cosines_good) if len(cosines_good)>0 else 0.0
-            ave_cosine_bad = sum(cosines_bad)/len(cosines_bad) if len(cosines_bad)>0 else 0.0
-            print "Ave Cosine to Good ", ave_cosine_good #sum(cosines_good) / len(cosines_good)
-            print "Ave Cosine to Bad ", ave_cosine_bad #sum(cosines_bad) / len(cosines_bad)
+            # ave_cosine_good = sum(cosines_good)/len(cosines_good) if len(cosines_good)>0 else 0.0
+            # ave_cosine_bad = sum(cosines_bad)/len(cosines_bad) if len(cosines_bad)>0 else 0.0
+            # print "Ave Cosine to Good ", ave_cosine_good #sum(cosines_good) / len(cosines_good)
+            # print "Ave Cosine to Bad ", ave_cosine_bad #sum(cosines_bad) / len(cosines_bad)
             
-            result.cosine = [cosines_good, cosines_bad] #ave_cosine_good - ave_cosine_bad 
-            result.pdf_cosine = 1.0
-            for csn in cosines_good:
-                #result.pdf_cosine *= sigmoid(ave_cosine_good)
-                result.pdf_cosine *= sigmoid(csn)
-            for csn in cosines_bad:
-                #result.pdf_cosine *= sigmoid(-1*ave_cosine_bad)
-                result.pdf_cosine *= sigmoid(-1*csn)
-            #result.words = [dictionary[pair[0]] for pair in corpus[proposed_bar_idx]]
+            # result.cosine = [cosines_good, cosines_bad] #ave_cosine_good - ave_cosine_bad 
+            # result.pdf_cosine = 1.0
+            # for csn in cosines_good:
+            #     #result.pdf_cosine *= sigmoid(ave_cosine_good)
+            #     result.pdf_cosine *= sigmoid(csn)
+            # for csn in cosines_bad:
+            #     #result.pdf_cosine *= sigmoid(-1*ave_cosine_bad)
+            #     result.pdf_cosine *= sigmoid(-1*csn)
+            # #result.words = [dictionary[pair[0]] for pair in corpus[proposed_bar_idx]]
 
         except Exception as e:
             print "Cosine Error"

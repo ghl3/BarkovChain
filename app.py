@@ -294,7 +294,6 @@ def get_next_location(current_chain, history):
     print "Fetching Locations"
     bars = mongo_db['bars']
 
-
     proposed_locations = get_proposed_locations(bars, db_query)
 
     #db_return = bars.find(db_query)
@@ -313,12 +312,15 @@ def get_next_location(current_chain, history):
 
         blocks *= 2
         updated_distance = get_lat_lon_square_query(current_location, blocks=blocks)
-        print "Updated Distance: ", updated_distance
         db_query.update(updated_distance)
+        proposed_locations = get_proposed_locations(bars, db_query)
 
-        proposed_locations = list(bars.find(db_query))
-        proposed_locations = [location for location in proposed_locations
-                              if acceptable_location(location)]
+        #print "Updated Distance: ", updated_distance
+        #db_query.update(updated_distance)
+
+        #proposed_locations = list(bars.find(db_query))
+        #proposed_locations = [location for location in proposed_locations
+        #                      if acceptable_location(location)]
 
     # Get the weights for the nearby locations
     weight_results = {}

@@ -283,6 +283,7 @@ def get_next_location(current_chain, history):
 
     current_location = current_chain[-1]
     used_ids = [ObjectId(location['venue']['_id']) for location in history]
+    bars = mongo_db['bars']
 
     # Build the db query
     blocks=10
@@ -292,35 +293,17 @@ def get_next_location(current_chain, history):
     db_query.update( {'_id' : {'$nin' : used_ids}})
 
     print "Fetching Locations"
-    bars = mongo_db['bars']
-
     proposed_locations = get_proposed_locations(bars, db_query)
-
-    #db_return = bars.find(db_query)
-
-    #print "Found Nearby Locations: ", 
-    #proposed_locations = list(db_return)
-    #print proposed_locations
-    #proposed_locations = [location for location in proposed_locations
-    #                      if acceptable_location(location)]
 
     # If we didn't grab enough locations,
     # try a larger search block
     while (len(proposed_locations) < 5):
         print "Too few nearby locations found within %s blocks (%s)." \
             % (blocks, len(proposed_locations))
-
         blocks *= 2
         updated_distance = get_lat_lon_square_query(current_location, blocks=blocks)
         db_query.update(updated_distance)
         proposed_locations = get_proposed_locations(bars, db_query)
-
-        #print "Updated Distance: ", updated_distance
-        #db_query.update(updated_distance)
-
-        #proposed_locations = list(bars.find(db_query))
-        #proposed_locations = [location for location in proposed_locations
-        #                      if acceptable_location(location)]
 
     # Get the weights for the nearby locations
     weight_results = {}
@@ -333,9 +316,10 @@ def get_next_location(current_chain, history):
     for location in proposed_locations:
         weight_result = weight_results[location['nymag']['name']]
         closest.append((location, weight_result.pdf_cosine, weight_result.probability))
+        
+    # Sort by pdf(cosine), and then total probability
+    # And get the top 5
     closest.sort(key=lambda x: (x[1], x[2]), reverse=True)
-
-    # Pick only the top 5
     proposed_locations = [location for (location, weight, pdf) in closest][:5]
     print "Closest Locations: "
     print [location['nymag']['name'] for location in proposed_locations]
@@ -363,19 +347,24 @@ def get_next_location(current_chain, history):
             #print "Words in Selected: ", weight_result.words
             return proposed
 
-    return None
+    raise Exception("MonteCarloError")
 
 
-def exponential_distribution(x, lam):
-    if x < 0: return 0
-    else:
-        return lam*exp(-1*lam*x)
-    return 
+#def exponential_distribution(x, lam):
+#    if x < 0: return 0
+#    else:
+#        return lam*exp(-1*lam*x)
+#    return 
 
 
 def mc_weight(proposed, current, history):
     """ 
-    Calculate the probability of jumping from current to proposed
+    Calculate the un-normalized transition probability
+
+    Depends on:
+    - Distance
+    - Reviews ('critics pick')
+    - History (if not the first choice)
     """
 
     result = weight()
@@ -388,7 +377,7 @@ def mc_weight(proposed, current, history):
     # To Do: favor linear paths
     #
     result.distance = distance_dr(proposed['nymag'], current)
-    result.pdf_distance = scipy.stats.expon.pdf(result.distance, scale=300) # size is 100 meters
+    result.pdf_distance = scipy.stats.expon.pdf(result.distance, scale=300) # Scale in meters
     result.probability *= result.pdf_distance
 
     # Disfavor non critics-picks
@@ -399,28 +388,28 @@ def mc_weight(proposed, current, history):
         result.probability *= .5
         
     # Get the lsa cosine, but only if this isn't
-    # the initial marker
-    result.cosine = [[], []] #None
-    result.pdf_cosine = 1.0 # cosine = None #None
+    # the initial marker:
+    # [ [cosine of accepted locations], [cosine of rejected locations] ]
+    result.cosine = [[], []] 
+    result.pdf_cosine = 1.0 
     if not initial:
         try:
+            # good_bars = []
+            # bad_bars = []
+            # for location in history:
+            #     location_name = location['venue']['name']
+            #     if location['accepted']:
+            #         good_bars.append(location_name)
+            #     else:
+            #         bad_bars.append(location_name)
 
-            good_bars = []
-            bad_bars = []
-            for location in history:
-                location_name = location['venue']['name']
-                if location['accepted']:
-                    good_bars.append(location_name)
-                else:
-                    bad_bars.append(location_name)
-
-            print "Good Bars: ",
-            for bar in good_bars: print bar,
-            print ''
+            # print "Good Bars: ",
+            # for bar in good_bars: print bar,
+            # print ''
                         
-            print "Bad Bars: ",
-            for bar in bad_bars: print bar,
-            print ''
+            # print "Bad Bars: ",
+            # for bar in bad_bars: print bar,
+            # print ''
 
             # Get the index of the proposed bar
             proposed_bar_idx = bar_idx_map[name]   
@@ -452,9 +441,11 @@ def mc_weight(proposed, current, history):
             result.cosine = [cosines_good, cosines_bad] #ave_cosine_good - ave_cosine_bad 
             result.pdf_cosine = 1.0
             for csn in cosines_good:
-                result.pdf_cosine *= sigmoid(ave_cosine_good)
+                #result.pdf_cosine *= sigmoid(ave_cosine_good)
+                result.pdf_cosine *= sigmoid(csn)
             for csn in cosines_bad:
-                result.pdf_cosine *= sigmoid(-1*ave_cosine_bad)
+                #result.pdf_cosine *= sigmoid(-1*ave_cosine_bad)
+                result.pdf_cosine *= sigmoid(-1*csn)
             #result.words = [dictionary[pair[0]] for pair in corpus[proposed_bar_idx]]
 
         except Exception as e:
